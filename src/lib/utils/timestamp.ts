@@ -119,9 +119,25 @@ function formatSecondsForYtDlp(totalSeconds: number): string {
 }
 
 /**
+ * Format seconds to a filename-safe segment string (e.g., "00_05_00" for HH:MM:SS)
+ */
+function formatSecondsToFilenameSegment(totalSeconds: number): string {
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = Math.floor(totalSeconds % 60);
+
+  let segment = '';
+  if (hours > 0) {
+    segment += `${hours.toString().padStart(2, '0')}_`;
+  }
+  segment += `${minutes.toString().padStart(2, '0')}_${seconds.toString().padStart(2, '0')}`;
+  return segment;
+}
+
+/**
  * Generate commands for downloading and processing video clips
- * For YouTube: Downloads only the clip sections and merges them
- * For local files: Uses FFmpeg directly
+ * For YouTube: Downloads all clip sections using one yt-dlp command, then merges them with ffmpeg.
+ * For local files: Uses FFmpeg directly.
  */
 export function generateFFmpegCommand(
   inputUrl: string,
@@ -134,22 +150,23 @@ export function generateFFmpegCommand(
   const isYouTubeUrl = inputUrl.includes('youtube.com') || inputUrl.includes('youtu.be');
 
   if (isYouTubeUrl) {
-    // For YouTube: Use yt-dlp to download each clip section individually, then use ffmpeg to merge them.
-    // This is the most reliable method to handle multiple non-contiguous clips from YouTube.
-    // The command generates a multi-step script for automation.
-    
-    // Step 1: Generate individual yt-dlp download commands
-    const downloadCommands = clips.map((clip, index) => {
-      const start = formatSecondsForYtDlp(clip.startTime);
-      const end = formatSecondsForYtDlp(clip.endTime);
-      const filename = `clip_${(index + 1).toString().padStart(2, '0')}.mp4`; // e.g., clip_01.mp4
-      
-      // Use robust format selection that works with YouTube's 2024-2025 changes
-      return `yt-dlp --download-sections "*${start}-${end}" --force-keyframes-at-cuts -f "bv+ba/b/best" -o "${filename}" "${inputUrl}"`;
+    // Step 1: Generate a single yt-dlp command to download all clips into separate files
+    // Use %(section_start)s and %(section_end)s templates for unique filenames
+    const ytDlpDownloadCommand = `yt-dlp ` +
+      clips.map(clip => {
+        const start = formatSecondsForYtDlp(clip.startTime);
+        const end = formatSecondsForYtDlp(clip.endTime);
+        return `--download-sections "*${start}-${end}"`;
+      }).join(' ') +
+      ` --force-keyframes-at-cuts -f "bv+ba/b/best" -o 'clip_%(section_start)s_to_%(section_end)s.mp4' "${inputUrl}"`;
+
+    // Step 2: Generate filelist.txt content based on the actual filenames yt-dlp will produce
+    const fileListContent = clips.map(clip => {
+      const startFilename = formatSecondsToFilenameSegment(clip.startTime);
+      const endFilename = formatSecondsToFilenameSegment(clip.endTime);
+      return `file 'clip_${startFilename}_to_${endFilename}.mp4'`;
     }).join('\n');
 
-    // Step 2: Generate filelist.txt content and command for PowerShell
-    const fileListContent = clips.map((_, index) => `file 'clip_${(index + 1).toString().padStart(2, '0')}.mp4'`).join('\n');
     const createFileListCommand = `
 # Windows (PowerShell) - Create filelist.txt
 Set-Content -Path filelist.txt -Value \`@"
@@ -157,7 +174,11 @@ ${fileListContent}
 \`@"
 
 # Linux/macOS (Bash) - Create filelist.txt
-# printf "%s\\n" ${clips.map((_, index) => `"file 'clip_${(index + 1).toString().padStart(2, '0')}.mp4'"`).join(' ')} > filelist.txt
+# printf "%s\\n" ${clips.map(clip => {
+  const startFilename = formatSecondsToFilenameSegment(clip.startTime);
+  const endFilename = formatSecondsToFilenameSegment(clip.endTime);
+  return `"file 'clip_${startFilename}_to_${endFilename}.mp4'"`;
+}).join(' ')} > filelist.txt
 `;
 
     // Step 3: Generate FFmpeg merge command
@@ -188,8 +209,8 @@ Remove-Item clip_*.mp4, filelist.txt
 # 2. Open PowerShell (Windows) or Terminal (Linux/macOS).
 # 3. Paste the script and press Enter.
 
-# --- Step 1: Download individual clip sections ---
-${downloadCommands}
+# --- Step 1: Download all clip sections (single command, multiple files) ---
+${ytDlpDownloadCommand}
 
 # --- Step 2: Create filelist.txt for merging ---
 ${createFileListCommand}

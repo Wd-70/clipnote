@@ -30,6 +30,7 @@ import {
   Share2,
   Settings,
   Trash2,
+  Loader2,
 } from 'lucide-react';
 import Link from 'next/link';
 import type { ParsedClip } from '@/types';
@@ -62,6 +63,7 @@ export default function EditorPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Fetch project data from API
   useEffect(() => {
@@ -157,18 +159,35 @@ export default function EditorPage() {
   // Generate FFmpeg command
   const handleExport = useCallback(() => {
     if (clips.length === 0 || !project) return;
+    setIsExporting(true);
 
-    const command = generateFFmpegCommand(project.videoUrl, clips);
-    navigator.clipboard.writeText(command);
-    
-    const isYouTube = project.videoUrl.includes('youtube.com') || project.videoUrl.includes('youtu.be');
-    if (isYouTube) {
-      toast.success('스크립트가 클립보드에 복사되었습니다!', {
-        description: 'yt-dlp와 FFmpeg 명령어가 포함된 배치 스크립트입니다. PowerShell에 붙여넣어 실행하세요.',
+    try {
+      const command = generateFFmpegCommand(project.videoUrl, clips);
+      const filename = `clipnote_export_${project.title.replace(/\s+/g, '_') || 'untitled'}.ps1`;
+      
+      const blob = new Blob([command], { type: 'application/x-powershell' }); // For .bat file
+      const url = URL.createObjectURL(blob);
+      
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      
+      URL.revokeObjectURL(url); // Clean up the URL object
+
+      toast.success('PowerShell 스크립트가 생성되었습니다!', {
+        description: `"${filename}" 파일이 다운로드되었습니다. PowerShell에서 실행해주세요.`,
         duration: 8000,
       });
-    } else {
-      toast.success('FFmpeg 명령어가 클립보드에 복사되었습니다!');
+    } catch (error) {
+      console.error('[EditorPage] Export failed:', error);
+      toast.error('파일 생성에 실패했습니다.', {
+        description: '오류가 발생했습니다. 콘솔을 확인해주세요.',
+      });
+    } finally {
+      setIsExporting(false);
     }
   }, [clips, project]);
 
@@ -250,9 +269,13 @@ export default function EditorPage() {
             <Play className="h-4 w-4 mr-2" />
             가상 재생
           </Button>
-          <Button variant="outline" size="sm" onClick={handleExport}>
-            <Download className="h-4 w-4 mr-2" />
-            내보내기
+          <Button variant="outline" size="sm" onClick={handleExport} disabled={isExporting}>
+            {isExporting ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4 mr-2" />
+            )}
+            {isExporting ? '내보내는 중...' : '내보내기'}
           </Button>
           <Button variant="outline" size="icon">
             <Share2 className="h-4 w-4" />
