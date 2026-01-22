@@ -1,0 +1,30 @@
+[
+  {
+    "userId": "dev-user-id",
+    "videoUrl": "https://youtu.be/h2-NqwdfvQc?si=OkkwYRIN9XJ91bot",
+    "platform": "YOUTUBE",
+    "videoId": "h2-NqwdfvQc",
+    "title": "[25.12.07] AGF 공연 다녀왔습니다 !",
+    "thumbnailUrl": "https://i.ytimg.com/vi/h2-NqwdfvQc/maxresdefault.jpg",
+    "duration": 10341,
+    "notes": "21:17.5 - 21:21.5 해석본\n43:51.4 - 43:55.1 머리카락 뒤에 비어있어\n1:10:08.8 - 1:10:24.7 재발하면",
+    "isAutoCollected": false,
+    "_id": "mkpf0qjf5spqwu38to5",
+    "createdAt": "2026-01-22T12:15:39.867Z",
+    "updatedAt": "2026-01-22T13:24:07.434Z"
+  },
+  {
+    "userId": "dev-user-id",
+    "videoUrl": "https://youtu.be/gQKeFRE_MO8?si=1fO6kkMNm9myHr7i",
+    "platform": "YOUTUBE",
+    "videoId": "gQKeFRE_MO8",
+    "title": "[25.12.06] 1부 캐롤 위주 노래방송 !",
+    "thumbnailUrl": "https://i.ytimg.com/vi/gQKeFRE_MO8/maxresdefault.jpg",
+    "duration": 15375,
+    "notes": [],
+    "isAutoCollected": false,
+    "_id": "mkpf17316xcpa2xgtr8",
+    "createdAt": "2026-01-22T12:16:01.309Z",
+    "updatedAt": "2026-01-22T12:16:01.309Z"
+  }
+]
