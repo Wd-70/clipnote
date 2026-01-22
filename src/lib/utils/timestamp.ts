@@ -1,4 +1,5 @@
 import type { ParsedClip } from '@/types';
+import { sanitizeFilename } from './string';
 
 // Regex pattern for MM:SS.d - MM:SS.d or HH:MM:SS.d - HH:MM:SS.d
 const TIMESTAMP_REGEX =
@@ -142,6 +143,7 @@ function formatSecondsToFilenameSegment(totalSeconds: number): string {
 export function generateFFmpegCommand(
   inputUrl: string,
   clips: ParsedClip[],
+  project: { title: string }, // Add project title for filename generation
   outputPath: string = 'output.mp4'
 ): string {
   if (clips.length === 0) return '';
@@ -150,79 +152,92 @@ export function generateFFmpegCommand(
   const isYouTubeUrl = inputUrl.includes('youtube.com') || inputUrl.includes('youtu.be');
 
   if (isYouTubeUrl) {
-    // Step 1: Generate a single yt-dlp command to download all clips into separate files
-    // Use %(section_start)s and %(section_end)s templates for unique filenames
-    const ytDlpDownloadCommand = `yt-dlp ` +
-      clips.map(clip => {
-        const start = formatSecondsForYtDlp(clip.startTime);
-        const end = formatSecondsForYtDlp(clip.endTime);
-        return `--download-sections "*${start}-${end}"`;
-      }).join(' ') +
-      ` --force-keyframes-at-cuts -f "bv+ba/b/best" -o 'clip_%(section_start)s_to_%(section_end)s.mp4' "${inputUrl}"`;
+    // 프로젝트 제목 정규화 (파일명으로 사용하기 위함)
+    const projectTitleSanitized = sanitizeFilename(project.title || 'Untitled_Project');
+    
+    // --- Step 1: 개별 클립 파일 다운로드 ---
+    // yt-dlp 명령어를 사용하여 각 클립 구간을 개별 파일로 다운로드합니다.
+    // 파일명 형식: [프로젝트_제목]_[클립_번호]_[클립_내용].mp4
+    const downloadCommands = clips.map((clip, index) => {
+      const start = formatSecondsForYtDlp(clip.startTime);
+      const end = formatSecondsForYtDlp(clip.endTime);
+      const clipNumber = (index + 1).toString().padStart(2, '0'); // 클립 번호 (01, 02...)
+      const clipName = sanitizeFilename(clip.text || `클립_${clipNumber}`); // 클립 내용 정규화
+      
+      const filename = `${projectTitleSanitized}_${clipNumber}_${clipName}.mp4`;
+      
+      return `yt-dlp --download-sections "*${start}-${end}" --force-keyframes-at-cuts -f "bv+ba/b/best" -o "${filename}" "${inputUrl}"`;
+    }).join('\n');
 
-    // Step 2: Generate filelist.txt content based on the actual filenames yt-dlp will produce
-    const fileListContent = clips.map(clip => {
-      const startFilename = formatSecondsToFilenameSegment(clip.startTime);
-      const endFilename = formatSecondsToFilenameSegment(clip.endTime);
-      return `file 'clip_${startFilename}_to_${endFilename}.mp4'`;
+    // --- Step 2: 클립 목록 파일 (filelist.txt) 생성 ---
+    // 다운로드된 클립 파일들을 FFmpeg가 인식할 수 있는 목록 파일로 만듭니다.
+    const fileListContent = clips.map((clip, index) => {
+      const clipNumber = (index + 1).toString().padStart(2, '0');
+      const clipName = sanitizeFilename(clip.text || `클립_${clipNumber}`);
+      const filename = `${projectTitleSanitized}_${clipNumber}_${clipName}.mp4`;
+      return `file '${filename}'`;
     }).join('\n');
 
     const createFileListCommand = `
-# Windows (PowerShell) - Create filelist.txt
+# Windows (PowerShell) - filelist.txt 파일 생성
 Set-Content -Path filelist.txt -Value \`@"
 ${fileListContent}
 \`@"
 
-# Linux/macOS (Bash) - Create filelist.txt
-# printf "%s\\n" ${clips.map(clip => {
-  const startFilename = formatSecondsToFilenameSegment(clip.startTime);
-  const endFilename = formatSecondsToFilenameSegment(clip.endTime);
-  return `"file 'clip_${startFilename}_to_${endFilename}.mp4'"`;
+# Linux/macOS (Bash) - filelist.txt 파일 생성 (주석 처리됨)
+# printf "%s\\n" ${clips.map((clip, index) => {
+  const clipNumber = (index + 1).toString().padStart(2, '0');
+  const clipName = sanitizeFilename(clip.text || `클립_${clipNumber}`);
+  const filename = `${projectTitleSanitized}_${clipNumber}_${clipName}.mp4`;
+  return `"file '${filename}'"`;
 }).join(' ')} > filelist.txt
 `;
 
-    // Step 3: Generate FFmpeg merge command
+    // --- Step 3: 개별 클립 파일들을 하나로 병합 ---
+    // FFmpeg의 concat demuxer를 사용하여 다운로드된 클립들을 하나의 영상으로 합칩니다.
+    // -c copy 옵션으로 재인코딩 없이 빠르게 병합됩니다 (무손실).
     const mergeCommand = `ffmpeg -f concat -safe 0 -i filelist.txt -c copy "${outputPath}"`;
 
-    // Step 4: Generate cleanup command
+    // --- Step 4: 임시 파일 정리 (선택 사항) ---
+    // 다운로드된 개별 클립 파일과 filelist.txt를 삭제합니다.
     const cleanupCommand = `
-# Windows (PowerShell) - Clean up
-Remove-Item clip_*.mp4, filelist.txt
+# Windows (PowerShell) - 임시 파일 삭제
+Remove-Item "${projectTitleSanitized}_*.mp4", filelist.txt
 
-# Linux/macOS (Bash) - Clean up
-# rm clip_*.mp4 filelist.txt
+# Linux/macOS (Bash) - 임시 파일 삭제 (주석 처리됨)
+# rm "${projectTitleSanitized}_*.mp4" filelist.txt
 `;
 
-    // Combine all steps into a single script
-    return `# ClipNote Export Script (PowerShell compatible)
+    // 모든 단계를 하나의 PowerShell 스크립트로 결합
+    return `# ClipNote 클립 내보내기 자동화 스크립트 (PowerShell 호환)
 #
-# This script will download individual video segments from YouTube using yt-dlp,
-# merge them into a single output file using ffmpeg, and then clean up
-# the intermediate files.
+# 이 스크립트는 YouTube 영상에서 지정된 클립 구간들을 다운로드하고,
+# 모든 클립을 하나의 영상 파일로 병합하며, 마지막으로 임시 파일들을 정리합니다.
 #
-# Requirements:
-#   - yt-dlp (https://github.com/yt-dlp/yt-dlp)
-#   - ffmpeg (https://ffmpeg.org/)
+# 필요 도구:
+#   - yt-dlp (YouTube 다운로드 도구): https://github.com/yt-dlp/yt-dlp
+#   - ffmpeg (영상 처리 도구): https://ffmpeg.org/
 #
-# How to use:
-# 1. Copy the entire script.
-# 2. Open PowerShell (Windows) or Terminal (Linux/macOS).
-# 3. Paste the script and press Enter.
+# 사용 방법:
+# 1. 이 스크립트 내용을 모두 복사합니다.
+# 2. Windows PowerShell 또는 Linux/macOS 터미널을 엽니다.
+# 3. 복사한 스크립트를 붙여넣고 Enter 키를 누릅니다.
+#    (PowerShell에서는 스크립트 실행 정책 변경이 필요할 수 있습니다: Set-ExecutionPolicy RemoteSigned -Scope CurrentUser)
+#
+# --- 1단계: 개별 클립 파일 다운로드 ---
+${downloadCommands}
 
-# --- Step 1: Download all clip sections (single command, multiple files) ---
-${ytDlpDownloadCommand}
-
-# --- Step 2: Create filelist.txt for merging ---
+# --- 2단계: 클립 목록 파일 (filelist.txt) 생성 ---
 ${createFileListCommand}
 
-# --- Step 3: Merge clips into a single output file ---
+# --- 3단계: 모든 클립을 하나의 파일로 병합 ---
 ${mergeCommand}
 
-# --- Step 4: Clean up (optional) ---
+# --- 4단계: 임시 파일 정리 (선택 사항) ---
 ${cleanupCommand}
 `;
   } else {
-    // For local files or direct URLs: Use FFmpeg filter_complex (single command)
+    // 로컬 파일 또는 직접 URL의 경우: FFmpeg filter_complex를 사용하여 단일 명령으로 처리
     const filterParts: string[] = [];
     const concatInputs: string[] = [];
 

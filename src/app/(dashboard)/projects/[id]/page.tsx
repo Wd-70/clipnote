@@ -6,6 +6,7 @@ import { VideoPlayer, VideoPlayerRef } from '@/components/video/video-player';
 import { NotesEditor, NotesEditorRef } from '@/components/editor/notes-editor';
 import { ClipList } from '@/components/editor/clip-list';
 import { ClipTimeline } from '@/components/editor/clip-timeline';
+import { ExportDialog } from '@/components/editor/export-dialog';
 import { useVideoSync } from '@/hooks/useVideoSync';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -64,6 +65,8 @@ export default function EditorPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
+  const [exportScriptContent, setExportScriptContent] = useState('');
 
   // Fetch project data from API
   useEffect(() => {
@@ -162,28 +165,20 @@ export default function EditorPage() {
     setIsExporting(true);
 
     try {
-      const command = generateFFmpegCommand(project.videoUrl, clips);
-      const filename = `clipnote_export_${project.title.replace(/\s+/g, '_') || 'untitled'}.ps1`;
-      
-      const blob = new Blob([command], { type: 'application/x-powershell' }); // For .bat file
-      const url = URL.createObjectURL(blob);
-      
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      
-      URL.revokeObjectURL(url); // Clean up the URL object
+      if (!project) {
+        throw new Error('Project data is missing for export.');
+      }
+      const script = generateFFmpegCommand(project.videoUrl, clips, project);
+      setExportScriptContent(script);
+      setIsExportDialogOpen(true); // Open the dialog
 
-      toast.success('PowerShell 스크립트가 생성되었습니다!', {
-        description: `"${filename}" 파일이 다운로드되었습니다. PowerShell에서 실행해주세요.`,
-        duration: 8000,
+      toast.success('내보내기 스크립트가 준비되었습니다!', {
+        description: '다이얼로그에서 스크립트를 확인하고 각 단계를 복사하세요.',
+        duration: 5000,
       });
     } catch (error) {
       console.error('[EditorPage] Export failed:', error);
-      toast.error('파일 생성에 실패했습니다.', {
+      toast.error('스크립트 생성에 실패했습니다.', {
         description: '오류가 발생했습니다. 콘솔을 확인해주세요.',
       });
     } finally {
@@ -412,6 +407,13 @@ export default function EditorPage() {
           </Button>
         </div>
       )}
+
+      {/* Export Dialog */}
+      <ExportDialog 
+        open={isExportDialogOpen} 
+        onOpenChange={setIsExportDialogOpen} 
+        scriptContent={exportScriptContent} 
+      />
     </div>
   );
 }
