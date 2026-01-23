@@ -35,7 +35,6 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import type { ParsedClip } from '@/types';
-import { generateFFmpegCommand } from '@/lib/utils/timestamp';
 import { toast } from 'sonner';
 
 interface Project {
@@ -64,9 +63,7 @@ export default function EditorPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
-  const [exportScriptContent, setExportScriptContent] = useState('');
 
   // Fetch project data from API
   useEffect(() => {
@@ -159,31 +156,10 @@ export default function EditorPage() {
     }
   }, [params.id]);
 
-  // Generate FFmpeg command
+  // Open export dialog
   const handleExport = useCallback(() => {
     if (clips.length === 0 || !project) return;
-    setIsExporting(true);
-
-    try {
-      if (!project) {
-        throw new Error('Project data is missing for export.');
-      }
-      const script = generateFFmpegCommand(project.videoUrl, clips, project);
-      setExportScriptContent(script);
-      setIsExportDialogOpen(true); // Open the dialog
-
-      toast.success('내보내기 스크립트가 준비되었습니다!', {
-        description: '다이얼로그에서 스크립트를 확인하고 각 단계를 복사하세요.',
-        duration: 5000,
-      });
-    } catch (error) {
-      console.error('[EditorPage] Export failed:', error);
-      toast.error('스크립트 생성에 실패했습니다.', {
-        description: '오류가 발생했습니다. 콘솔을 확인해주세요.',
-      });
-    } finally {
-      setIsExporting(false);
-    }
+    setIsExportDialogOpen(true);
   }, [clips, project]);
 
   // Handle delete
@@ -264,13 +240,9 @@ export default function EditorPage() {
             <Play className="h-4 w-4 mr-2" />
             가상 재생
           </Button>
-          <Button variant="outline" size="sm" onClick={handleExport} disabled={isExporting}>
-            {isExporting ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <Download className="h-4 w-4 mr-2" />
-            )}
-            {isExporting ? '내보내는 중...' : '내보내기'}
+          <Button variant="outline" size="sm" onClick={handleExport} disabled={clips.length === 0}>
+            <Download className="h-4 w-4 mr-2" />
+            내보내기
           </Button>
           <Button variant="outline" size="icon">
             <Share2 className="h-4 w-4" />
@@ -409,11 +381,15 @@ export default function EditorPage() {
       )}
 
       {/* Export Dialog */}
-      <ExportDialog 
-        open={isExportDialogOpen} 
-        onOpenChange={setIsExportDialogOpen} 
-        scriptContent={exportScriptContent} 
-      />
+      {project && (
+        <ExportDialog 
+          open={isExportDialogOpen} 
+          onOpenChange={setIsExportDialogOpen}
+          clips={clips}
+          videoUrl={project.videoUrl}
+          projectTitle={project.title}
+        />
+      )}
     </div>
   );
 }

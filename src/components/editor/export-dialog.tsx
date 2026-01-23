@@ -1,138 +1,441 @@
 'use client';
 
-import { useState, Fragment, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Copy, Check } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import {
+  Copy,
+  Check,
+  Download,
+  FileText,
+  Merge,
+  Trash2,
+  Terminal,
+  Sparkles,
+  Settings2,
+  ChevronDown,
+  ChevronUp,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import type { ParsedClip } from '@/types';
 
 interface ExportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  scriptContent: string;
+  clips: ParsedClip[];
+  videoUrl: string;
+  projectTitle: string;
 }
 
-export function ExportDialog({ open, onOpenChange, scriptContent }: ExportDialogProps) {
-  const [copiedStates, setCopiedStates] = useState<boolean[]>([]);
+// Format seconds to yt-dlp timestamp format
+function formatSecondsForYtDlp(totalSeconds: number): string {
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = Math.floor(totalSeconds % 60);
 
-  // Parse the script content into structured command blocks
-  const parsedCommandBlocks = useMemo(() => {
-    const blocks: { title: string; command: string }[] = [];
-    const lines = scriptContent.split('\n');
-    let currentTitle = '';
-    let currentCommandLines: string[] = [];
+  if (hours > 0) {
+    return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  }
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
 
-    lines.forEach(line => {
-      // Check for step headers (e.g., "# --- 1단계: 개별 클립 파일 다운로드 ---")
-      const stepHeaderMatch = line.match(/^# ---\s(\d단계:.*?)\s---$/);
-      if (stepHeaderMatch) {
-        if (currentTitle && currentCommandLines.length > 0) {
-          blocks.push({
-            title: currentTitle,
-            command: currentCommandLines.join('\n').trim(),
-          });
-        }
-        currentTitle = stepHeaderMatch[1];
-        currentCommandLines = [];
-      } else if (!line.startsWith('#') && line.trim() !== '') {
-        // Only include non-comment and non-empty lines in the command block
-        currentCommandLines.push(line);
-      }
-    });
+// Sanitize filename
+function sanitizeFilename(name: string, useUnderscore: boolean): string {
+  // Remove or replace invalid characters
+  let sanitized = name
+    .replace(/[<>:"/\\|?*]/g, '')
+    .replace(/\s+/g, useUnderscore ? '_' : ' ')
+    .trim();
+  
+  // Limit length
+  if (sanitized.length > 100) {
+    sanitized = sanitized.substring(0, 100);
+  }
+  
+  return sanitized || 'Untitled';
+}
 
-    // Add the last block
-    if (currentTitle && currentCommandLines.length > 0) {
-      blocks.push({
-        title: currentTitle,
-        command: currentCommandLines.join('\n').trim(),
-      });
+interface CommandBlockProps {
+  stepNumber: number;
+  title: string;
+  description: string;
+  command: string;
+  icon: React.ReactNode;
+  accentColor: string;
+  copied: boolean;
+  onCopy: () => void;
+  defaultExpanded?: boolean;
+}
+
+function CommandBlock({
+  stepNumber,
+  title,
+  description,
+  command,
+  icon,
+  accentColor,
+  copied,
+  onCopy,
+  defaultExpanded = true,
+}: CommandBlockProps) {
+  const [expanded, setExpanded] = useState(defaultExpanded);
+
+  return (
+    <div className="rounded-xl border bg-card overflow-hidden shadow-sm">
+      {/* Header */}
+      <div
+        className={cn(
+          "flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 transition-colors",
+          `border-l-4`,
+          accentColor
+        )}
+        onClick={() => setExpanded(!expanded)}
+      >
+        <div className="flex items-center gap-3">
+          <div className={cn(
+            "flex items-center justify-center w-8 h-8 rounded-full text-white text-sm font-bold",
+            accentColor.replace('border-l-', 'bg-').replace('-500', '-500')
+          )}>
+            {stepNumber}
+          </div>
+          <div className="flex items-center gap-2">
+            {icon}
+            <div>
+              <h4 className="font-semibold text-sm">{title}</h4>
+              <p className="text-xs text-muted-foreground">{description}</p>
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant={copied ? "default" : "secondary"}
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              onCopy();
+            }}
+            className={cn(
+              "gap-1.5 transition-all",
+              copied && "bg-green-500 hover:bg-green-600"
+            )}
+          >
+            {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+            {copied ? '복사됨!' : '복사'}
+          </Button>
+          {expanded ? (
+            <ChevronUp className="h-4 w-4 text-muted-foreground" />
+          ) : (
+            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+          )}
+        </div>
+      </div>
+
+      {/* Code Content */}
+      {expanded && (
+        <div className="border-t bg-zinc-950 dark:bg-zinc-900">
+          <ScrollArea className="max-h-[200px]">
+            <pre className="p-4 text-xs font-mono text-zinc-100 whitespace-pre-wrap break-all">
+              <code>{command}</code>
+            </pre>
+          </ScrollArea>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function ExportDialog({
+  open,
+  onOpenChange,
+  clips,
+  videoUrl,
+  projectTitle,
+}: ExportDialogProps) {
+  // Settings state
+  const [useSingleCommand, setUseSingleCommand] = useState(false);
+  const [useUnderscore, setUseUnderscore] = useState(true);
+  const [copiedStates, setCopiedStates] = useState<Record<string, boolean>>({});
+  const [showSettings, setShowSettings] = useState(false);
+
+  // Reset copied states when dialog opens
+  useEffect(() => {
+    if (open) {
+      setCopiedStates({});
     }
-    return blocks;
-  }, [scriptContent]);
+  }, [open]);
 
-  const handleCopy = async (text: string, index: number) => {
+  // Generate filenames based on settings
+  const generateFilename = useCallback((clip: ParsedClip, index: number) => {
+    const sanitizedTitle = sanitizeFilename(projectTitle, useUnderscore);
+    const clipNumber = (index + 1).toString().padStart(2, '0');
+    const clipName = sanitizeFilename(clip.text || `클립${clipNumber}`, useUnderscore);
+    return `${sanitizedTitle}_${clipNumber}_${clipName}.mp4`;
+  }, [projectTitle, useUnderscore]);
+
+  // Generate commands based on settings
+  const commands = useMemo(() => {
+    if (clips.length === 0) return null;
+
+    const sanitizedTitle = sanitizeFilename(projectTitle, useUnderscore);
+    const outputFilename = `ClipNote_${sanitizedTitle}.mp4`;
+
+    // Step 1: Download commands
+    let downloadCommand: string;
+    if (useSingleCommand) {
+      // Single command with all sections
+      const sections = clips.map(clip => {
+        const start = formatSecondsForYtDlp(clip.startTime);
+        const end = formatSecondsForYtDlp(clip.endTime);
+        return `"*${start}-${end}"`;
+      }).join(' ');
+      downloadCommand = `yt-dlp --download-sections ${sections} --force-keyframes-at-cuts -f "bv+ba/b/best" -o "${sanitizedTitle}_%(section_start)s.mp4" "${videoUrl}"`;
+    } else {
+      // Individual commands for each clip, joined with semicolon for PowerShell
+      const individualCommands = clips.map((clip, index) => {
+        const start = formatSecondsForYtDlp(clip.startTime);
+        const end = formatSecondsForYtDlp(clip.endTime);
+        const filename = generateFilename(clip, index);
+        return `yt-dlp --download-sections "*${start}-${end}" --force-keyframes-at-cuts -f "bv+ba/b/best" -o "${filename}" "${videoUrl}"`;
+      });
+      // Join with semicolon for Windows PowerShell compatibility
+      downloadCommand = individualCommands.join('; ');
+    }
+
+    // Step 2: File list
+    const fileListContent = clips.map((clip, index) => {
+      const filename = generateFilename(clip, index);
+      return `file '${filename}'`;
+    }).join('\n');
+
+    const fileListCommand = `Set-Content -Path filelist.txt -Value @"
+${fileListContent}
+"@`;
+
+    // Step 3: Merge command
+    const mergeCommand = `ffmpeg -f concat -safe 0 -i filelist.txt -c copy "${outputFilename}"`;
+
+    // Step 4: Cleanup
+    const cleanupPattern = useUnderscore 
+      ? `${sanitizedTitle}_*.mp4`
+      : `"${sanitizedTitle}_*.mp4"`;
+    const cleanupCommand = `Remove-Item ${cleanupPattern}, filelist.txt`;
+
+    return {
+      download: downloadCommand,
+      fileList: fileListCommand,
+      merge: mergeCommand,
+      cleanup: cleanupCommand,
+      outputFilename,
+    };
+  }, [clips, videoUrl, projectTitle, useSingleCommand, useUnderscore, generateFilename]);
+
+  const handleCopy = async (key: string, text: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      setCopiedStates(prev => {
-        const newState = [...prev];
-        newState[index] = true;
-        return newState;
-      });
+      setCopiedStates(prev => ({ ...prev, [key]: true }));
       toast.success('클립보드에 복사되었습니다!');
       setTimeout(() => {
-        setCopiedStates(prev => {
-          const newState = [...prev];
-          newState[index] = false;
-          return newState;
-        });
+        setCopiedStates(prev => ({ ...prev, [key]: false }));
       }, 2000);
-    } catch (err) {
-      console.error('Failed to copy text: ', err);
+    } catch {
       toast.error('클립보드 복사에 실패했습니다.');
     }
   };
 
-  // Reset copied states when dialog opens/closes or blocks change
-  useEffect(() => {
-    setCopiedStates(new Array(parsedCommandBlocks.length).fill(false));
-  }, [open, parsedCommandBlocks.length]);
+  const handleCopyAll = async () => {
+    if (!commands) return;
+    const fullScript = `# ClipNote 내보내기 스크립트
+# 프로젝트: ${projectTitle}
+# 클립 수: ${clips.length}개
+
+# 1단계: 클립 다운로드
+${commands.download}
+
+# 2단계: 파일 목록 생성
+${commands.fileList}
+
+# 3단계: 클립 병합
+${commands.merge}
+
+# 4단계: 임시 파일 정리 (선택)
+${commands.cleanup}
+`;
+    await handleCopy('all', fullScript);
+  };
+
+  if (!commands) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle>클립 내보내기 스크립트</DialogTitle>
-          <DialogDescription>
-            아래 스크립트를 PowerShell 또는 터미널에 붙여넣어 클립을 다운로드하고 병합하세요. 각 단계별로 복사할 수 있습니다.
-          </DialogDescription>
-        </DialogHeader>
-        
-        <ScrollArea className="flex-1 p-4 rounded-md border bg-muted/20 text-sm font-mono">
-          {parsedCommandBlocks.map((block, blockIndex) => (
-            <Fragment key={blockIndex}>
-              <div className="flex items-center justify-between my-2">
-                <span className="font-semibold text-base text-primary">
-                  {block.title}
-                </span>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleCopy(block.command, blockIndex)}
-                        className="gap-1 text-muted-foreground hover:text-foreground"
-                      >
-                        {copiedStates[blockIndex] ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                        {copiedStates[blockIndex] ? '복사됨!' : '복사'}
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>이 명령어 블록 복사</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+      <DialogContent className="max-w-3xl max-h-[90vh] p-0 gap-0 overflow-hidden">
+        {/* Header */}
+        <div className="px-6 pt-6 pb-4 border-b bg-gradient-to-r from-violet-500/10 via-purple-500/10 to-fuchsia-500/10">
+          <DialogHeader>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 text-white">
+                <Terminal className="h-5 w-5" />
               </div>
-              <pre className={cn("bg-transparent p-2 rounded-md overflow-x-auto", blockIndex < parsedCommandBlocks.length - 1 && "mb-4 border-b pb-4")}>
-                <code>{block.command}</code>
-              </pre>
-            </Fragment>
-          ))}
+              <div>
+                <DialogTitle className="text-xl">클립 내보내기</DialogTitle>
+                <DialogDescription className="mt-1">
+                  {clips.length}개 클립을 다운로드하고 하나의 영상으로 병합합니다
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          {/* Quick Stats */}
+          <div className="flex gap-2 mt-4">
+            <Badge variant="secondary" className="gap-1.5">
+              <Sparkles className="h-3 w-3" />
+              {clips.length}개 클립
+            </Badge>
+            <Badge variant="outline" className="gap-1.5">
+              <FileText className="h-3 w-3" />
+              {commands.outputFilename}
+            </Badge>
+          </div>
+        </div>
+
+        {/* Settings Toggle */}
+        <div className="px-6 py-3 border-b bg-muted/30">
+          <button
+            onClick={() => setShowSettings(!showSettings)}
+            className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Settings2 className="h-4 w-4" />
+            내보내기 설정
+            {showSettings ? (
+              <ChevronUp className="h-4 w-4" />
+            ) : (
+              <ChevronDown className="h-4 w-4" />
+            )}
+          </button>
+
+          {showSettings && (
+            <div className="mt-4 space-y-4">
+              <Separator />
+              <div className="grid gap-4 sm:grid-cols-2">
+                {/* Download Mode Toggle */}
+                <div className="flex items-center justify-between p-3 rounded-lg bg-background border">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="download-mode" className="text-sm font-medium">
+                      다운로드 방식
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      {useSingleCommand ? '하나의 명령어로 모든 클립 다운로드' : '클립별 개별 명령어 생성'}
+                    </p>
+                  </div>
+                  <Switch
+                    id="download-mode"
+                    checked={useSingleCommand}
+                    onCheckedChange={setUseSingleCommand}
+                  />
+                </div>
+
+                {/* Filename Format Toggle */}
+                <div className="flex items-center justify-between p-3 rounded-lg bg-background border">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="filename-format" className="text-sm font-medium">
+                      파일명 형식
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      {useUnderscore ? '빈칸을 언더바(_)로 교체' : '빈칸 그대로 유지'}
+                    </p>
+                  </div>
+                  <Switch
+                    id="filename-format"
+                    checked={useUnderscore}
+                    onCheckedChange={setUseUnderscore}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Commands */}
+        <ScrollArea className="flex-1 px-6 py-4" style={{ maxHeight: 'calc(90vh - 320px)' }}>
+          <div className="space-y-3">
+            <CommandBlock
+              stepNumber={1}
+              title="클립 다운로드"
+              description={useSingleCommand ? "모든 클립을 한 번에 다운로드" : `${clips.length}개 클립을 개별 다운로드`}
+              command={commands.download}
+              icon={<Download className="h-4 w-4 text-blue-500" />}
+              accentColor="border-l-blue-500"
+              copied={copiedStates['download'] ?? false}
+              onCopy={() => handleCopy('download', commands.download)}
+            />
+
+            <CommandBlock
+              stepNumber={2}
+              title="파일 목록 생성"
+              description="FFmpeg용 파일 목록 생성"
+              command={commands.fileList}
+              icon={<FileText className="h-4 w-4 text-amber-500" />}
+              accentColor="border-l-amber-500"
+              copied={copiedStates['fileList'] ?? false}
+              onCopy={() => handleCopy('fileList', commands.fileList)}
+              defaultExpanded={false}
+            />
+
+            <CommandBlock
+              stepNumber={3}
+              title="클립 병합"
+              description="모든 클립을 하나의 영상으로"
+              command={commands.merge}
+              icon={<Merge className="h-4 w-4 text-green-500" />}
+              accentColor="border-l-green-500"
+              copied={copiedStates['merge'] ?? false}
+              onCopy={() => handleCopy('merge', commands.merge)}
+              defaultExpanded={false}
+            />
+
+            <CommandBlock
+              stepNumber={4}
+              title="임시 파일 정리"
+              description="다운로드된 개별 클립 파일 삭제 (선택)"
+              command={commands.cleanup}
+              icon={<Trash2 className="h-4 w-4 text-red-500" />}
+              accentColor="border-l-red-500"
+              copied={copiedStates['cleanup'] ?? false}
+              onCopy={() => handleCopy('cleanup', commands.cleanup)}
+              defaultExpanded={false}
+            />
+          </div>
         </ScrollArea>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>닫기</Button>
-        </DialogFooter>
+        {/* Footer */}
+        <div className="px-6 py-4 border-t bg-muted/30 flex items-center justify-between">
+          <p className="text-xs text-muted-foreground">
+            필요 도구: <span className="font-medium text-foreground">yt-dlp</span>, <span className="font-medium text-foreground">ffmpeg</span>
+          </p>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              닫기
+            </Button>
+            <Button
+              onClick={handleCopyAll}
+              className="gap-2 bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700"
+            >
+              {copiedStates['all'] ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+              {copiedStates['all'] ? '복사됨!' : '전체 복사'}
+            </Button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
