@@ -164,7 +164,7 @@ export function ExportDialog({
   projectTitle,
 }: ExportDialogProps) {
   // Settings state
-  const [useSingleCommand, setUseSingleCommand] = useState(false);
+  const [useJoinedCommands, setUseJoinedCommands] = useState(false); // 한 줄로 이어서 vs 단계별 구분
   const [useUnderscore, setUseUnderscore] = useState(true);
   const [copiedStates, setCopiedStates] = useState<Record<string, boolean>>({});
   const [showSettings, setShowSettings] = useState(false);
@@ -191,27 +191,15 @@ export function ExportDialog({
     const sanitizedTitle = sanitizeFilename(projectTitle, useUnderscore);
     const outputFilename = `ClipNote_${sanitizedTitle}.mp4`;
 
-    // Step 1: Download commands
-    let downloadCommand: string;
-    if (useSingleCommand) {
-      // Single command with all sections
-      const sections = clips.map(clip => {
-        const start = formatSecondsForYtDlp(clip.startTime);
-        const end = formatSecondsForYtDlp(clip.endTime);
-        return `"*${start}-${end}"`;
-      }).join(' ');
-      downloadCommand = `yt-dlp --download-sections ${sections} --force-keyframes-at-cuts -f "bv+ba/b/best" -o "${sanitizedTitle}_%(section_start)s.mp4" "${videoUrl}"`;
-    } else {
-      // Individual commands for each clip, joined with semicolon for PowerShell
-      const individualCommands = clips.map((clip, index) => {
-        const start = formatSecondsForYtDlp(clip.startTime);
-        const end = formatSecondsForYtDlp(clip.endTime);
-        const filename = generateFilename(clip, index);
-        return `yt-dlp --download-sections "*${start}-${end}" --force-keyframes-at-cuts -f "bv+ba/b/best" -o "${filename}" "${videoUrl}"`;
-      });
-      // Join with semicolon for Windows PowerShell compatibility
-      downloadCommand = individualCommands.join('; ');
-    }
+    // Step 1: Download commands (individual commands for each clip)
+    const individualCommands = clips.map((clip, index) => {
+      const start = formatSecondsForYtDlp(clip.startTime);
+      const end = formatSecondsForYtDlp(clip.endTime);
+      const filename = generateFilename(clip, index);
+      return `yt-dlp --download-sections "*${start}-${end}" --force-keyframes-at-cuts -f "bv+ba/b/best" -o "${filename}" "${videoUrl}"`;
+    });
+    // Join with semicolon for Windows PowerShell compatibility
+    const downloadCommand = individualCommands.join('; ');
 
     // Step 2: File list
     const fileListContent = clips.map((clip, index) => {
@@ -239,7 +227,7 @@ ${fileListContent}
       cleanup: cleanupCommand,
       outputFilename,
     };
-  }, [clips, videoUrl, projectTitle, useSingleCommand, useUnderscore, generateFilename]);
+  }, [clips, videoUrl, projectTitle, useUnderscore, generateFilename]);
 
   const handleCopy = async (key: string, text: string) => {
     try {
@@ -256,7 +244,14 @@ ${fileListContent}
 
   const handleCopyAll = async () => {
     if (!commands) return;
-    const fullScript = `# ClipNote 내보내기 스크립트
+    
+    if (useJoinedCommands) {
+      // 한 줄로 이어붙인 명령어
+      const joinedCommand = `${commands.download}; ${commands.fileList}; ${commands.merge}; ${commands.cleanup}`;
+      await handleCopy('all', joinedCommand);
+    } else {
+      // 주석과 함께 단계별로 구분된 스크립트
+      const fullScript = `# ClipNote 내보내기 스크립트
 # 프로젝트: ${projectTitle}
 # 클립 수: ${clips.length}개
 
@@ -272,7 +267,8 @@ ${commands.merge}
 # 4단계: 임시 파일 정리 (선택)
 ${commands.cleanup}
 `;
-    await handleCopy('all', fullScript);
+      await handleCopy('all', fullScript);
+    }
   };
 
   if (!commands) return null;
@@ -328,20 +324,20 @@ ${commands.cleanup}
             <div className="mt-4 space-y-4">
               <Separator />
               <div className="grid gap-4 sm:grid-cols-2">
-                {/* Download Mode Toggle */}
+                {/* Command Format Toggle */}
                 <div className="flex items-center justify-between p-3 rounded-lg bg-background border">
                   <div className="space-y-0.5">
-                    <Label htmlFor="download-mode" className="text-sm font-medium">
-                      다운로드 방식
+                    <Label htmlFor="command-format" className="text-sm font-medium">
+                      명령어 형식
                     </Label>
                     <p className="text-xs text-muted-foreground">
-                      {useSingleCommand ? '하나의 명령어로 모든 클립 다운로드' : '클립별 개별 명령어 생성'}
+                      {useJoinedCommands ? '모든 단계를 한 줄로 이어서' : '단계별로 구분하여 표시'}
                     </p>
                   </div>
                   <Switch
-                    id="download-mode"
-                    checked={useSingleCommand}
-                    onCheckedChange={setUseSingleCommand}
+                    id="command-format"
+                    checked={useJoinedCommands}
+                    onCheckedChange={setUseJoinedCommands}
                   />
                 </div>
 
@@ -369,52 +365,69 @@ ${commands.cleanup}
         {/* Commands */}
         <ScrollArea className="flex-1 px-6 py-4" style={{ maxHeight: 'calc(90vh - 320px)' }}>
           <div className="space-y-3">
-            <CommandBlock
-              stepNumber={1}
-              title="클립 다운로드"
-              description={useSingleCommand ? "모든 클립을 한 번에 다운로드" : `${clips.length}개 클립을 개별 다운로드`}
-              command={commands.download}
-              icon={<Download className="h-4 w-4 text-blue-500" />}
-              accentColor="border-l-blue-500"
-              copied={copiedStates['download'] ?? false}
-              onCopy={() => handleCopy('download', commands.download)}
-            />
+            {useJoinedCommands ? (
+              // 한 줄로 이어붙인 전체 명령어
+              <CommandBlock
+                stepNumber={1}
+                title="전체 명령어 (한 줄로 이어서)"
+                description="모든 단계를 한 번에 실행"
+                command={`${commands.download}; ${commands.fileList}; ${commands.merge}; ${commands.cleanup}`}
+                icon={<Terminal className="h-4 w-4 text-purple-500" />}
+                accentColor="border-l-purple-500"
+                copied={copiedStates['joined'] ?? false}
+                onCopy={() => handleCopy('joined', `${commands.download}; ${commands.fileList}; ${commands.merge}; ${commands.cleanup}`)}
+              />
+            ) : (
+              // 단계별로 구분된 명령어들
+              <>
+                <CommandBlock
+                  stepNumber={1}
+                  title="클립 다운로드"
+                  description={`${clips.length}개 클립을 개별 다운로드`}
+                  command={commands.download}
+                  icon={<Download className="h-4 w-4 text-blue-500" />}
+                  accentColor="border-l-blue-500"
+                  copied={copiedStates['download'] ?? false}
+                  onCopy={() => handleCopy('download', commands.download)}
+                />
 
-            <CommandBlock
-              stepNumber={2}
-              title="파일 목록 생성"
-              description="FFmpeg용 파일 목록 생성"
-              command={commands.fileList}
-              icon={<FileText className="h-4 w-4 text-amber-500" />}
-              accentColor="border-l-amber-500"
-              copied={copiedStates['fileList'] ?? false}
-              onCopy={() => handleCopy('fileList', commands.fileList)}
-              defaultExpanded={false}
-            />
+                <CommandBlock
+                  stepNumber={2}
+                  title="파일 목록 생성"
+                  description="FFmpeg용 파일 목록 생성"
+                  command={commands.fileList}
+                  icon={<FileText className="h-4 w-4 text-amber-500" />}
+                  accentColor="border-l-amber-500"
+                  copied={copiedStates['fileList'] ?? false}
+                  onCopy={() => handleCopy('fileList', commands.fileList)}
+                  defaultExpanded={false}
+                />
 
-            <CommandBlock
-              stepNumber={3}
-              title="클립 병합"
-              description="모든 클립을 하나의 영상으로"
-              command={commands.merge}
-              icon={<Merge className="h-4 w-4 text-green-500" />}
-              accentColor="border-l-green-500"
-              copied={copiedStates['merge'] ?? false}
-              onCopy={() => handleCopy('merge', commands.merge)}
-              defaultExpanded={false}
-            />
+                <CommandBlock
+                  stepNumber={3}
+                  title="클립 병합"
+                  description="모든 클립을 하나의 영상으로"
+                  command={commands.merge}
+                  icon={<Merge className="h-4 w-4 text-green-500" />}
+                  accentColor="border-l-green-500"
+                  copied={copiedStates['merge'] ?? false}
+                  onCopy={() => handleCopy('merge', commands.merge)}
+                  defaultExpanded={false}
+                />
 
-            <CommandBlock
-              stepNumber={4}
-              title="임시 파일 정리"
-              description="다운로드된 개별 클립 파일 삭제 (선택)"
-              command={commands.cleanup}
-              icon={<Trash2 className="h-4 w-4 text-red-500" />}
-              accentColor="border-l-red-500"
-              copied={copiedStates['cleanup'] ?? false}
-              onCopy={() => handleCopy('cleanup', commands.cleanup)}
-              defaultExpanded={false}
-            />
+                <CommandBlock
+                  stepNumber={4}
+                  title="임시 파일 정리"
+                  description="다운로드된 개별 클립 파일 삭제 (선택)"
+                  command={commands.cleanup}
+                  icon={<Trash2 className="h-4 w-4 text-red-500" />}
+                  accentColor="border-l-red-500"
+                  copied={copiedStates['cleanup'] ?? false}
+                  onCopy={() => handleCopy('cleanup', commands.cleanup)}
+                  defaultExpanded={false}
+                />
+              </>
+            )}
           </div>
         </ScrollArea>
 
