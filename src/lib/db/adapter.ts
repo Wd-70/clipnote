@@ -60,6 +60,26 @@ export interface DBAnalysisCache {
   cachedAt?: Date | string;
 }
 
+export interface DBSharedProject {
+  _id?: string;
+  shareId: string;
+  projectId: string;
+  userId: string;
+  title: string;
+  videoUrl: string;
+  platform: 'YOUTUBE' | 'CHZZK';
+  videoId: string;
+  thumbnailUrl?: string;
+  clips: Array<{
+    startTime: number;
+    endTime: number;
+    text: string;
+  }>;
+  viewCount: number;
+  createdAt?: Date | string;
+  expiresAt?: Date | string;
+}
+
 // Export appropriate database based on environment
 export const db = USE_MONGODB 
   ? (async () => {
@@ -68,12 +88,14 @@ export const db = USE_MONGODB
       const { User } = await import('@/models/User');
       const { Project } = await import('@/models/Project');
       const { AnalysisCache } = await import('@/models/AnalysisCache');
-      return { User, Project, AnalysisCache };
+      const { SharedProject } = await import('@/models/SharedProject');
+      return { User, Project, AnalysisCache, SharedProject };
     })()
   : Promise.resolve({
       User: JsonDB.User,
       Project: JsonDB.Project,
       AnalysisCache: JsonDB.AnalysisCache,
+      SharedProject: JsonDB.SharedProject,
     });
 
 // Helper function to get database instance

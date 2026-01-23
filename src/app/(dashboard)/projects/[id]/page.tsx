@@ -7,6 +7,7 @@ import { NotesEditor, NotesEditorRef } from '@/components/editor/notes-editor';
 import { ClipList } from '@/components/editor/clip-list';
 import { ClipTimeline } from '@/components/editor/clip-timeline';
 import { ExportDialog } from '@/components/editor/export-dialog';
+import { ShareDialog } from '@/components/editor/share-dialog';
 import { useVideoSync } from '@/hooks/useVideoSync';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -64,6 +65,7 @@ export default function EditorPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
+  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
 
   // Fetch project data from API
   useEffect(() => {
@@ -244,7 +246,7 @@ export default function EditorPage() {
             <Download className="h-4 w-4 mr-2" />
             내보내기
           </Button>
-          <Button variant="outline" size="icon">
+          <Button variant="outline" size="icon" onClick={() => setIsShareDialogOpen(true)}>
             <Share2 className="h-4 w-4" />
           </Button>
           <Button variant="outline" size="icon">
@@ -388,6 +390,17 @@ export default function EditorPage() {
           clips={clips}
           videoUrl={project.videoUrl}
           projectTitle={project.title}
+        />
+      )}
+
+      {/* Share Dialog */}
+      {project && (
+        <ShareDialog
+          open={isShareDialogOpen}
+          onOpenChange={setIsShareDialogOpen}
+          projectId={projectId}
+          projectTitle={project.title}
+          clipCount={clips.length}
         />
       )}
     </div>

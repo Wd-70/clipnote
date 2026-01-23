@@ -6,6 +6,7 @@ const DB_PATH = path.join(process.cwd(), '.dev-db');
 const USERS_FILE = path.join(DB_PATH, 'users.json');
 const PROJECTS_FILE = path.join(DB_PATH, 'projects.json');
 const ANALYSIS_CACHE_FILE = path.join(DB_PATH, 'analysis-cache.json');
+const SHARED_PROJECTS_FILE = path.join(DB_PATH, 'shared-projects.json');
 
 // Ensure DB directory exists
 function ensureDbDir() {
@@ -249,11 +250,32 @@ interface JsonAnalysisCache {
   cachedAt?: string;
 }
 
+interface JsonSharedProject {
+  _id?: string;
+  shareId: string;
+  projectId: string;
+  userId: string;
+  title: string;
+  videoUrl: string;
+  platform: 'YOUTUBE' | 'CHZZK';
+  videoId: string;
+  thumbnailUrl?: string;
+  clips: Array<{
+    startTime: number;
+    endTime: number;
+    text: string;
+  }>;
+  viewCount: number;
+  createdAt?: string;
+  expiresAt?: string;
+}
+
 // Export collections
 export const JsonDB = {
   User: new JsonCollection<JsonUser>(USERS_FILE),
   Project: new JsonCollection<JsonProject>(PROJECTS_FILE),
   AnalysisCache: new JsonCollection<JsonAnalysisCache>(ANALYSIS_CACHE_FILE),
+  SharedProject: new JsonCollection<JsonSharedProject>(SHARED_PROJECTS_FILE),
 };
 
 // Initialize dev user if not exists
