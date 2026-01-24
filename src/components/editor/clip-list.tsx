@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -26,6 +27,7 @@ export function ClipList({
   onPlayAll,
   className,
 }: ClipListProps) {
+  const t = useTranslations('clipList');
   const totalDuration = clips.reduce((sum, clip) => sum + clip.duration, 0);
 
   if (clips.length === 0) {
@@ -34,10 +36,10 @@ export function ClipList({
         <CardContent className="py-8 text-center">
           <Scissors className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
           <p className="text-muted-foreground">
-            아직 클립이 없습니다
+            {t('empty')}
           </p>
           <p className="text-sm text-muted-foreground/70 mt-1">
-            노트에 타임스탬프를 입력하면 자동으로 클립이 생성됩니다
+            {t('emptyHint')}
           </p>
         </CardContent>
       </Card>
@@ -50,11 +52,11 @@ export function ClipList({
         <div className="flex items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">
             <Scissors className="h-4 w-4" />
-            클립 목록
+            {t('title')}
           </CardTitle>
           <div className="flex items-center gap-2">
             <Badge variant="secondary" className="text-xs">
-              {clips.length}개
+              {clips.length}
             </Badge>
             <Badge variant="outline" className="text-xs">
               <Clock className="h-3 w-3 mr-1" />
@@ -74,7 +76,7 @@ export function ClipList({
             size="sm"
           >
             <Play className="h-4 w-4 mr-2" />
-            클립 재생
+            {t('playAll')}
           </Button>
         )}
 

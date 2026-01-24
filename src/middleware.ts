@@ -1,21 +1,48 @@
+import createMiddleware from 'next-intl/middleware';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { routing } from './i18n/routing';
 
-const protectedRoutes = ['/dashboard', '/projects'];
+// Create the i18n middleware
+const intlMiddleware = createMiddleware(routing);
+
+// Routes that require authentication
+const protectedRoutes = ['/dashboard', '/projects', '/points', '/settings'];
 const authRoutes = ['/login'];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Skip i18n for API routes and static files
+  if (
+    pathname.startsWith('/api') ||
+    pathname.startsWith('/_next') ||
+    pathname.includes('.')
+  ) {
+    return NextResponse.next();
+  }
+
+  // Apply i18n middleware first
+  const response = intlMiddleware(request);
+
+  // Extract locale from the response or pathname
+  const pathnameLocale = pathname.split('/')[1];
+  const locale = ['ko', 'en', 'ja', 'zh'].includes(pathnameLocale) 
+    ? pathnameLocale 
+    : 'ko';
+
+  // Get the pathname without locale prefix
+  const pathnameWithoutLocale = pathname.replace(`/${locale}`, '') || '/';
+
   // DEVELOPMENT MODE: Auto-login bypass
-  // Remove this block when you want to enable real authentication
   if (process.env.NODE_ENV === 'development') {
     // Redirect from /login to /dashboard in dev mode
-    if (authRoutes.some((route) => pathname.startsWith(route))) {
-      return NextResponse.redirect(new URL('/dashboard', request.url));
+    if (authRoutes.some((route) => pathnameWithoutLocale.startsWith(route))) {
+      const url = request.nextUrl.clone();
+      url.pathname = `/${locale}/dashboard`;
+      return NextResponse.redirect(url);
     }
-    // Allow all protected routes in dev mode
-    return NextResponse.next();
+    return response;
   }
 
   // PRODUCTION MODE: Real authentication
@@ -25,27 +52,34 @@ export function middleware(request: NextRequest) {
   const isLoggedIn = !!sessionToken;
 
   const isProtectedRoute = protectedRoutes.some((route) =>
-    pathname.startsWith(route)
+    pathnameWithoutLocale.startsWith(route)
   );
   const isAuthRoute = authRoutes.some((route) =>
-    pathname.startsWith(route)
+    pathnameWithoutLocale.startsWith(route)
   );
 
   // Redirect logged-in users away from auth pages
   if (isAuthRoute && isLoggedIn) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+    const url = request.nextUrl.clone();
+    url.pathname = `/${locale}/dashboard`;
+    return NextResponse.redirect(url);
   }
 
   // Redirect non-logged-in users to login
   if (isProtectedRoute && !isLoggedIn) {
-    const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('callbackUrl', pathname);
-    return NextResponse.redirect(loginUrl);
+    const url = request.nextUrl.clone();
+    url.pathname = `/${locale}/login`;
+    url.searchParams.set('callbackUrl', pathname);
+    return NextResponse.redirect(url);
   }
 
-  return NextResponse.next();
+  return response;
 }
 
 export const config = {
+  // Match all pathnames except for
+  // - API routes
+  // - Static files (including _next)
+  // - Favicon and other root files
   matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\..*).*)'],
 };

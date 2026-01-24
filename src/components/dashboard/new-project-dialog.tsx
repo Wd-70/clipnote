@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { z } from "zod";
 import { Plus, Loader2, Youtube, Play, Video } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -16,11 +17,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
-const projectSchema = z.object({
-  url: z.string().url("Please enter a valid URL"),
-  title: z.string().optional(),
-});
-
 type Platform = 'YOUTUBE' | 'CHZZK' | 'UNKNOWN';
 
 interface NewProjectDialogProps {
@@ -29,6 +25,7 @@ interface NewProjectDialogProps {
 }
 
 export function NewProjectDialog({ children, onProjectCreated }: NewProjectDialogProps) {
+  const t = useTranslations('newProject');
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [url, setUrl] = useState("");
@@ -52,10 +49,15 @@ export function NewProjectDialog({ children, onProjectCreated }: NewProjectDialo
 
     try {
       // Validate
+      const projectSchema = z.object({
+        url: z.string().url(t('urlRequired')),
+        title: z.string().optional(),
+      });
+      
       projectSchema.parse({ url, title });
       
       if (platform === 'UNKNOWN') {
-        throw new Error("Only YouTube and Chzzk URLs are supported");
+        throw new Error(t('unsupportedPlatform'));
       }
 
       // Call actual API
@@ -94,7 +96,7 @@ export function NewProjectDialog({ children, onProjectCreated }: NewProjectDialo
       
     } catch (err) {
       if (err instanceof z.ZodError) {
-        setError((err as any).errors[0].message);
+        setError(err.issues[0].message);
       } else if (err instanceof Error) {
         setError(err.message);
       } else {
@@ -111,15 +113,15 @@ export function NewProjectDialog({ children, onProjectCreated }: NewProjectDialo
         {children || (
           <Button>
             <Plus className="w-4 h-4 mr-2" />
-            New Project
+            {t('title')}
           </Button>
         )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>New Project</DialogTitle>
+          <DialogTitle>{t('title')}</DialogTitle>
           <DialogDescription>
-            Enter a video URL to start analyzing. We support YouTube and Chzzk.
+            {t('description')}
           </DialogDescription>
         </DialogHeader>
         
@@ -127,7 +129,7 @@ export function NewProjectDialog({ children, onProjectCreated }: NewProjectDialo
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                Video URL
+                {t('videoUrl')}
               </label>
               {platform !== 'UNKNOWN' && (
                 <span className={cn(
@@ -141,7 +143,7 @@ export function NewProjectDialog({ children, onProjectCreated }: NewProjectDialo
             </div>
             <div className="relative">
               <Input
-                placeholder="https://youtube.com/watch?v=..."
+                placeholder={t('videoUrlPlaceholder')}
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 className={cn(
@@ -159,23 +161,23 @@ export function NewProjectDialog({ children, onProjectCreated }: NewProjectDialo
 
           <div className="space-y-2">
              <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                Project Title (Optional)
+                {t('projectTitle')}
               </label>
             <Input
-              placeholder="My Awesome Clip"
+              placeholder={t('projectTitlePlaceholder')}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               disabled={isLoading}
             />
             <p className="text-[0.8rem] text-muted-foreground">
-              If left empty, we'll fetch the video title automatically.
+              {t('autoTitle')}
             </p>
           </div>
 
           <DialogFooter>
             <Button type="submit" disabled={isLoading || !url} className="w-full sm:w-auto">
               {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              {isLoading ? "Analyzing..." : "Create Project"}
+              {isLoading ? t('analyzing') : t('create')}
             </Button>
           </DialogFooter>
         </form>

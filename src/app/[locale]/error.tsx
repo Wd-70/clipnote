@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, RefreshCw, Home } from 'lucide-react';
 import Link from 'next/link';
@@ -12,6 +13,9 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const t = useTranslations('error');
+  const tCommon = useTranslations('common');
+
   useEffect(() => {
     console.error('Application error:', error);
   }, [error]);
@@ -23,26 +27,26 @@ export default function Error({
           <AlertCircle className="w-8 h-8 text-destructive" />
         </div>
 
-        <h1 className="text-2xl font-bold mb-2">문제가 발생했습니다</h1>
+        <h1 className="text-2xl font-bold mb-2">{t('title')}</h1>
         <p className="text-muted-foreground mb-6">
-          예기치 않은 오류가 발생했습니다. 문제가 지속되면 고객센터에 문의해 주세요.
+          {t('description')}
         </p>
 
         {error.digest && (
           <p className="text-xs text-muted-foreground mb-6 font-mono">
-            오류 코드: {error.digest}
+            {t('errorCode')}: {error.digest}
           </p>
         )}
 
         <div className="flex items-center justify-center gap-4">
           <Button onClick={reset} variant="default">
             <RefreshCw className="w-4 h-4 mr-2" />
-            다시 시도
+            {tCommon('retry')}
           </Button>
           <Button asChild variant="outline">
             <Link href="/">
               <Home className="w-4 h-4 mr-2" />
-              홈으로
+              {tCommon('home')}
             </Link>
           </Button>
         </div>

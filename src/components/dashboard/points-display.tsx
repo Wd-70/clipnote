@@ -1,15 +1,17 @@
 "use client";
 
 import { Zap, CreditCard, Clock } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
 
 interface PointsDisplayProps {
   points: number;
 }
 
 export function PointsDisplay({ points }: PointsDisplayProps) {
+  const t = useTranslations('points');
+  
   // 1 point = 1 minute
   const estimatedMinutes = points;
 
@@ -22,19 +24,19 @@ export function PointsDisplay({ points }: PointsDisplayProps) {
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-zinc-400 text-sm uppercase tracking-wider font-medium">
             <Zap className="w-4 h-4 text-yellow-500" />
-            <span>Available Balance</span>
+            <span>{t('availableBalance')}</span>
           </div>
           
           <div className="flex items-baseline gap-2">
             <span className="text-4xl font-bold tracking-tight font-mono">
               {points.toLocaleString()}
             </span>
-            <span className="text-zinc-500 font-medium">PTS</span>
+            <span className="text-zinc-500 font-medium">{t('pts')}</span>
           </div>
           
           <div className="flex items-center gap-2 text-xs text-zinc-500">
             <Clock className="w-3 h-3" />
-            <span>≈ {estimatedMinutes} minutes of AI analysis</span>
+            <span>{t('estimatedMinutes', { minutes: estimatedMinutes })}</span>
           </div>
         </div>
 
@@ -47,7 +49,7 @@ export function PointsDisplay({ points }: PointsDisplayProps) {
           }}
         >
           <CreditCard className="w-4 h-4 mr-2" />
-          Recharge Points
+          {t('recharge')}
         </Button>
       </div>
     </Card>

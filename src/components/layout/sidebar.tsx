@@ -2,20 +2,20 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { 
   LayoutDashboard, 
   FolderOpen, 
   Coins, 
   Settings, 
-  LogOut, 
   User as UserIcon,
-  ChevronsLeft
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ThemeToggle } from '@/components/layout/theme-toggle';
+import { LanguageSwitcher } from '@/components/layout/language-switcher';
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
   className?: string;
@@ -23,37 +23,47 @@ interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
 
 export function Sidebar({ className, ...props }: SidebarProps) {
   const pathname = usePathname();
+  const t = useTranslations('nav');
+  const tSidebar = useTranslations('sidebar');
+  const tCommon = useTranslations('common');
   
   // Mock user data
   const user = {
-    name: '김클립',
+    name: 'ClipUser',
     email: 'user@clipnote.ai',
     points: 1250,
-    avatar: '', // Placeholder for avatar URL
+    avatar: '',
   };
 
   const navItems = [
     {
-      title: '대시보드',
+      title: t('dashboard'),
       href: '/dashboard',
       icon: LayoutDashboard,
     },
     {
-      title: '내 프로젝트',
+      title: t('projects'),
       href: '/projects',
       icon: FolderOpen,
     },
     {
-      title: '포인트',
+      title: t('points'),
       href: '/points',
       icon: Coins,
     },
     {
-      title: '설정',
+      title: t('settings'),
       href: '/settings',
       icon: Settings,
     },
   ];
+
+  // Check if pathname matches, handling locale prefix
+  const isActiveRoute = (href: string) => {
+    // Remove locale prefix if present (e.g., /en/dashboard -> /dashboard)
+    const pathWithoutLocale = pathname.replace(/^\/(ko|en|ja|zh)/, '');
+    return pathWithoutLocale === href || pathWithoutLocale.startsWith(href + '/');
+  };
 
   return (
     <div className={cn("pb-12 h-screen", className)} {...props}>
@@ -72,17 +82,17 @@ export function Sidebar({ className, ...props }: SidebarProps) {
             {navItems.map((item) => (
               <Button
                 key={item.href}
-                variant={pathname === item.href ? 'secondary' : 'ghost'}
+                variant={isActiveRoute(item.href) ? 'secondary' : 'ghost'}
                 className={cn(
                   "w-full justify-start gap-3 h-11 transition-all",
-                  pathname === item.href 
+                  isActiveRoute(item.href)
                     ? "bg-secondary font-medium shadow-sm" 
                     : "text-muted-foreground hover:text-foreground"
                 )}
                 asChild
               >
                 <Link href={item.href}>
-                  <item.icon className={cn("h-4 w-4", pathname === item.href ? "text-primary" : "")} />
+                  <item.icon className={cn("h-4 w-4", isActiveRoute(item.href) ? "text-primary" : "")} />
                   {item.title}
                 </Link>
               </Button>
@@ -97,12 +107,12 @@ export function Sidebar({ className, ...props }: SidebarProps) {
         <div className="px-3 space-y-4">
           <div className="bg-card/50 border rounded-lg p-4 mb-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-muted-foreground">보유 포인트</span>
+              <span className="text-sm font-medium text-muted-foreground">{tSidebar('currentPoints')}</span>
               <Coins className="h-4 w-4 text-yellow-500" />
             </div>
-            <div className="text-2xl font-bold">{user.points.toLocaleString()} P</div>
+            <div className="text-2xl font-bold">{user.points.toLocaleString()} {tCommon('points')}</div>
             <Button size="sm" className="w-full mt-3 text-xs h-8" variant="outline" asChild>
-              <Link href="/points/charge">충전하기</Link>
+              <Link href="/points/charge">{tSidebar('recharge')}</Link>
             </Button>
           </div>
 
@@ -117,6 +127,7 @@ export function Sidebar({ className, ...props }: SidebarProps) {
               <p className="text-sm font-medium leading-none truncate">{user.name}</p>
               <p className="text-xs text-muted-foreground truncate mt-1">{user.email}</p>
             </div>
+            <LanguageSwitcher />
             <ThemeToggle />
           </div>
         </div>

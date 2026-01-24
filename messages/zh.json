@@ -1,0 +1,145 @@
+{
+  "common": {
+    "loading": "加载中...",
+    "save": "保存",
+    "cancel": "取消",
+    "delete": "删除",
+    "deleting": "删除中...",
+    "copy": "复制",
+    "copied": "已复制",
+    "close": "关闭",
+    "open": "打开",
+    "back": "返回",
+    "home": "返回首页",
+    "retry": "重试",
+    "create": "创建",
+    "edit": "编辑",
+    "confirm": "确认",
+    "clips": "{count}个片段",
+    "points": "积分"
+  },
+  "nav": {
+    "dashboard": "工作台",
+    "projects": "我的项目",
+    "points": "积分",
+    "settings": "设置"
+  },
+  "sidebar": {
+    "currentPoints": "当前积分",
+    "recharge": "充值"
+  },
+  "dashboard": {
+    "title": "工作台",
+    "description": "管理视频项目，查看分析额度。",
+    "recentProjects": "最近项目",
+    "projectCount": "共有 {count} 个活跃项目。",
+    "createFirst": "创建第一个项目",
+    "loadingDashboard": "加载工作台..."
+  },
+  "points": {
+    "availableBalance": "可用余额",
+    "pts": "积分",
+    "estimatedMinutes": "约可进行 {minutes} 分钟 AI 分析",
+    "recharge": "充值积分"
+  },
+  "emptyState": {
+    "title": "暂无项目",
+    "description": "添加 YouTube 或 Chzzk 视频链接开始使用。AI 将分析内容，帮助您更快完成剪辑。",
+    "createProject": "创建项目"
+  },
+  "newProject": {
+    "title": "新建项目",
+    "description": "输入要分析的视频链接。支持 YouTube 和 Chzzk。",
+    "videoUrl": "视频链接",
+    "videoUrlPlaceholder": "https://youtube.com/watch?v=...",
+    "projectTitle": "项目名称（选填）",
+    "projectTitlePlaceholder": "精彩片段集锦",
+    "autoTitle": "留空将自动获取视频标题。",
+    "analyzing": "分析中...",
+    "create": "创建项目",
+    "urlRequired": "请输入有效的链接",
+    "unsupportedPlatform": "仅支持 YouTube 和 Chzzk 链接"
+  },
+  "editor": {
+    "playClips": "播放片段",
+    "export": "导出",
+    "clipPlaying": "正在播放片段",
+    "stop": "停止",
+    "notes": "笔记",
+    "aiAnalysis": "AI 分析",
+    "aiDescription": "AI 将自动分析视频并找出精彩片段",
+    "startAnalysis": "开始 AI 分析（{points} 积分）",
+    "loadingProject": "加载项目中...",
+    "projectNotFound": "未找到项目。",
+    "backToDashboard": "返回工作台",
+    "deleteProject": "确定删除此项目？",
+    "deleteWarning": "此操作无法撤销。项目「{title}」及所有片段信息将被永久删除。"
+  },
+  "clipList": {
+    "title": "片段列表",
+    "empty": "暂无片段",
+    "emptyHint": "在笔记中输入时间戳，片段将自动创建",
+    "playAll": "播放全部"
+  },
+  "share": {
+    "title": "分享片段",
+    "views": "{count}次观看",
+    "shareLink": "分享链接",
+    "embedCode": "嵌入代码",
+    "embedHint": "将此代码粘贴到您的网站或博客中。",
+    "deleteWarning": "删除分享链接后将无法访问。",
+    "startSharing": "开始分享",
+    "startSharingDescription": "创建分享链接后，任何人都可以观看此项目的片段。还可以嵌入到其他网站！",
+    "createLink": "创建分享链接",
+    "noClips": "暂无片段。请先在笔记中添加时间戳。",
+    "linkCreated": "分享链接已创建！",
+    "linkDeleted": "分享链接已删除。",
+    "createFailed": "创建分享链接失败。",
+    "deleteFailed": "删除分享链接失败。"
+  },
+  "export": {
+    "title": "导出片段",
+    "description": "下载 {count} 个片段并合并为一个视频",
+    "settings": "导出设置",
+    "commandFormat": "命令格式",
+    "commandFormatJoined": "所有步骤合为一行",
+    "commandFormatSeparate": "分步骤显示",
+    "filenameFormat": "文件名格式",
+    "filenameUnderscore": "空格替换为下划线(_)",
+    "filenameSpace": "保留空格",
+    "step1": "下载片段",
+    "step1Desc": "单独下载 {count} 个片段",
+    "step2": "创建文件列表",
+    "step2Desc": "生成 FFmpeg 所需的文件列表",
+    "step3": "合并片段",
+    "step3Desc": "将所有片段合并为一个视频",
+    "step4": "清理临时文件",
+    "step4Desc": "删除已下载的单独片段文件（可选）",
+    "allInOne": "完整命令（单行）",
+    "allInOneDesc": "一次性执行所有步骤",
+    "copyAll": "全部复制",
+    "requiredTools": "所需工具"
+  },
+  "notesEditor": {
+    "placeholder": "输入想要剪辑部分的时间戳。\n\n示例：\n0:30 - 1:45 开场\n2:00 - 3:30 精彩片段\n\n提示：按 Ctrl+T 可插入当前播放位置的时间戳。",
+    "insertTimestamp": "插入时间戳",
+    "saving": "保存中..."
+  },
+  "error": {
+    "title": "出现问题",
+    "description": "发生意外错误。如问题持续存在，请联系客服。",
+    "errorCode": "错误代码",
+    "clipboardSuccess": "已复制到剪贴板！",
+    "clipboardFailed": "复制到剪贴板失败。",
+    "saveFailed": "保存失败。"
+  },
+  "notFound": {
+    "title": "404",
+    "subtitle": "页面不存在",
+    "description": "您访问的页面不存在或已被移动。"
+  },
+  "meta": {
+    "title": "ClipNote - AI 视频剪辑服务",
+    "description": "通过 AI 分析，仅用文字笔记即可编辑视频"
+  }
+}

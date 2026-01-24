@@ -1,8 +1,15 @@
+'use client';
+
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { FileQuestion, Home, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
 export default function NotFound() {
+  const t = useTranslations('notFound');
+  const tNav = useTranslations('nav');
+  const tCommon = useTranslations('common');
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="text-center max-w-md">
@@ -10,23 +17,23 @@ export default function NotFound() {
           <FileQuestion className="w-8 h-8 text-muted-foreground" />
         </div>
 
-        <h1 className="text-4xl font-bold mb-2">404</h1>
-        <h2 className="text-xl font-semibold mb-2">페이지를 찾을 수 없습니다</h2>
+        <h1 className="text-4xl font-bold mb-2">{t('title')}</h1>
+        <h2 className="text-xl font-semibold mb-2">{t('subtitle')}</h2>
         <p className="text-muted-foreground mb-6">
-          요청하신 페이지가 존재하지 않거나 이동되었을 수 있습니다.
+          {t('description')}
         </p>
 
         <div className="flex items-center justify-center gap-4">
           <Button asChild variant="default">
             <Link href="/">
               <Home className="w-4 h-4 mr-2" />
-              홈으로
+              {tCommon('home')}
             </Link>
           </Button>
           <Button asChild variant="outline">
             <Link href="/dashboard">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              대시보드
+              {tNav('dashboard')}
             </Link>
           </Button>
         </div>

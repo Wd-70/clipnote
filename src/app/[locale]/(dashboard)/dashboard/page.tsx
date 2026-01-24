@@ -1,7 +1,8 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Plus } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { PointsDisplay } from "@/components/dashboard/points-display";
@@ -11,6 +12,7 @@ import { NewProjectDialog } from "@/components/dashboard/new-project-dialog";
 import { IProject } from "@/types";
 
 function DashboardContent() {
+  const t = useTranslations('dashboard');
   const [projects, setProjects] = useState<IProject[]>([]);
   const [points, setPoints] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -44,7 +46,7 @@ function DashboardContent() {
   };
 
   if (isLoading) {
-    return <div className="h-96 flex items-center justify-center">Loading dashboard...</div>;
+    return <div className="h-96 flex items-center justify-center">{t('loadingDashboard')}</div>;
   }
 
   return (
@@ -52,9 +54,9 @@ function DashboardContent() {
       {/* Top Section: Points & Header */}
       <div className="grid gap-6 md:grid-cols-[1fr_auto] items-start">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">Dashboard</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">{t('title')}</h1>
           <p className="text-muted-foreground mt-2">
-            Manage your video projects and track your analysis credits.
+            {t('description')}
           </p>
         </div>
         <div className="w-full md:w-auto min-w-[300px]">
@@ -68,9 +70,9 @@ function DashboardContent() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div className="space-y-1">
-            <h2 className="text-xl font-semibold tracking-tight">Recent Projects</h2>
+            <h2 className="text-xl font-semibold tracking-tight">{t('recentProjects')}</h2>
             <p className="text-sm text-muted-foreground">
-              You have {projects.length} active projects.
+              {t('projectCount', { count: projects.length })}
             </p>
           </div>
           
@@ -91,7 +93,7 @@ function DashboardContent() {
               <NewProjectDialog onProjectCreated={fetchProjects}>
                 <Button className="mt-4">
                   <Plus className="w-4 h-4 mr-2" />
-                  Create First Project
+                  {t('createFirst')}
                 </Button>
               </NewProjectDialog>
             } 

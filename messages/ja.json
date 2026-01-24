@@ -1,0 +1,145 @@
+{
+  "common": {
+    "loading": "読み込み中...",
+    "save": "保存",
+    "cancel": "キャンセル",
+    "delete": "削除",
+    "deleting": "削除中...",
+    "copy": "コピー",
+    "copied": "コピーしました",
+    "close": "閉じる",
+    "open": "開く",
+    "back": "戻る",
+    "home": "ホームへ",
+    "retry": "再試行",
+    "create": "作成",
+    "edit": "編集",
+    "confirm": "確認",
+    "clips": "{count}個のクリップ",
+    "points": "pt"
+  },
+  "nav": {
+    "dashboard": "ダッシュボード",
+    "projects": "マイプロジェクト",
+    "points": "ポイント",
+    "settings": "設定"
+  },
+  "sidebar": {
+    "currentPoints": "保有ポイント",
+    "recharge": "チャージ"
+  },
+  "dashboard": {
+    "title": "ダッシュボード",
+    "description": "動画プロジェクトの管理と分析クレジットの確認ができます。",
+    "recentProjects": "最近のプロジェクト",
+    "projectCount": "{count}件のアクティブなプロジェクトがあります。",
+    "createFirst": "最初のプロジェクトを作成",
+    "loadingDashboard": "ダッシュボードを読み込み中..."
+  },
+  "points": {
+    "availableBalance": "利用可能残高",
+    "pts": "ポイント",
+    "estimatedMinutes": "約{minutes}分のAI分析が可能",
+    "recharge": "ポイントをチャージ"
+  },
+  "emptyState": {
+    "title": "プロジェクトがありません",
+    "description": "YouTubeまたはChzzkの動画URLを追加してみましょう。AIがコンテンツを分析し、より速い編集をサポートします。",
+    "createProject": "プロジェクトを作成"
+  },
+  "newProject": {
+    "title": "新規プロジェクト",
+    "description": "分析する動画のURLを入力してください。YouTubeとChzzkに対応しています。",
+    "videoUrl": "動画URL",
+    "videoUrlPlaceholder": "https://youtube.com/watch?v=...",
+    "projectTitle": "プロジェクト名（任意）",
+    "projectTitlePlaceholder": "お気に入りクリップ集",
+    "autoTitle": "空欄の場合、動画タイトルを自動取得します。",
+    "analyzing": "分析中...",
+    "create": "プロジェクトを作成",
+    "urlRequired": "有効なURLを入力してください",
+    "unsupportedPlatform": "YouTubeとChzzkのURLのみ対応しています"
+  },
+  "editor": {
+    "playClips": "クリップ再生",
+    "export": "エクスポート",
+    "clipPlaying": "クリップ再生中",
+    "stop": "停止",
+    "notes": "ノート",
+    "aiAnalysis": "AI分析",
+    "aiDescription": "AIが動画を分析し、ハイライトを自動で検出します",
+    "startAnalysis": "AI分析を開始（{points}ポイント）",
+    "loadingProject": "プロジェクトを読み込み中...",
+    "projectNotFound": "プロジェクトが見つかりません。",
+    "backToDashboard": "ダッシュボードに戻る",
+    "deleteProject": "プロジェクトを削除しますか？",
+    "deleteWarning": "この操作は取り消せません。「{title}」プロジェクトとすべてのクリップ情報が完全に削除されます。"
+  },
+  "clipList": {
+    "title": "クリップ一覧",
+    "empty": "クリップがありません",
+    "emptyHint": "ノートにタイムスタンプを入力すると、自動でクリップが作成されます",
+    "playAll": "すべて再生"
+  },
+  "share": {
+    "title": "クリップを共有",
+    "views": "{count}回再生",
+    "shareLink": "共有リンク",
+    "embedCode": "埋め込みコード",
+    "embedHint": "このコードをウェブサイトやブログに貼り付けてください。",
+    "deleteWarning": "共有リンクを削除すると、アクセスできなくなります。",
+    "startSharing": "共有を始める",
+    "startSharingDescription": "共有リンクを作成すると、誰でもこのプロジェクトのクリップを視聴できます。他のサイトへの埋め込みも可能です！",
+    "createLink": "共有リンクを作成",
+    "noClips": "クリップがありません。まずノートにタイムスタンプを追加してください。",
+    "linkCreated": "共有リンクを作成しました！",
+    "linkDeleted": "共有リンクを削除しました。",
+    "createFailed": "共有リンクの作成に失敗しました。",
+    "deleteFailed": "共有リンクの削除に失敗しました。"
+  },
+  "export": {
+    "title": "クリップをエクスポート",
+    "description": "{count}個のクリップをダウンロードし、1つの動画に結合します",
+    "settings": "エクスポート設定",
+    "commandFormat": "コマンド形式",
+    "commandFormatJoined": "すべてのステップを1行で",
+    "commandFormatSeparate": "ステップごとに分けて表示",
+    "filenameFormat": "ファイル名形式",
+    "filenameUnderscore": "スペースをアンダースコア(_)に置換",
+    "filenameSpace": "スペースをそのまま維持",
+    "step1": "クリップをダウンロード",
+    "step1Desc": "{count}個のクリップを個別にダウンロード",
+    "step2": "ファイルリストを作成",
+    "step2Desc": "FFmpeg用のファイルリストを生成",
+    "step3": "クリップを結合",
+    "step3Desc": "すべてのクリップを1つの動画に",
+    "step4": "一時ファイルを削除",
+    "step4Desc": "ダウンロードした個別クリップファイルを削除（任意）",
+    "allInOne": "全コマンド（1行）",
+    "allInOneDesc": "すべてのステップを一度に実行",
+    "copyAll": "すべてコピー",
+    "requiredTools": "必要なツール"
+  },
+  "notesEditor": {
+    "placeholder": "クリップしたい部分のタイムスタンプを入力してください。\n\n例：\n0:30 - 1:45 イントロ\n2:00 - 3:30 ハイライト\n\nヒント：Ctrl+Tで現在の再生位置のタイムスタンプを挿入できます。",
+    "insertTimestamp": "タイムスタンプを挿入",
+    "saving": "保存中..."
+  },
+  "error": {
+    "title": "問題が発生しました",
+    "description": "予期しないエラーが発生しました。問題が続く場合は、サポートまでお問い合わせください。",
+    "errorCode": "エラーコード",
+    "clipboardSuccess": "クリップボードにコピーしました！",
+    "clipboardFailed": "クリップボードへのコピーに失敗しました。",
+    "saveFailed": "保存に失敗しました。"
+  },
+  "notFound": {
+    "title": "404",
+    "subtitle": "ページが見つかりません",
+    "description": "お探しのページは存在しないか、移動された可能性があります。"
+  },
+  "meta": {
+    "title": "ClipNote - AI動画クリッピングサービス",
+    "description": "AIによる分析でテキストノートだけで動画を編集"
+  }
+}

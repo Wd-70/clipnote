@@ -34,6 +34,7 @@
     "motion": "^12.28.1",
     "next": "16.1.4",
     "next-auth": "^5.0.0-beta.30",
+    "next-intl": "^4.7.0",
     "next-themes": "^0.4.6",
     "react": "19.2.3",
     "react-dom": "19.2.3",

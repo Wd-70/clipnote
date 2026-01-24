@@ -1,0 +1,145 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "deleting": "Deleting...",
+    "copy": "Copy",
+    "copied": "Copied!",
+    "close": "Close",
+    "open": "Open",
+    "back": "Back",
+    "home": "Home",
+    "retry": "Try Again",
+    "create": "Create",
+    "edit": "Edit",
+    "confirm": "Confirm",
+    "clips": "{count, plural, =1 {# clip} other {# clips}}",
+    "points": "pts"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "projects": "My Projects",
+    "points": "Points",
+    "settings": "Settings"
+  },
+  "sidebar": {
+    "currentPoints": "Current Balance",
+    "recharge": "Top Up"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "description": "Manage your video projects and track your analysis credits.",
+    "recentProjects": "Recent Projects",
+    "projectCount": "You have {count, plural, =1 {# active project} other {# active projects}}.",
+    "createFirst": "Create Your First Project",
+    "loadingDashboard": "Loading dashboard..."
+  },
+  "points": {
+    "availableBalance": "Available Balance",
+    "pts": "PTS",
+    "estimatedMinutes": "Approx. {minutes} min of AI analysis",
+    "recharge": "Recharge Points"
+  },
+  "emptyState": {
+    "title": "No projects yet",
+    "description": "Get started by adding a YouTube or Chzzk video URL. AI will analyze the content and help you edit faster.",
+    "createProject": "Create Project"
+  },
+  "newProject": {
+    "title": "New Project",
+    "description": "Enter a video URL to start analyzing. We support YouTube and Chzzk.",
+    "videoUrl": "Video URL",
+    "videoUrlPlaceholder": "https://youtube.com/watch?v=...",
+    "projectTitle": "Project Title (Optional)",
+    "projectTitlePlaceholder": "My Awesome Clips",
+    "autoTitle": "Leave empty to auto-fetch the video title.",
+    "analyzing": "Analyzing...",
+    "create": "Create Project",
+    "urlRequired": "Please enter a valid URL",
+    "unsupportedPlatform": "Only YouTube and Chzzk URLs are supported"
+  },
+  "editor": {
+    "playClips": "Play Clips",
+    "export": "Export",
+    "clipPlaying": "Playing Clips",
+    "stop": "Stop",
+    "notes": "Notes",
+    "aiAnalysis": "AI Analysis",
+    "aiDescription": "Let AI find the highlights for you automatically",
+    "startAnalysis": "Start AI Analysis ({points} pts)",
+    "loadingProject": "Loading project...",
+    "projectNotFound": "Project not found.",
+    "backToDashboard": "Back to Dashboard",
+    "deleteProject": "Delete this project?",
+    "deleteWarning": "This action cannot be undone. The project \"{title}\" and all clip data will be permanently deleted."
+  },
+  "clipList": {
+    "title": "Clip List",
+    "empty": "No clips yet",
+    "emptyHint": "Add timestamps in your notes to automatically create clips",
+    "playAll": "Play All"
+  },
+  "share": {
+    "title": "Share Clips",
+    "views": "{count, plural, =1 {# view} other {# views}}",
+    "shareLink": "Share Link",
+    "embedCode": "Embed Code",
+    "embedHint": "Paste this code into your website or blog.",
+    "deleteWarning": "Deleting the share link will make it inaccessible.",
+    "startSharing": "Start Sharing",
+    "startSharingDescription": "Create a share link to let anyone view your clips. You can also embed them on other sites!",
+    "createLink": "Create Share Link",
+    "noClips": "No clips available. Add timestamps to your notes first.",
+    "linkCreated": "Share link created!",
+    "linkDeleted": "Share link deleted.",
+    "createFailed": "Failed to create share link.",
+    "deleteFailed": "Failed to delete share link."
+  },
+  "export": {
+    "title": "Export Clips",
+    "description": "Download {count, plural, =1 {# clip} other {# clips}} and merge into a single video",
+    "settings": "Export Settings",
+    "commandFormat": "Command Format",
+    "commandFormatJoined": "All steps in one line",
+    "commandFormatSeparate": "Separate steps",
+    "filenameFormat": "Filename Format",
+    "filenameUnderscore": "Replace spaces with underscores (_)",
+    "filenameSpace": "Keep spaces as-is",
+    "step1": "Download Clips",
+    "step1Desc": "Download {count, plural, =1 {# clip} other {# clips}} individually",
+    "step2": "Create File List",
+    "step2Desc": "Generate file list for FFmpeg",
+    "step3": "Merge Clips",
+    "step3Desc": "Combine all clips into one video",
+    "step4": "Clean Up",
+    "step4Desc": "Delete temporary clip files (optional)",
+    "allInOne": "Full Command (Single Line)",
+    "allInOneDesc": "Run all steps at once",
+    "copyAll": "Copy All",
+    "requiredTools": "Required tools"
+  },
+  "notesEditor": {
+    "placeholder": "Enter timestamps for the parts you want to clip.\n\nExample:\n0:30 - 1:45 Intro\n2:00 - 3:30 Highlight\n\nTip: Press Ctrl+T to insert the current playback timestamp.",
+    "insertTimestamp": "Insert Timestamp",
+    "saving": "Saving..."
+  },
+  "error": {
+    "title": "Something went wrong",
+    "description": "An unexpected error occurred. If the problem persists, please contact support.",
+    "errorCode": "Error Code",
+    "clipboardSuccess": "Copied to clipboard!",
+    "clipboardFailed": "Failed to copy to clipboard.",
+    "saveFailed": "Failed to save."
+  },
+  "notFound": {
+    "title": "404",
+    "subtitle": "Page Not Found",
+    "description": "The page you're looking for doesn't exist or has been moved."
+  },
+  "meta": {
+    "title": "ClipNote - AI Video Clipping Service",
+    "description": "Edit videos with text notes using AI analysis"
+  }
+}
