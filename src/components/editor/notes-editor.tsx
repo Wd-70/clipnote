@@ -11,7 +11,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { Save, Clock, FileText, Sparkles, Timer } from 'lucide-react';
+import { Save, Clock, FileText, Timer } from 'lucide-react';
 import { useTimestampParser } from '@/hooks/useTimestampParser';
 import { formatSecondsToTime } from '@/lib/utils/timestamp';
 import { cn } from '@/lib/utils';
@@ -198,8 +198,8 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
       </div>
 
       {/* Editor */}
-      <Card className="flex-1 flex flex-col">
-        <CardContent className="flex-1 p-4">
+      <Card className="flex-1 flex flex-col min-h-0">
+        <CardContent className="flex-1 p-4 flex flex-col min-h-0">
           <Textarea
             ref={textareaRef}
             value={notes}
@@ -213,49 +213,11 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
 
 Tip: 각 줄에 "시작시간 - 종료시간" 형식으로 작성하면 자동으로 클립이 생성됩니다.
 단축키: Ctrl+M으로 현재 재생 시간을 삽입할 수 있습니다.`}
-            className="h-full min-h-[200px] resize-none font-mono text-sm"
+            className="flex-1 min-h-0 resize-none font-mono text-sm"
           />
         </CardContent>
       </Card>
 
-      {/* Clip list */}
-      {clips.length > 0 && (
-        <Card className="mt-4">
-          <CardHeader className="py-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Sparkles className="h-4 w-4" />
-              감지된 클립
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="py-2">
-            <div className="space-y-2 max-h-[200px] overflow-y-auto">
-              {clips.map((clip, index) => (
-                <button
-                  key={clip.id}
-                  onClick={() => onClipClick?.(clip, index)}
-                  className={cn(
-                    'w-full text-left p-2 rounded-md transition-colors',
-                    'hover:bg-muted/50',
-                    currentClipIndex === index && 'bg-primary/10 border-l-2 border-primary'
-                  )}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-xs text-muted-foreground">
-                      {formatSecondsToTime(clip.startTime)} - {formatSecondsToTime(clip.endTime)}
-                    </span>
-                    <Badge variant="outline" className="text-xs">
-                      {formatSecondsToTime(clip.duration)}
-                    </Badge>
-                  </div>
-                  {clip.text && (
-                    <p className="text-sm mt-1 truncate">{clip.text}</p>
-                  )}
-                </button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 });

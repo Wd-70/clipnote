@@ -1,0 +1,33 @@
+[
+  {
+    "shareId": "bmCeK01C2E",
+    "projectId": "mkpf0qjf5spqwu38to5",
+    "userId": "dev-user-id",
+    "title": "[25.12.07] AGF 공연 다녀왔습니다 !",
+    "videoUrl": "https://youtu.be/h2-NqwdfvQc?si=OkkwYRIN9XJ91bot",
+    "platform": "YOUTUBE",
+    "videoId": "h2-NqwdfvQc",
+    "thumbnailUrl": "https://i.ytimg.com/vi/h2-NqwdfvQc/maxresdefault.jpg",
+    "clips": [
+      {
+        "startTime": 1277.5,
+        "endTime": 1281.5,
+        "text": "해석본"
+      },
+      {
+        "startTime": 2631.4,
+        "endTime": 2635.1,
+        "text": "머리카락 뒤에 비어있어"
+      },
+      {
+        "startTime": 4208.8,
+        "endTime": 4224.7,
+        "text": "재발하면"
+      }
+    ],
+    "viewCount": 51,
+    "_id": "mkr767684yeokh2otfc",
+    "createdAt": "2026-01-23T18:11:30.128Z",
+    "updatedAt": "2026-01-24T16:16:13.327Z"
+  }
+]

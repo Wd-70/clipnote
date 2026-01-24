@@ -147,7 +147,7 @@ export function ShareDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg p-0 gap-0 overflow-hidden">
+      <DialogContent className="max-w-lg w-[calc(100vw-2rem)] p-0 gap-0 overflow-hidden">
         {/* Header */}
         <div className="px-6 pt-6 pb-4 border-b bg-gradient-to-r from-violet-500/10 via-purple-500/10 to-fuchsia-500/10">
           <DialogHeader>
@@ -179,7 +179,7 @@ export function ShareDialog({
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-6 overflow-hidden">
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -192,33 +192,39 @@ export function ShareDialog({
                   <Link2 className="h-4 w-4 text-primary" />
                   공유 링크
                 </label>
+                {/* URL Display */}
+                <div className="bg-muted rounded-lg px-3 py-2 text-sm font-mono break-all select-all">
+                  {shareUrl}
+                </div>
+                {/* Action Buttons */}
                 <div className="flex gap-2">
-                  <div className="flex-1 bg-muted rounded-lg px-3 py-2 text-sm font-mono truncate">
-                    {shareUrl}
-                  </div>
                   <Button
                     variant={copiedStates['url'] ? 'default' : 'secondary'}
-                    size="icon"
                     onClick={() => handleCopy('url', shareUrl)}
                     className={cn(
-                      'shrink-0 transition-all',
+                      'flex-1 transition-all',
                       copiedStates['url'] && 'bg-green-500 hover:bg-green-600'
                     )}
                   >
                     {copiedStates['url'] ? (
-                      <Check className="h-4 w-4" />
+                      <>
+                        <Check className="h-4 w-4 mr-2" />
+                        복사됨!
+                      </>
                     ) : (
-                      <Copy className="h-4 w-4" />
+                      <>
+                        <Copy className="h-4 w-4 mr-2" />
+                        복사
+                      </>
                     )}
                   </Button>
                   <Button
                     variant="outline"
-                    size="icon"
                     asChild
-                    className="shrink-0"
                   >
                     <a href={shareUrl} target="_blank" rel="noopener noreferrer">
-                      <ExternalLink className="h-4 w-4" />
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      열기
                     </a>
                   </Button>
                 </div>

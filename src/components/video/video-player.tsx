@@ -23,6 +23,17 @@ export interface VideoPlayerRef {
   getDuration: () => number;
   play: () => void;
   pause: () => void;
+  // Volume controls
+  setVolume: (volume: number) => void;
+  getVolume: () => number;
+  mute: () => void;
+  unmute: () => void;
+  isMuted: () => boolean;
+  // Fullscreen
+  requestFullscreen: () => void;
+  exitFullscreen: () => void;
+  isFullscreen: () => boolean;
+  getContainerRef: () => HTMLDivElement | null;
 }
 
 interface VideoPlayerProps {
@@ -32,10 +43,14 @@ interface VideoPlayerProps {
   onDuration?: (duration: number) => void;
   onClipChange?: (clipIndex: number) => void;
   className?: string;
+  /** If true, blocks direct video clicks - use for share/embed pages */
+  disableDirectPlay?: boolean;
+  /** Called when video area is clicked (only works when disableDirectPlay is true) */
+  onVideoClick?: () => void;
 }
 
 export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
-  ({ url, clips = [], onProgress, onDuration, className }, ref) => {
+  ({ url, clips = [], onProgress, onDuration, className, disableDirectPlay = false, onVideoClick }, ref) => {
     const playerRef = useRef<YouTubePlayerType | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -86,6 +101,47 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
           playerRef.current.pauseVideo();
         }
       },
+      // Volume controls
+      setVolume: (newVolume: number) => {
+        if (playerRef.current) {
+          setVolume(newVolume);
+          playerRef.current.setVolume(newVolume);
+          if (newVolume === 0) {
+            playerRef.current.mute();
+            setMuted(true);
+          } else {
+            playerRef.current.unMute();
+            setMuted(false);
+          }
+        }
+      },
+      getVolume: () => volume,
+      mute: () => {
+        if (playerRef.current) {
+          playerRef.current.mute();
+          setMuted(true);
+        }
+      },
+      unmute: () => {
+        if (playerRef.current) {
+          playerRef.current.unMute();
+          setMuted(false);
+        }
+      },
+      isMuted: () => muted,
+      // Fullscreen controls
+      requestFullscreen: () => {
+        if (containerRef.current) {
+          containerRef.current.requestFullscreen();
+        }
+      },
+      exitFullscreen: () => {
+        if (document.fullscreenElement) {
+          document.exitFullscreen();
+        }
+      },
+      isFullscreen: () => !!document.fullscreenElement,
+      getContainerRef: () => containerRef.current,
     }));
 
     const onReady: YouTubeProps['onReady'] = useCallback((event: { target: YouTubePlayerType }) => {
@@ -206,6 +262,7 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
 
     const played = duration > 0 ? (currentTime / duration) * 100 : 0;
 
+    // Build playerVars - more restrictive when disableDirectPlay is enabled
     const opts: YouTubeProps['opts'] = {
       width: '100%',
       height: '100%',
@@ -214,7 +271,10 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
         controls: 0, // Hide default YouTube controls
         modestbranding: 1,
         rel: 0,
-        fs: 1, // Allow fullscreen
+        fs: disableDirectPlay ? 0 : 1, // Disable fullscreen button when blocking direct play
+        disablekb: disableDirectPlay ? 1 : 0, // Disable keyboard controls
+        iv_load_policy: 3, // Hide video annotations
+        playsinline: 1,
       },
     };
 
@@ -243,14 +303,26 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
         )}
       >
         {/* Video */}
-        <div className="aspect-video">
+        <div className="aspect-video relative">
           <YouTube
             videoId={videoId}
             opts={opts}
             onReady={onReady}
             onStateChange={onStateChange}
-            className="w-full h-full"
+            className={cn(
+              "w-full h-full",
+              // When disableDirectPlay is enabled, block ALL interactions with YouTube iframe
+              disableDirectPlay && "[&_iframe]:pointer-events-none"
+            )}
           />
+          {/* Overlay to capture all interactions on share/embed pages */}
+          {disableDirectPlay && (
+            <div 
+              className="absolute inset-0 z-10 cursor-pointer" 
+              aria-label="Video overlay"
+              onClick={onVideoClick}
+            />
+          )}
         </div>
 
         {/* Controls overlay */}

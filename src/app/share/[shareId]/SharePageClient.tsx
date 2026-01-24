@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Scissors, 
   Play, 
+  Pause,
   Clock, 
   Share2, 
   ChevronRight, 
@@ -14,11 +15,19 @@ import {
   Sparkles,
   Quote,
   Layout,
-  Calendar
+  SkipBack,
+  SkipForward,
+  Rewind,
+  FastForward,
+  Volume2,
+  VolumeX,
+  Maximize,
+  Minimize,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Slider } from '@/components/ui/slider';
 import { ThemeToggle } from '@/components/layout/theme-toggle';
 import { VideoPlayer, type VideoPlayerRef } from '@/components/video/video-player';
 import { formatSecondsToTime } from '@/lib/utils/timestamp';
@@ -54,7 +63,88 @@ export default function SharePageClient() {
   const [duration, setDuration] = useState(0);
   const [currentClipIndex, setCurrentClipIndex] = useState(-1);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isVirtualPlaying, setIsVirtualPlaying] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [volume, setVolume] = useState(100);
+  const [isMuted, setIsMuted] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const lastSeekTimeRef = useRef<number>(0);
+  const videoContainerRef = useRef<HTMLDivElement>(null);
+
+  // Calculate virtual timeline data (clips only, not full video)
+  const { totalVirtualDuration, clipRanges } = useMemo(() => {
+    if (!project) return { totalVirtualDuration: 0, clipRanges: [] };
+    
+    let accumulated = 0;
+    const ranges = project.clips.map((clip) => {
+      const start = accumulated;
+      const clipDuration = clip.endTime - clip.startTime;
+      accumulated += clipDuration;
+      return {
+        clip,
+        virtualStart: start,
+        virtualEnd: accumulated,
+        actualStart: clip.startTime,
+        actualEnd: clip.endTime,
+        duration: clipDuration,
+      };
+    });
+    return { totalVirtualDuration: accumulated, clipRanges: ranges };
+  }, [project]);
+
+  // Convert actual video time to virtual timeline time
+  const actualToVirtual = useCallback(
+    (actualTime: number): number => {
+      for (let i = 0; i < clipRanges.length; i++) {
+        const range = clipRanges[i];
+        if (actualTime >= range.actualStart && actualTime <= range.actualEnd) {
+          const offsetInClip = actualTime - range.actualStart;
+          return range.virtualStart + offsetInClip;
+        }
+      }
+      // If not in any clip, find the closest one
+      for (let i = 0; i < clipRanges.length; i++) {
+        const range = clipRanges[i];
+        if (actualTime < range.actualStart) {
+          return range.virtualStart;
+        }
+      }
+      return totalVirtualDuration;
+    },
+    [clipRanges, totalVirtualDuration]
+  );
+
+  // Convert virtual timeline time to actual video time and clip index
+  const virtualToActual = useCallback(
+    (virtualTime: number): { actualTime: number; clipIndex: number } => {
+      for (let i = 0; i < clipRanges.length; i++) {
+        const range = clipRanges[i];
+        if (virtualTime >= range.virtualStart && virtualTime < range.virtualEnd) {
+          const offsetInVirtual = virtualTime - range.virtualStart;
+          return {
+            actualTime: range.actualStart + offsetInVirtual,
+            clipIndex: i,
+          };
+        }
+      }
+      // Default to last clip end
+      if (clipRanges.length > 0) {
+        const lastRange = clipRanges[clipRanges.length - 1];
+        return {
+          actualTime: lastRange.actualEnd,
+          clipIndex: clipRanges.length - 1,
+        };
+      }
+      return { actualTime: 0, clipIndex: -1 };
+    },
+    [clipRanges]
+  );
+
+  // Calculate current virtual time
+  const currentVirtualTime = useMemo(() => {
+    if (!project || project.clips.length === 0) return 0;
+    return actualToVirtual(currentTime);
+  }, [currentTime, actualToVirtual, project]);
 
   // Fetch project data
   useEffect(() => {
@@ -101,6 +191,65 @@ export default function SharePageClient() {
     setCurrentClipIndex(index);
   }, [currentTime, project]);
 
+  // Track if playback has finished (to keep position at end)
+  const [playbackFinished, setPlaybackFinished] = useState(false);
+
+  // Virtual playback: auto-jump between clips
+  useEffect(() => {
+    if (!project || !isVirtualPlaying || project.clips.length === 0) return;
+
+    const clips = project.clips;
+    const lastClip = clips[clips.length - 1];
+    
+    // Check if we've reached the end of the last clip
+    if (currentTime >= lastClip.endTime - 0.1) {
+      // Stop playback and keep position at end
+      setIsVirtualPlaying(false);
+      setPlaybackFinished(true);
+      playerRef.current?.pause();
+      return;
+    }
+    
+    // Find which clip we're in or should be in
+    let foundClipIndex = -1;
+    for (let i = 0; i < clips.length; i++) {
+      if (currentTime >= clips[i].startTime && currentTime < clips[i].endTime) {
+        foundClipIndex = i;
+        break;
+      }
+    }
+
+    // If we're past a clip's end but not the last one, jump to next clip
+    if (foundClipIndex === -1) {
+      for (let i = 0; i < clips.length - 1; i++) {
+        // We've passed this clip's end, check if we should jump to next
+        if (currentTime >= clips[i].endTime && currentTime < clips[i + 1].startTime) {
+          // Only jump if we haven't just seeked here
+          if (Math.abs(currentTime - lastSeekTimeRef.current) > 0.5) {
+            lastSeekTimeRef.current = clips[i + 1].startTime;
+            playerRef.current?.seekTo(clips[i + 1].startTime);
+          }
+          break;
+        }
+      }
+    }
+
+    // If we're before the first clip, jump to first clip
+    if (foundClipIndex === -1 && currentTime < clips[0].startTime) {
+      if (Math.abs(currentTime - lastSeekTimeRef.current) > 0.5) {
+        lastSeekTimeRef.current = clips[0].startTime;
+        playerRef.current?.seekTo(clips[0].startTime);
+      }
+    }
+  }, [currentTime, isVirtualPlaying, project]);
+
+  // Reset playbackFinished when user seeks or starts playing again
+  useEffect(() => {
+    if (isVirtualPlaying && playbackFinished) {
+      setPlaybackFinished(false);
+    }
+  }, [isVirtualPlaying, playbackFinished]);
+
   // Handle video progress
   const handleProgress = useCallback(({ playedSeconds }: { played: number; playedSeconds: number }) => {
     setCurrentTime(playedSeconds);
@@ -113,10 +262,119 @@ export default function SharePageClient() {
 
   // Seek to specific clip
   const handleJumpToClip = (startTime: number) => {
+    lastSeekTimeRef.current = startTime;
     playerRef.current?.seekTo(startTime);
     // Auto play when jumping to clip
+    setIsVirtualPlaying(true);
     playerRef.current?.play();
   };
+
+  // Toggle virtual playback (clips only)
+  const handleToggleVirtualPlay = () => {
+    if (isVirtualPlaying) {
+      setIsVirtualPlaying(false);
+      playerRef.current?.pause();
+    } else {
+      // If not in any clip, jump to first clip
+      if (project && project.clips.length > 0) {
+        const inClip = project.clips.some(
+          (clip) => currentTime >= clip.startTime && currentTime < clip.endTime
+        );
+        if (!inClip) {
+          lastSeekTimeRef.current = project.clips[0].startTime;
+          playerRef.current?.seekTo(project.clips[0].startTime);
+        }
+      }
+      setIsVirtualPlaying(true);
+      playerRef.current?.play();
+    }
+  };
+
+  // Seek on virtual timeline
+  const handleVirtualSeek = (value: number[]) => {
+    const virtualTime = value[0];
+    const { actualTime } = virtualToActual(virtualTime);
+    lastSeekTimeRef.current = actualTime;
+    playerRef.current?.seekTo(actualTime);
+  };
+
+  // Skip to next clip
+  const handleNextClip = () => {
+    if (!project || project.clips.length === 0) return;
+    const nextIndex = currentClipIndex + 1;
+    if (nextIndex < project.clips.length) {
+      handleJumpToClip(project.clips[nextIndex].startTime);
+    }
+  };
+
+  // Skip to previous clip
+  const handlePrevClip = () => {
+    if (!project || project.clips.length === 0) return;
+    // If more than 2 seconds into current clip, restart it; otherwise go to previous
+    const currentClip = project.clips[currentClipIndex];
+    if (currentClip && currentTime - currentClip.startTime > 2) {
+      handleJumpToClip(currentClip.startTime);
+    } else {
+      const prevIndex = Math.max(0, currentClipIndex - 1);
+      handleJumpToClip(project.clips[prevIndex].startTime);
+    }
+  };
+
+  // Skip forward 5 seconds within virtual timeline
+  const handleSkipForward = () => {
+    const newVirtualTime = Math.min(currentVirtualTime + 5, totalVirtualDuration);
+    const { actualTime } = virtualToActual(newVirtualTime);
+    lastSeekTimeRef.current = actualTime;
+    playerRef.current?.seekTo(actualTime);
+  };
+
+  // Skip backward 5 seconds within virtual timeline
+  const handleSkipBackward = () => {
+    const newVirtualTime = Math.max(currentVirtualTime - 5, 0);
+    const { actualTime } = virtualToActual(newVirtualTime);
+    lastSeekTimeRef.current = actualTime;
+    playerRef.current?.seekTo(actualTime);
+  };
+
+  // Volume controls
+  const handleVolumeChange = (value: number[]) => {
+    const newVolume = value[0];
+    setVolume(newVolume);
+    setIsMuted(newVolume === 0);
+    playerRef.current?.setVolume(newVolume);
+  };
+
+  const handleToggleMute = () => {
+    if (isMuted) {
+      playerRef.current?.unmute();
+      playerRef.current?.setVolume(volume > 0 ? volume : 100);
+      setIsMuted(false);
+      if (volume === 0) setVolume(100);
+    } else {
+      playerRef.current?.mute();
+      setIsMuted(true);
+    }
+  };
+
+  // Fullscreen controls
+  const handleToggleFullscreen = () => {
+    if (isFullscreen) {
+      document.exitFullscreen();
+    } else {
+      videoContainerRef.current?.requestFullscreen();
+    }
+  };
+
+  // Listen for fullscreen changes
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, []);
 
   // Loading state
   if (loading) {
@@ -266,51 +524,164 @@ export default function SharePageClient() {
 
           {/* Video Player Section */}
           <motion.div variants={item} className="space-y-4">
-            <div className="rounded-2xl overflow-hidden shadow-2xl shadow-primary/10 border border-border/50 bg-black">
+            <div 
+              ref={videoContainerRef}
+              className={cn(
+                "rounded-2xl overflow-hidden shadow-2xl shadow-primary/10 border border-border/50 bg-black",
+                isFullscreen && "rounded-none border-0 shadow-none"
+              )}
+            >
               <VideoPlayer
                 ref={playerRef}
                 url={project.videoUrl}
                 clips={parsedClips}
                 onProgress={handleProgress}
                 onDuration={handleDuration}
-                className="aspect-video w-full"
+                className={cn("aspect-video w-full", isFullscreen && "h-[calc(100vh-120px)]")}
+                disableDirectPlay
+                onVideoClick={handleToggleVirtualPlay}
               />
-            </div>
+              
+              {/* Virtual Timeline Controls - Always dark theme for video player UI */}
+              <div className={cn(
+                "bg-neutral-900 p-4 space-y-4 text-white",
+                isFullscreen ? "absolute bottom-0 left-0 right-0" : "rounded-b-2xl"
+              )}>
+              {/* Playback Controls */}
+              <div className="flex items-center justify-between gap-2">
+                {/* Volume Controls - Left side */}
+                <div className="flex items-center gap-2 min-w-[120px]">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9 rounded-full text-white/80 hover:text-white hover:bg-white/10"
+                    onClick={handleToggleMute}
+                  >
+                    {isMuted || volume === 0 ? (
+                      <VolumeX className="h-4 w-4" />
+                    ) : (
+                      <Volume2 className="h-4 w-4" />
+                    )}
+                  </Button>
+                  <Slider
+                    value={[isMuted ? 0 : volume]}
+                    min={0}
+                    max={100}
+                    step={1}
+                    onValueChange={handleVolumeChange}
+                    className="w-20"
+                  />
+                </div>
 
-            {/* Timeline Visualization */}
-            <div className="relative h-12 bg-muted/30 rounded-xl flex items-center px-4 border border-border/50">
-               {/* Timeline Track */}
-               <div className="absolute left-4 right-4 h-1.5 bg-muted rounded-full overflow-hidden">
-                 {/* Current Progress */}
-                 <div 
-                   className="absolute top-0 left-0 h-full bg-primary/30 z-10 transition-all duration-100 ease-linear"
-                   style={{ width: duration > 0 ? `${(currentTime / duration) * 100}%` : '0%' }}
-                 />
-                 
-                 {/* Clip Segments */}
-                 {project.clips.map((clip, i) => {
-                   const left = duration > 0 ? (clip.startTime / duration) * 100 : 0;
-                   const width = duration > 0 ? ((clip.endTime - clip.startTime) / duration) * 100 : 0;
-                   const isActive = i === currentClipIndex;
-                   
-                   return (
-                     <div
-                       key={i}
-                       className={cn(
-                         "absolute top-0 h-full transition-colors z-20",
-                         isActive ? "bg-primary" : "bg-primary/40 hover:bg-primary/60"
-                       )}
-                       style={{ left: `${left}%`, width: `${width}%` }}
-                       title={clip.text}
-                     />
-                   );
-                 })}
-               </div>
-               
-               {/* Time Display */}
-               <div className="ml-auto text-xs font-mono text-muted-foreground bg-background/50 px-2 py-1 rounded backdrop-blur-sm relative z-30">
-                 {formatSecondsToTime(currentTime)} / {formatSecondsToTime(duration)}
-               </div>
+                {/* Center Playback Controls */}
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9 rounded-full text-white/80 hover:text-white hover:bg-white/10"
+                    onClick={handlePrevClip}
+                    disabled={!project.clips.length}
+                  >
+                    <SkipBack className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9 rounded-full text-white/80 hover:text-white hover:bg-white/10"
+                    onClick={handleSkipBackward}
+                  >
+                    <Rewind className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="icon"
+                    className="h-12 w-12 rounded-full shadow-lg bg-white text-black hover:bg-white/90"
+                    onClick={handleToggleVirtualPlay}
+                  >
+                    {isVirtualPlaying ? (
+                      <Pause className="h-5 w-5" />
+                    ) : (
+                      <Play className="h-5 w-5 ml-0.5" />
+                    )}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9 rounded-full text-white/80 hover:text-white hover:bg-white/10"
+                    onClick={handleSkipForward}
+                  >
+                    <FastForward className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9 rounded-full text-white/80 hover:text-white hover:bg-white/10"
+                    onClick={handleNextClip}
+                    disabled={!project.clips.length || currentClipIndex >= project.clips.length - 1}
+                  >
+                    <SkipForward className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                {/* Fullscreen Control - Right side */}
+                <div className="flex items-center min-w-[120px] justify-end">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9 rounded-full text-white/80 hover:text-white hover:bg-white/10"
+                    onClick={handleToggleFullscreen}
+                  >
+                    {isFullscreen ? (
+                      <Minimize className="h-4 w-4" />
+                    ) : (
+                      <Maximize className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Virtual Timeline Slider */}
+              <div className="space-y-2">
+                <div className="relative">
+                  {/* Clip segments visualization */}
+                  <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-2 rounded-full overflow-hidden pointer-events-none bg-white/10">
+                    {clipRanges.map((range, i) => {
+                      const left = totalVirtualDuration > 0 ? (range.virtualStart / totalVirtualDuration) * 100 : 0;
+                      const width = totalVirtualDuration > 0 ? (range.duration / totalVirtualDuration) * 100 : 0;
+                      const isActive = i === currentClipIndex;
+                      
+                      return (
+                        <div
+                          key={i}
+                          className={cn(
+                            "absolute top-0 h-full transition-colors",
+                            isActive ? "bg-white" : "bg-white/40"
+                          )}
+                          style={{ left: `${left}%`, width: `${width}%` }}
+                        />
+                      );
+                    })}
+                  </div>
+                  
+                  <Slider
+                    value={[currentVirtualTime]}
+                    min={0}
+                    max={totalVirtualDuration || 1}
+                    step={0.1}
+                    onValueChange={handleVirtualSeek}
+                    className="relative z-10"
+                  />
+                </div>
+                
+                {/* Time Display */}
+                <div className="flex justify-between text-xs font-mono text-white/60">
+                  <span>{formatSecondsToTime(currentVirtualTime)}</span>
+                  <span className="text-white font-medium">
+                    클립 {currentClipIndex >= 0 ? currentClipIndex + 1 : '-'} / {project.clips.length}
+                  </span>
+                  <span>{formatSecondsToTime(totalVirtualDuration)}</span>
+                </div>
+              </div>
+              </div>
             </div>
           </motion.div>
 

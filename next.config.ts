@@ -25,6 +25,24 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Allow /embed/* pages to be embedded in iframes on any site
+  async headers() {
+    return [
+      {
+        source: '/embed/:path*',
+        headers: [
+          {
+            key: 'X-Frame-Options',
+            value: 'ALLOWALL',
+          },
+          {
+            key: 'Content-Security-Policy',
+            value: "frame-ancestors *;",
+          },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;

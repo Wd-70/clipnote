@@ -12,7 +12,11 @@ async function ProjectsContent() {
   let projects: IProject[] = [];
   
   try {
-    const response = await fetch('http://localhost:3001/api/projects', {
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 
+                    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '') || 
+                    'http://localhost:3500';
+    
+    const response = await fetch(`${baseUrl}/api/projects`, {
       cache: 'no-store',
     });
     

@@ -56,8 +56,9 @@ export function Sidebar({ className, ...props }: SidebarProps) {
   ];
 
   return (
-    <div className={cn("pb-12 min-h-screen", className)} {...props}>
-      <div className="space-y-4 py-4 h-full flex flex-col">
+    <div className={cn("pb-12 h-screen", className)} {...props}>
+      <div className="py-4 h-full flex flex-col overflow-y-auto">
+        {/* Top Section: Logo and Navigation */}
         <div className="px-3 py-2">
           <Link href="/" className="flex items-center pl-2 mb-10 gap-2">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center text-white font-bold text-lg shadow-md">
@@ -89,7 +90,11 @@ export function Sidebar({ className, ...props }: SidebarProps) {
           </div>
         </div>
 
-        <div className="mt-auto px-3">
+        {/* Spacer to push bottom content down */}
+        <div className="flex-1"></div>
+
+        {/* Bottom Section: Points and User Info */}
+        <div className="px-3 space-y-4">
           <div className="bg-card/50 border rounded-lg p-4 mb-4">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-muted-foreground">보유 포인트</span>

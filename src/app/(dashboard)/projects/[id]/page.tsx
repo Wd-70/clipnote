@@ -55,6 +55,7 @@ export default function EditorPage() {
 
   const playerRef = useRef<VideoPlayerRef>(null);
   const notesEditorRef = useRef<NotesEditorRef>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [clips, setClips] = useState<ParsedClip[]>([]);
@@ -66,6 +67,7 @@ export default function EditorPage() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+  const [headerWidth, setHeaderWidth] = useState(0);
 
   // Fetch project data from API
   useEffect(() => {
@@ -95,6 +97,42 @@ export default function EditorPage() {
     
     fetchProject();
   }, [projectId]);
+
+  // Observe header width to determine button layout
+  useEffect(() => {
+    const headerElement = headerRef.current;
+    if (!headerElement) return;
+
+    // Debounce resize updates to avoid excessive re-renders
+    let timeoutId: NodeJS.Timeout;
+    
+    const resizeObserver = new ResizeObserver((entries) => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        for (const entry of entries) {
+          const width = Math.floor(entry.contentRect.width);
+          setHeaderWidth(prevWidth => {
+            // Only update if width changed significantly (avoid sub-pixel updates)
+            if (Math.abs(prevWidth - width) > 1) {
+              return width;
+            }
+            return prevWidth;
+          });
+        }
+      }, 16); // ~60fps throttle
+    });
+
+    resizeObserver.observe(headerElement);
+    
+    // Initial measurement
+    const initialWidth = Math.floor(headerElement.getBoundingClientRect().width);
+    setHeaderWidth(initialWidth);
+    
+    return () => {
+      clearTimeout(timeoutId);
+      resizeObserver.disconnect();
+    };
+  }, [isLoading, project]);
 
   // Video sync hook for virtual editing
   const {
@@ -216,116 +254,164 @@ export default function EditorPage() {
     );
   }
 
+  // Determine layout mode based on actual header width
+  // Thresholds calculated from actual minimum widths:
+  // - Full layout (with text): ~770px minimum
+  // - Compact layout (icons only): ~707px minimum
+  // - Very compact: < 550px
+  const isVeryCompact = headerWidth > 0 && headerWidth < 550;
+  const isCompact = headerWidth > 0 && headerWidth < 650;
+  const isNarrow = headerWidth > 0 && headerWidth < 720;
+
   return (
-    <div className="h-screen flex flex-col">
+    <div className="min-h-screen lg:h-screen flex flex-col -mx-4 md:-mx-8 -mt-6">
       {/* Header */}
-      <header className="border-b px-4 py-3 flex items-center justify-between bg-background/95 backdrop-blur">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" asChild>
-            <Link href="/dashboard">
-              <ArrowLeft className="h-4 w-4" />
-            </Link>
-          </Button>
-          <div>
-            <h1 className="font-semibold">{project.title}</h1>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Badge variant="outline" className="text-xs">
-                {project.platform}
-              </Badge>
-              <span>{clips.length} 클립</span>
+      <header ref={headerRef} className="border-b px-2 sm:px-4 py-2 sm:py-3 bg-background/95 backdrop-blur sticky top-0 z-10">
+        <div className="flex items-center justify-between gap-2">
+          {/* Left: Back button + Title */}
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <Button variant="ghost" size="icon" className="shrink-0" asChild>
+              <Link href="/dashboard">
+                <ArrowLeft className="h-4 w-4" />
+              </Link>
+            </Button>
+            <div className="min-w-0">
+              <h1 className="font-semibold text-sm sm:text-base truncate">{project.title}</h1>
+              <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                <Badge variant="outline" className="text-xs">
+                  {project.platform}
+                </Badge>
+                {!isCompact && <span>{clips.length} 클립</span>}
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => playAllClips()}>
-            <Play className="h-4 w-4 mr-2" />
-            가상 재생
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleExport} disabled={clips.length === 0}>
-            <Download className="h-4 w-4 mr-2" />
-            내보내기
-          </Button>
-          <Button variant="outline" size="icon" onClick={() => setIsShareDialogOpen(true)}>
-            <Share2 className="h-4 w-4" />
-          </Button>
-          <Button variant="outline" size="icon">
-            <Settings className="h-4 w-4" />
-          </Button>
-          
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
+          {/* Right: Action buttons - dynamically responsive based on header width */}
+          <div className="flex items-center gap-1 shrink-0">
+            {/* Play button */}
+            <Button 
+              variant="outline" 
+              size={isNarrow ? "icon" : "sm"}
+              onClick={() => playAllClips()}
+              className="h-8"
+            >
+              <Play className="h-4 w-4" />
+              {!isNarrow && <span className="ml-2">클립 재생</span>}
+            </Button>
+
+            {/* Export button */}
+            <Button 
+              variant="outline" 
+              size={isNarrow ? "icon" : "sm"}
+              onClick={handleExport} 
+              disabled={clips.length === 0}
+              className="h-8"
+            >
+              <Download className="h-4 w-4" />
+              {!isNarrow && <span className="ml-2">내보내기</span>}
+            </Button>
+
+            {/* Share button */}
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={() => setIsShareDialogOpen(true)}
+              className="h-8 w-8"
+            >
+              <Share2 className="h-4 w-4" />
+            </Button>
+
+            {/* Settings button - hide when narrow */}
+            {!isNarrow && (
               <Button 
                 variant="outline" 
                 size="icon"
-                className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                disabled={isDeleting}
+                className="h-8 w-8"
               >
-                <Trash2 className="h-4 w-4" />
+                <Settings className="h-4 w-4" />
               </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>프로젝트를 삭제하시겠습니까?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  이 작업은 되돌릴 수 없습니다. &quot;{project.title}&quot; 프로젝트와 모든 클립 정보가 영구적으로 삭제됩니다.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel disabled={isDeleting}>취소</AlertDialogCancel>
-                <AlertDialogAction 
-                  onClick={handleDelete}
+            )}
+            
+            {/* Delete button - always visible */}
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8"
                   disabled={isDeleting}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 >
-                  {isDeleting ? '삭제 중...' : '삭제'}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>프로젝트를 삭제하시겠습니까?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    이 작업은 되돌릴 수 없습니다. &quot;{project.title}&quot; 프로젝트와 모든 클립 정보가 영구적으로 삭제됩니다.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={isDeleting}>취소</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={handleDelete}
+                    disabled={isDeleting}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    {isDeleting ? '삭제 중...' : '삭제'}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         </div>
       </header>
 
       {/* Main content */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 p-4 overflow-hidden">
-        {/* Left: Video Player */}
+      <div className="flex-1 lg:grid lg:grid-cols-2 gap-4 p-4 lg:overflow-hidden">
+        {/* Mobile: Scrollable vertical layout, Desktop: Grid layout */}
         <div className="flex flex-col gap-4">
-          <VideoPlayer
-            ref={playerRef}
-            url={project.videoUrl}
-            clips={clips}
-            onDuration={setDuration}
-            onProgress={handleProgress}
-          />
+          {/* Left: Video Player */}
+          <div className="flex flex-col gap-4 lg:overflow-hidden">
+            <VideoPlayer
+              ref={playerRef}
+              url={project.videoUrl}
+              clips={clips}
+              onDuration={setDuration}
+              onProgress={handleProgress}
+              className="shrink-0"
+            />
 
-          {/* Clip Timeline - Virtual playback controls */}
-          <ClipTimeline
-            clips={clips}
-            playerRef={playerRef}
-            currentTime={currentTime}
-            isPlaying={isPlaying}
-            onPlayStateChange={setIsPlaying}
-          />
+            {/* Clip Timeline - Virtual playback controls */}
+            <ClipTimeline
+              clips={clips}
+              playerRef={playerRef}
+              currentTime={currentTime}
+              isPlaying={isPlaying}
+              onPlayStateChange={setIsPlaying}
+              className="shrink-0"
+            />
 
-          {/* Clip List */}
-          <ClipList
-            clips={clips}
-            currentClipIndex={currentClipIndex}
-            onClipClick={handleClipClick}
-            onPlayAll={playAllClips}
-            className="flex-1 overflow-hidden"
-          />
+            {/* Clip List - Takes remaining space on desktop, fixed height on mobile */}
+            <ClipList
+              clips={clips}
+              currentClipIndex={currentClipIndex}
+              onClipClick={handleClipClick}
+              onPlayAll={playAllClips}
+              className="lg:flex-1 lg:min-h-0"
+            />
+          </div>
         </div>
 
         {/* Right: Notes Editor & Analysis */}
-        <div className="flex flex-col gap-4 overflow-hidden">
-          <Tabs defaultValue="notes" className="flex-1 flex flex-col">
-            <TabsList className="grid w-full grid-cols-2">
+        <div className="flex flex-col gap-4 min-h-[600px] lg:min-h-0 lg:overflow-hidden pt-4 lg:pt-0">
+          <Tabs defaultValue="notes" className="flex-1 flex flex-col lg:overflow-hidden">
+            <TabsList className="grid w-full grid-cols-2 shrink-0">
               <TabsTrigger value="notes">노트</TabsTrigger>
               <TabsTrigger value="analysis">AI 분석</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="notes" className="flex-1 overflow-hidden mt-4">
+            <TabsContent value="notes" className="flex-1 mt-4 data-[state=active]:flex data-[state=active]:flex-col lg:overflow-hidden min-h-0">
               <NotesEditor
                 ref={notesEditorRef}
                 initialNotes={notes}
@@ -336,12 +422,12 @@ export default function EditorPage() {
                 currentClipIndex={currentClipIndex}
                 currentTime={currentTime}
                 onInsertTimestamp={handleInsertTimestamp}
-                className="h-full"
+                className="flex-1 min-h-[400px] lg:min-h-0"
               />
             </TabsContent>
 
-            <TabsContent value="analysis" className="flex-1 overflow-hidden mt-4">
-              <Card className="h-full">
+            <TabsContent value="analysis" className="flex-1 mt-4 data-[state=active]:flex data-[state=active]:flex-col lg:overflow-hidden">
+              <Card className="h-full min-h-[400px]">
                 <CardHeader>
                   <CardTitle className="text-base flex items-center gap-2">
                     <Sparkles className="h-4 w-4" />
@@ -370,7 +456,7 @@ export default function EditorPage() {
       {isVirtualMode && (
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
           <Play className="h-4 w-4 animate-pulse" />
-          <span className="text-sm font-medium">가상 편집 모드</span>
+          <span className="text-sm font-medium">클립 재생 중</span>
           <Button
             size="sm"
             variant="secondary"
