@@ -16,17 +16,71 @@
     "edit": "Edit",
     "confirm": "Confirm",
     "clips": "{count, plural, =1 {# clip} other {# clips}}",
-    "points": "pts"
+    "points": "pts",
+    "terms": "Terms",
+    "privacy": "Privacy",
+    "contact": "Contact"
   },
   "nav": {
     "dashboard": "Dashboard",
     "projects": "My Projects",
     "points": "Points",
-    "settings": "Settings"
+    "settings": "Settings",
+    "features": "Features",
+    "howItWorks": "How It Works",
+    "pricing": "Pricing"
   },
   "sidebar": {
     "currentPoints": "Current Balance",
     "recharge": "Top Up"
+  },
+  "landing": {
+    "badge": "AI-Powered Smart Video Editor",
+    "heroTitle1": "Write notes,",
+    "heroTitle2": "get videos",
+    "heroDescription": "No more complex timeline editing. Cut and manage videos with text. ClipNote makes your video workflow 10x faster.",
+    "getStartedFree": "Get Started Free",
+    "watchDemo": "Watch Demo",
+    "whyClipNote": "Why ClipNote?",
+    "whyClipNoteDesc": "A new experience beyond traditional editing tools",
+    "feature1Title": "AI Auto-Analysis",
+    "feature1Desc": "Gemini AI automatically finds key moments and highlights in your videos.",
+    "feature2Title": "Timeline Notes",
+    "feature2Desc": "Write text instead of dragging timelines to precisely set clip ranges.",
+    "feature3Title": "Virtual Editing",
+    "feature3Desc": "Instantly preview without rendering the original file using seekTo technology.",
+    "feature4Title": "Smart Export",
+    "feature4Desc": "High-speed FFmpeg rendering exports only the parts you need.",
+    "howItWorksTitle": "How does it work?",
+    "howItWorksDesc": "Video clipping in just 3 steps",
+    "step1Title": "Enter Video Link",
+    "step1Desc": "Just paste a YouTube or streaming replay link. No download required.",
+    "step2Title": "AI Analysis & Notes",
+    "step2Desc": "Select the segments you need from AI-analyzed content using text.",
+    "step3Title": "Create Clips",
+    "step3Desc": "One button click saves your selected segments as high-quality video files.",
+    "pricingTitle": "Simple Pricing",
+    "pricingDesc": "Start with transparent and fair pricing",
+    "starterPlan": "Starter",
+    "starterPrice": "Free",
+    "starterPriceUnit": "/ forever",
+    "starterDesc": "For creators just getting started",
+    "starterFeature1": "60 min free analysis/month",
+    "starterFeature2": "720p export quality",
+    "starterFeature3": "Up to 5 projects",
+    "proPlan": "Pro",
+    "proPrice": "$9.99",
+    "proPriceUnit": "/ month",
+    "proDesc": "All features for professional work",
+    "proFeature1": "Unlimited analysis",
+    "proFeature2": "4K export quality",
+    "proFeature3": "Priority processing",
+    "proFeature4": "Unlimited projects",
+    "startPro": "Start Pro",
+    "ctaTitle": "Turn your videos into personal notes now",
+    "ctaDesc": "New users get 60 minutes of free analysis credits.",
+    "ctaButton": "Start ClipNote",
+    "copyright": "© 2026 ClipNote. All rights reserved."
   },
   "dashboard": {
     "title": "Dashboard",
@@ -36,11 +90,59 @@
     "createFirst": "Create Your First Project",
     "loadingDashboard": "Loading dashboard..."
   },
+  "projects": {
+    "title": "My Projects",
+    "description": "Manage and edit all your video projects.",
+    "totalProjects": "{count, plural, =1 {# project} other {# projects}} total",
+    "loading": "Loading projects..."
+  },
+  "projectCard": {
+    "editProject": "Edit Project",
+    "deleteConfirm": "Delete this project?",
+    "deleteWarning": "This action cannot be undone. The project \"{title}\" and all clip data will be permanently deleted.",
+    "hasClips": "Has clips",
+    "noClips": "No clips",
+    "deleted": "Project deleted",
+    "deleteFailed": "Failed to delete project",
+    "untitled": "Untitled Project"
+  },
   "points": {
     "availableBalance": "Available Balance",
     "pts": "PTS",
     "estimatedMinutes": "Approx. {minutes} min of AI analysis",
     "recharge": "Recharge Points"
+  },
+  "pointsPage": {
+    "title": "Points Management",
+    "description": "Manage and recharge your AI analysis credits.",
+    "currentBalance": "Current Balance",
+    "chargePoints": "Recharge Points",
+    "usageHistory": "Usage History",
+    "noHistory": "No usage history yet.",
+    "chargeOptions": "Charge Options",
+    "option1": "1,000 Points",
+    "option1Price": "$5.00",
+    "option2": "3,000 Points",
+    "option2Price": "$12.00",
+    "option3": "10,000 Points",
+    "option3Price": "$35.00",
+    "comingSoon": "Payment feature coming soon"
+  },
+  "settingsPage": {
+    "title": "Settings",
+    "description": "Manage account settings and preferences.",
+    "account": "Account",
+    "profile": "Profile",
+    "email": "Email",
+    "name": "Name",
+    "preferences": "Preferences",
+    "language": "Language",
+    "theme": "Theme",
+    "notifications": "Notifications",
+    "saveChanges": "Save Changes",
+    "dangerZone": "Danger Zone",
+    "deleteAccount": "Delete Account",
+    "deleteAccountDesc": "Deleting your account will permanently remove all your data."
   },
   "emptyState": {
     "title": "No projects yet",
@@ -97,6 +199,20 @@
     "createFailed": "Failed to create share link.",
     "deleteFailed": "Failed to delete share link."
   },
+  "sharePage": {
+    "title": "Shared Clips",
+    "clips": "{count, plural, =1 {# clip} other {# clips}}",
+    "totalDuration": "Total Duration",
+    "playAll": "Play All",
+    "pause": "Pause",
+    "prev": "Previous",
+    "next": "Next",
+    "volume": "Volume",
+    "fullscreen": "Fullscreen",
+    "sharedBy": "Shared by",
+    "clipNotFound": "Clip not found",
+    "clipNotFoundDesc": "The shared link you requested does not exist or has been deleted."
+  },
   "export": {
     "title": "Export Clips",
     "description": "Download {count, plural, =1 {# clip} other {# clips}} and merge into a single video",
@@ -118,7 +234,10 @@
     "allInOne": "Full Command (Single Line)",
     "allInOneDesc": "Run all steps at once",
     "copyAll": "Copy All",
-    "requiredTools": "Required tools"
+    "requiredTools": "Required tools",
+    "scriptComment": "ClipNote Export Script",
+    "projectComment": "Project",
+    "clipsComment": "Number of clips"
   },
   "notesEditor": {
     "placeholder": "Enter timestamps for the parts you want to clip.\n\nExample:\n0:30 - 1:45 Intro\n2:00 - 3:30 Highlight\n\nTip: Press Ctrl+T to insert the current playback timestamp.",
@@ -131,7 +250,8 @@
     "errorCode": "Error Code",
     "clipboardSuccess": "Copied to clipboard!",
     "clipboardFailed": "Failed to copy to clipboard.",
-    "saveFailed": "Failed to save."
+    "saveFailed": "Failed to save.",
+    "loadFailed": "Failed to load."
   },
   "notFound": {
     "title": "404",

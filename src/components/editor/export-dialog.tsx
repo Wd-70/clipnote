@@ -30,6 +30,7 @@ import {
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import type { ParsedClip } from '@/types';
+import { useTranslations } from 'next-intl';
 
 interface ExportDialogProps {
   open: boolean;
@@ -77,6 +78,8 @@ interface CommandBlockProps {
   copied: boolean;
   onCopy: () => void;
   defaultExpanded?: boolean;
+  copyLabel: string;
+  copiedLabel: string;
 }
 
 function CommandBlock({
@@ -89,6 +92,8 @@ function CommandBlock({
   copied,
   onCopy,
   defaultExpanded = true,
+  copyLabel,
+  copiedLabel,
 }: CommandBlockProps) {
   const [expanded, setExpanded] = useState(defaultExpanded);
 
@@ -132,7 +137,7 @@ function CommandBlock({
             )}
           >
             {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-            {copied ? '복사됨!' : '복사'}
+            {copied ? copiedLabel : copyLabel}
           </Button>
           {expanded ? (
             <ChevronUp className="h-4 w-4 text-muted-foreground" />
@@ -163,8 +168,12 @@ export function ExportDialog({
   videoUrl,
   projectTitle,
 }: ExportDialogProps) {
+  const t = useTranslations('export');
+  const tCommon = useTranslations('common');
+  const tError = useTranslations('error');
+  
   // Settings state
-  const [useJoinedCommands, setUseJoinedCommands] = useState(false); // 한 줄로 이어서 vs 단계별 구분
+  const [useJoinedCommands, setUseJoinedCommands] = useState(false);
   const [useUnderscore, setUseUnderscore] = useState(true);
   const [copiedStates, setCopiedStates] = useState<Record<string, boolean>>({});
   const [showSettings, setShowSettings] = useState(false);
@@ -180,7 +189,7 @@ export function ExportDialog({
   const generateFilename = useCallback((clip: ParsedClip, index: number) => {
     const sanitizedTitle = sanitizeFilename(projectTitle, useUnderscore);
     const clipNumber = (index + 1).toString().padStart(2, '0');
-    const clipName = sanitizeFilename(clip.text || `클립${clipNumber}`, useUnderscore);
+    const clipName = sanitizeFilename(clip.text || `clip${clipNumber}`, useUnderscore);
     return `${sanitizedTitle}_${clipNumber}_${clipName}.mp4`;
   }, [projectTitle, useUnderscore]);
 
@@ -233,12 +242,12 @@ ${fileListContent}
     try {
       await navigator.clipboard.writeText(text);
       setCopiedStates(prev => ({ ...prev, [key]: true }));
-      toast.success('클립보드에 복사되었습니다!');
+      toast.success(tError('clipboardSuccess'));
       setTimeout(() => {
         setCopiedStates(prev => ({ ...prev, [key]: false }));
       }, 2000);
     } catch {
-      toast.error('클립보드 복사에 실패했습니다.');
+      toast.error(tError('clipboardFailed'));
     }
   };
 
@@ -246,25 +255,23 @@ ${fileListContent}
     if (!commands) return;
     
     if (useJoinedCommands) {
-      // 한 줄로 이어붙인 명령어
       const joinedCommand = `${commands.download}; ${commands.fileList}; ${commands.merge}; ${commands.cleanup}`;
       await handleCopy('all', joinedCommand);
     } else {
-      // 주석과 함께 단계별로 구분된 스크립트
-      const fullScript = `# ClipNote 내보내기 스크립트
-# 프로젝트: ${projectTitle}
-# 클립 수: ${clips.length}개
+      const fullScript = `# ${t('scriptComment')}
+# ${t('projectComment')}: ${projectTitle}
+# ${t('clipsComment')}: ${clips.length}
 
-# 1단계: 클립 다운로드
+# Step 1: ${t('step1')}
 ${commands.download}
 
-# 2단계: 파일 목록 생성
+# Step 2: ${t('step2')}
 ${commands.fileList}
 
-# 3단계: 클립 병합
+# Step 3: ${t('step3')}
 ${commands.merge}
 
-# 4단계: 임시 파일 정리 (선택)
+# Step 4: ${t('step4')}
 ${commands.cleanup}
 `;
       await handleCopy('all', fullScript);
@@ -284,9 +291,9 @@ ${commands.cleanup}
                 <Terminal className="h-5 w-5" />
               </div>
               <div>
-                <DialogTitle className="text-xl">클립 내보내기</DialogTitle>
+                <DialogTitle className="text-xl">{t('title')}</DialogTitle>
                 <DialogDescription className="mt-1">
-                  {clips.length}개 클립을 다운로드하고 하나의 영상으로 병합합니다
+                  {t('description', { count: clips.length })}
                 </DialogDescription>
               </div>
             </div>
@@ -296,7 +303,7 @@ ${commands.cleanup}
           <div className="flex gap-2 mt-4">
             <Badge variant="secondary" className="gap-1.5">
               <Sparkles className="h-3 w-3" />
-              {clips.length}개 클립
+              {tCommon('clips', { count: clips.length })}
             </Badge>
             <Badge variant="outline" className="gap-1.5">
               <FileText className="h-3 w-3" />
@@ -312,7 +319,7 @@ ${commands.cleanup}
             className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
             <Settings2 className="h-4 w-4" />
-            내보내기 설정
+            {t('settings')}
             {showSettings ? (
               <ChevronUp className="h-4 w-4" />
             ) : (
@@ -328,10 +335,10 @@ ${commands.cleanup}
                 <div className="flex items-center justify-between p-3 rounded-lg bg-background border">
                   <div className="space-y-0.5">
                     <Label htmlFor="command-format" className="text-sm font-medium">
-                      명령어 형식
+                      {t('commandFormat')}
                     </Label>
                     <p className="text-xs text-muted-foreground">
-                      {useJoinedCommands ? '모든 단계를 한 줄로 이어서' : '단계별로 구분하여 표시'}
+                      {useJoinedCommands ? t('commandFormatJoined') : t('commandFormatSeparate')}
                     </p>
                   </div>
                   <Switch
@@ -345,10 +352,10 @@ ${commands.cleanup}
                 <div className="flex items-center justify-between p-3 rounded-lg bg-background border">
                   <div className="space-y-0.5">
                     <Label htmlFor="filename-format" className="text-sm font-medium">
-                      파일명 형식
+                      {t('filenameFormat')}
                     </Label>
                     <p className="text-xs text-muted-foreground">
-                      {useUnderscore ? '빈칸을 언더바(_)로 교체' : '빈칸 그대로 유지'}
+                      {useUnderscore ? t('filenameUnderscore') : t('filenameSpace')}
                     </p>
                   </div>
                   <Switch
@@ -366,65 +373,73 @@ ${commands.cleanup}
         <ScrollArea className="flex-1 px-6 py-4" style={{ maxHeight: 'calc(90vh - 320px)' }}>
           <div className="space-y-3">
             {useJoinedCommands ? (
-              // 한 줄로 이어붙인 전체 명령어
               <CommandBlock
                 stepNumber={1}
-                title="전체 명령어 (한 줄로 이어서)"
-                description="모든 단계를 한 번에 실행"
+                title={t('allInOne')}
+                description={t('allInOneDesc')}
                 command={`${commands.download}; ${commands.fileList}; ${commands.merge}; ${commands.cleanup}`}
                 icon={<Terminal className="h-4 w-4 text-purple-500" />}
                 accentColor="border-l-purple-500"
                 copied={copiedStates['joined'] ?? false}
                 onCopy={() => handleCopy('joined', `${commands.download}; ${commands.fileList}; ${commands.merge}; ${commands.cleanup}`)}
+                copyLabel={tCommon('copy')}
+                copiedLabel={tCommon('copied')}
               />
             ) : (
-              // 단계별로 구분된 명령어들
               <>
                 <CommandBlock
                   stepNumber={1}
-                  title="클립 다운로드"
-                  description={`${clips.length}개 클립을 개별 다운로드`}
+                  title={t('step1')}
+                  description={t('step1Desc', { count: clips.length })}
                   command={commands.download}
                   icon={<Download className="h-4 w-4 text-blue-500" />}
                   accentColor="border-l-blue-500"
                   copied={copiedStates['download'] ?? false}
                   onCopy={() => handleCopy('download', commands.download)}
+                  copyLabel={tCommon('copy')}
+                  copiedLabel={tCommon('copied')}
                 />
 
                 <CommandBlock
                   stepNumber={2}
-                  title="파일 목록 생성"
-                  description="FFmpeg용 파일 목록 생성"
+                  title={t('step2')}
+                  description={t('step2Desc')}
                   command={commands.fileList}
                   icon={<FileText className="h-4 w-4 text-amber-500" />}
                   accentColor="border-l-amber-500"
                   copied={copiedStates['fileList'] ?? false}
                   onCopy={() => handleCopy('fileList', commands.fileList)}
                   defaultExpanded={false}
+                  copyLabel={tCommon('copy')}
+                  copiedLabel={tCommon('copied')}
                 />
 
                 <CommandBlock
                   stepNumber={3}
-                  title="클립 병합"
-                  description="모든 클립을 하나의 영상으로"
+                  title={t('step3')}
+                  description={t('step3Desc')}
                   command={commands.merge}
                   icon={<Merge className="h-4 w-4 text-green-500" />}
                   accentColor="border-l-green-500"
                   copied={copiedStates['merge'] ?? false}
                   onCopy={() => handleCopy('merge', commands.merge)}
                   defaultExpanded={false}
+                  copyLabel={tCommon('copy')}
+                  copiedLabel={tCommon('copied')}
                 />
 
                 <CommandBlock
                   stepNumber={4}
-                  title="임시 파일 정리"
-                  description="다운로드된 개별 클립 파일 삭제 (선택)"
+                  title={t('step4')}
+                  description={t('step4Desc')}
                   command={commands.cleanup}
                   icon={<Trash2 className="h-4 w-4 text-red-500" />}
                   accentColor="border-l-red-500"
                   copied={copiedStates['cleanup'] ?? false}
                   onCopy={() => handleCopy('cleanup', commands.cleanup)}
                   defaultExpanded={false}
+                  copyLabel={tCommon('copy')}
+                  copiedLabel={tCommon('copied')}
                 />
               </>
             )}
@@ -434,18 +449,18 @@ ${commands.cleanup}
         {/* Footer */}
         <div className="px-6 py-4 border-t bg-muted/30 flex items-center justify-between">
           <p className="text-xs text-muted-foreground">
-            필요 도구: <span className="font-medium text-foreground">yt-dlp</span>, <span className="font-medium text-foreground">ffmpeg</span>
+            {t('requiredTools')}: <span className="font-medium text-foreground">yt-dlp</span>, <span className="font-medium text-foreground">ffmpeg</span>
           </p>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => onOpenChange(false)}>
-              닫기
+              {tCommon('close')}
             </Button>
             <Button
               onClick={handleCopyAll}
               className="gap-2 bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700"
             >
               {copiedStates['all'] ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-              {copiedStates['all'] ? '복사됨!' : '전체 복사'}
+              {copiedStates['all'] ? tCommon('copied') : t('copyAll')}
             </Button>
           </div>
         </div>

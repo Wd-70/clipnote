@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 import { 
   Scissors, 
   Play, 
@@ -33,6 +33,7 @@ import { VideoPlayer, type VideoPlayerRef } from '@/components/video/video-playe
 import { formatSecondsToTime } from '@/lib/utils/timestamp';
 import { cn } from '@/lib/utils';
 import type { ParsedClip } from '@/types';
+import { useTranslations } from 'next-intl';
 
 // Interface matching the API response
 interface SharedProject {
@@ -55,6 +56,9 @@ export default function SharePageClient() {
   const params = useParams();
   const shareId = params.shareId as string;
   const playerRef = useRef<VideoPlayerRef>(null);
+  const t = useTranslations('sharePage');
+  const tCommon = useTranslations('common');
+  const tLanding = useTranslations('landing');
 
   const [project, setProject] = useState<SharedProject | null>(null);
   const [loading, setLoading] = useState(true);
@@ -151,26 +155,18 @@ export default function SharePageClient() {
     async function fetchProject() {
       try {
         setLoading(true);
-        // In a real scenario, this would be an actual API call
-        // const res = await fetch(`/api/share/${shareId}`);
-        // if (!res.ok) throw new Error('Project not found');
-        // const data = await res.json();
-        
-        // Mock data for development/demonstration if API is not ready
-        // But the prompt says "Fetch data from /api/share/[shareId]"
-        // So I will implement the real fetch
         const res = await fetch(`/api/share/${shareId}`);
         
         if (!res.ok) {
-          if (res.status === 404) throw new Error('프로젝트를 찾을 수 없습니다.');
-          throw new Error('데이터를 불러오는 중 오류가 발생했습니다.');
+          if (res.status === 404) throw new Error(t('clipNotFound'));
+          throw new Error(t('clipNotFoundDesc'));
         }
         
         const json = await res.json();
         setProject(json.data);
       } catch (err) {
         console.error(err);
-        setError(err instanceof Error ? err.message : '알 수 없는 오류');
+        setError(err instanceof Error ? err.message : t('clipNotFoundDesc'));
       } finally {
         setLoading(false);
       }
@@ -179,7 +175,7 @@ export default function SharePageClient() {
     if (shareId) {
       fetchProject();
     }
-  }, [shareId]);
+  }, [shareId, t]);
 
   // Update current clip index based on video time
   useEffect(() => {
@@ -382,7 +378,7 @@ export default function SharePageClient() {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
-          <p className="text-muted-foreground animate-pulse">로딩 중...</p>
+          <p className="text-muted-foreground animate-pulse">{tCommon('loading')}</p>
         </div>
       </div>
     );
@@ -395,10 +391,10 @@ export default function SharePageClient() {
         <div className="w-20 h-20 bg-destructive/10 rounded-full flex items-center justify-center mb-6 text-destructive">
           <Scissors className="w-10 h-10" />
         </div>
-        <h1 className="text-2xl font-bold mb-2">오류가 발생했습니다</h1>
-        <p className="text-muted-foreground mb-8">{error || '프로젝트를 찾을 수 없습니다'}</p>
+        <h1 className="text-2xl font-bold mb-2">{t('clipNotFound')}</h1>
+        <p className="text-muted-foreground mb-8">{error || t('clipNotFoundDesc')}</p>
         <Button asChild>
-          <Link href="/">홈으로 돌아가기</Link>
+          <Link href="/">{tCommon('home')}</Link>
         </Button>
       </div>
     );
@@ -448,7 +444,7 @@ export default function SharePageClient() {
             <ThemeToggle />
             <Button size="sm" className="hidden sm:flex rounded-full" asChild>
               <Link href="/">
-                나도 만들기 <ChevronRight className="w-4 h-4 ml-1" />
+                {tLanding('getStartedFree')} <ChevronRight className="w-4 h-4 ml-1" />
               </Link>
             </Button>
           </div>
@@ -468,7 +464,7 @@ export default function SharePageClient() {
               <div>
                 <Badge variant="secondary" className="mb-3 px-3 py-1 rounded-full bg-primary/10 text-primary border-primary/20 hover:bg-primary/20">
                   <Play className="w-3 h-3 mr-1.5 fill-current" />
-                  Shared Clip
+                  {t('title')}
                 </Badge>
                 <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-2">
                   {project.title}
@@ -480,11 +476,11 @@ export default function SharePageClient() {
                   </span>
                   <span className="flex items-center gap-1.5">
                     <Quote className="w-4 h-4" />
-                    클립 {project.clips.length}개
+                    {t('clips', { count: project.clips.length })}
                   </span>
                   <span className="flex items-center gap-1.5">
                     <Share2 className="w-4 h-4" />
-                    조회 {project.viewCount.toLocaleString()}회
+                    {project.viewCount.toLocaleString()} views
                   </span>
                 </div>
               </div>
@@ -503,19 +499,19 @@ export default function SharePageClient() {
                   {copied ? (
                     <>
                       <Sparkles className="w-4 h-4 mr-2 text-primary" />
-                      복사됨!
+                      {tCommon('copied')}
                     </>
                   ) : (
                     <>
                       <Share2 className="w-4 h-4 mr-2" />
-                      공유하기
+                      Share
                     </>
                   )}
                 </Button>
                 <Button variant="outline" size="sm" className="rounded-full" asChild>
                   <a href={project.videoUrl} target="_blank" rel="noopener noreferrer">
                     <ExternalLink className="w-4 h-4 mr-2" />
-                    원본 영상
+                    Original
                   </a>
                 </Button>
               </div>
@@ -581,6 +577,7 @@ export default function SharePageClient() {
                     className="h-9 w-9 rounded-full text-white/80 hover:text-white hover:bg-white/10"
                     onClick={handlePrevClip}
                     disabled={!project.clips.length}
+                    title={t('prev')}
                   >
                     <SkipBack className="h-4 w-4" />
                   </Button>
@@ -617,6 +614,7 @@ export default function SharePageClient() {
                     className="h-9 w-9 rounded-full text-white/80 hover:text-white hover:bg-white/10"
                     onClick={handleNextClip}
                     disabled={!project.clips.length || currentClipIndex >= project.clips.length - 1}
+                    title={t('next')}
                   >
                     <SkipForward className="h-4 w-4" />
                   </Button>
@@ -629,6 +627,7 @@ export default function SharePageClient() {
                     size="icon"
                     className="h-9 w-9 rounded-full text-white/80 hover:text-white hover:bg-white/10"
                     onClick={handleToggleFullscreen}
+                    title={t('fullscreen')}
                   >
                     {isFullscreen ? (
                       <Minimize className="h-4 w-4" />
@@ -676,7 +675,7 @@ export default function SharePageClient() {
                 <div className="flex justify-between text-xs font-mono text-white/60">
                   <span>{formatSecondsToTime(currentVirtualTime)}</span>
                   <span className="text-white font-medium">
-                    클립 {currentClipIndex >= 0 ? currentClipIndex + 1 : '-'} / {project.clips.length}
+                    Clip {currentClipIndex >= 0 ? currentClipIndex + 1 : '-'} / {project.clips.length}
                   </span>
                   <span>{formatSecondsToTime(totalVirtualDuration)}</span>
                 </div>
@@ -689,7 +688,7 @@ export default function SharePageClient() {
           <motion.div variants={item}>
             <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-primary" />
-              하이라이트 클립
+              Highlights
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {project.clips.map((clip, i) => (
@@ -733,16 +732,15 @@ export default function SharePageClient() {
               <div className="absolute inset-0 bg-grid-white/5 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))]" />
               <div className="relative z-10 space-y-6">
                 <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
-                  나만의 하이라이트를 만들어보세요
+                  {tLanding('ctaTitle')}
                 </h2>
                 <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                  복잡한 편집 프로그램 없이, 노트처럼 적기만 하면 영상이 만들어집니다.<br />
-                  지금 바로 무료로 시작해보세요.
+                  {tLanding('ctaDesc')}
                 </p>
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
                   <Button size="lg" className="rounded-full px-8 h-12 text-lg shadow-lg shadow-primary/25" asChild>
                     <Link href="/">
-                      ClipNote 무료로 시작하기
+                      {tLanding('ctaButton')}
                     </Link>
                   </Button>
                 </div>
@@ -754,7 +752,7 @@ export default function SharePageClient() {
 
       {/* Minimal Footer */}
       <footer className="border-t border-border/40 py-8 text-center text-sm text-muted-foreground">
-        <p>© 2026 ClipNote. All rights reserved.</p>
+        <p>{tLanding('copyright')}</p>
       </footer>
     </div>
   );

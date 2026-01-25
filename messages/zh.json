@@ -16,17 +16,71 @@
     "edit": "编辑",
     "confirm": "确认",
     "clips": "{count}个片段",
-    "points": "积分"
+    "points": "积分",
+    "terms": "服务条款",
+    "privacy": "隐私政策",
+    "contact": "联系我们"
   },
   "nav": {
     "dashboard": "工作台",
     "projects": "我的项目",
     "points": "积分",
-    "settings": "设置"
+    "settings": "设置",
+    "features": "功能",
+    "howItWorks": "使用方法",
+    "pricing": "价格"
   },
   "sidebar": {
     "currentPoints": "当前积分",
     "recharge": "充值"
+  },
+  "landing": {
+    "badge": "AI智能视频编辑器",
+    "heroTitle1": "像写笔记一样，",
+    "heroTitle2": "就能制作视频",
+    "heroDescription": "告别复杂的时间轴编辑。用文字剪辑和管理视频。ClipNote让您的视频工作效率提升10倍。",
+    "getStartedFree": "免费开始",
+    "watchDemo": "查看使用方法",
+    "whyClipNote": "为什么选择ClipNote？",
+    "whyClipNoteDesc": "超越传统编辑工具的全新体验",
+    "feature1Title": "AI自动分析",
+    "feature1Desc": "Gemini AI自动识别视频中的关键片段和精彩时刻。",
+    "feature2Title": "时间轴笔记",
+    "feature2Desc": "用文字代替拖动时间轴，精确设置片段范围。",
+    "feature3Title": "虚拟编辑",
+    "feature3Desc": "使用seekTo技术，无需渲染原文件即可即时预览。",
+    "feature4Title": "智能导出",
+    "feature4Desc": "使用FFmpeg高速渲染，仅导出您需要的部分。",
+    "howItWorksTitle": "如何使用？",
+    "howItWorksDesc": "只需3步完成视频剪辑",
+    "step1Title": "输入视频链接",
+    "step1Desc": "只需粘贴YouTube或直播回放链接，无需下载。",
+    "step2Title": "AI分析与笔记",
+    "step2Desc": "根据AI分析结果，用文字选择您需要的片段。",
+    "step3Title": "创建片段",
+    "step3Desc": "一键将选定片段保存为高质量视频文件。",
+    "pricingTitle": "简单定价",
+    "pricingDesc": "透明合理的价格，轻松开始",
+    "starterPlan": "入门版",
+    "starterPrice": "免费",
+    "starterPriceUnit": "/ 永久",
+    "starterDesc": "适合刚起步的创作者",
+    "starterFeature1": "每月60分钟免费分析",
+    "starterFeature2": "720p导出质量",
+    "starterFeature3": "最多5个项目",
+    "proPlan": "专业版",
+    "proPrice": "¥69",
+    "proPriceUnit": "/ 月",
+    "proDesc": "专业工作所需的全部功能",
+    "proFeature1": "无限分析",
+    "proFeature2": "4K高清导出",
+    "proFeature3": "优先处理",
+    "proFeature4": "无限项目",
+    "startPro": "开始专业版",
+    "ctaTitle": "现在就将视频变成您的专属笔记",
+    "ctaDesc": "新用户注册即可获得60分钟免费分析积分。",
+    "ctaButton": "开始使用ClipNote",
+    "copyright": "© 2026 ClipNote. 保留所有权利。"
   },
   "dashboard": {
     "title": "工作台",
@@ -36,11 +90,59 @@
     "createFirst": "创建第一个项目",
     "loadingDashboard": "加载工作台..."
   },
+  "projects": {
+    "title": "我的项目",
+    "description": "管理和编辑所有视频项目。",
+    "totalProjects": "共 {count} 个项目",
+    "loading": "加载项目列表..."
+  },
+  "projectCard": {
+    "editProject": "编辑项目",
+    "deleteConfirm": "确定删除此项目？",
+    "deleteWarning": "此操作无法撤销。项目「{title}」及所有片段信息将被永久删除。",
+    "hasClips": "有片段",
+    "noClips": "无片段",
+    "deleted": "项目已删除",
+    "deleteFailed": "删除项目失败",
+    "untitled": "未命名项目"
+  },
   "points": {
     "availableBalance": "可用余额",
     "pts": "积分",
     "estimatedMinutes": "约可进行 {minutes} 分钟 AI 分析",
     "recharge": "充值积分"
+  },
+  "pointsPage": {
+    "title": "积分管理",
+    "description": "管理和充值AI分析额度。",
+    "currentBalance": "当前余额",
+    "chargePoints": "充值积分",
+    "usageHistory": "使用记录",
+    "noHistory": "暂无使用记录。",
+    "chargeOptions": "充值选项",
+    "option1": "1,000积分",
+    "option1Price": "¥25",
+    "option2": "3,000积分",
+    "option2Price": "¥60",
+    "option3": "10,000积分",
+    "option3Price": "¥175",
+    "comingSoon": "支付功能即将上线"
+  },
+  "settingsPage": {
+    "title": "设置",
+    "description": "管理账户设置和偏好设置。",
+    "account": "账户",
+    "profile": "个人资料",
+    "email": "邮箱",
+    "name": "姓名",
+    "preferences": "偏好设置",
+    "language": "语言",
+    "theme": "主题",
+    "notifications": "通知",
+    "saveChanges": "保存更改",
+    "dangerZone": "危险区域",
+    "deleteAccount": "删除账户",
+    "deleteAccountDesc": "删除账户将永久删除所有数据。"
   },
   "emptyState": {
     "title": "暂无项目",
@@ -97,6 +199,20 @@
     "createFailed": "创建分享链接失败。",
     "deleteFailed": "删除分享链接失败。"
   },
+  "sharePage": {
+    "title": "分享的片段",
+    "clips": "{count}个片段",
+    "totalDuration": "总时长",
+    "playAll": "播放全部",
+    "pause": "暂停",
+    "prev": "上一个",
+    "next": "下一个",
+    "volume": "音量",
+    "fullscreen": "全屏",
+    "sharedBy": "分享者",
+    "clipNotFound": "未找到片段",
+    "clipNotFoundDesc": "您请求的分享链接不存在或已被删除。"
+  },
   "export": {
     "title": "导出片段",
     "description": "下载 {count} 个片段并合并为一个视频",
@@ -118,7 +234,10 @@
     "allInOne": "完整命令（单行）",
     "allInOneDesc": "一次性执行所有步骤",
     "copyAll": "全部复制",
-    "requiredTools": "所需工具"
+    "requiredTools": "所需工具",
+    "scriptComment": "ClipNote导出脚本",
+    "projectComment": "项目",
+    "clipsComment": "片段数量"
   },
   "notesEditor": {
     "placeholder": "输入想要剪辑部分的时间戳。\n\n示例：\n0:30 - 1:45 开场\n2:00 - 3:30 精彩片段\n\n提示：按 Ctrl+T 可插入当前播放位置的时间戳。",
@@ -131,7 +250,8 @@
     "errorCode": "错误代码",
     "clipboardSuccess": "已复制到剪贴板！",
     "clipboardFailed": "复制到剪贴板失败。",
-    "saveFailed": "保存失败。"
+    "saveFailed": "保存失败。",
+    "loadFailed": "加载失败。"
   },
   "notFound": {
     "title": "404",

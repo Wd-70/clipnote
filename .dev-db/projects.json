@@ -26,5 +26,17 @@
     "_id": "mkpf17316xcpa2xgtr8",
     "createdAt": "2026-01-22T12:16:01.309Z",
     "updatedAt": "2026-01-22T12:16:01.309Z"
+  },
+  {
+    "userId": "dev-user-id",
+    "videoUrl": "https://chzzk.naver.com/video/11363594",
+    "platform": "CHZZK",
+    "videoId": "11363594",
+    "title": "Untitled Project",
+    "notes": [],
+    "isAutoCollected": false,
+    "_id": "mkt3ladzxt0ofzflx2",
+    "createdAt": "2026-01-25T02:06:48.023Z",
+    "updatedAt": "2026-01-25T02:06:48.023Z"
   }
 ]

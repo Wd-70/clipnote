@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
 interface ProjectCardProps {
   project: IProject;
@@ -31,6 +32,8 @@ interface ProjectCardProps {
 export function ProjectCard({ project, onDelete }: ProjectCardProps) {
   const router = useRouter();
   const [isDeleting, setIsDeleting] = useState(false);
+  const t = useTranslations('projectCard');
+  const tCommon = useTranslations('common');
 
   // Safe date handling
   const createdDate = new Date(project.createdAt);
@@ -51,7 +54,7 @@ export function ProjectCard({ project, onDelete }: ProjectCardProps) {
         throw new Error('Failed to delete project');
       }
 
-      toast.success('프로젝트가 삭제되었습니다');
+      toast.success(t('deleted'));
       
       // Call onDelete callback if provided
       if (onDelete) {
@@ -62,7 +65,7 @@ export function ProjectCard({ project, onDelete }: ProjectCardProps) {
       }
     } catch (error) {
       console.error('[ProjectCard] Delete failed:', error);
-      toast.error('프로젝트 삭제에 실패했습니다');
+      toast.error(t('deleteFailed'));
     } finally {
       setIsDeleting(false);
     }
@@ -91,7 +94,7 @@ export function ProjectCard({ project, onDelete }: ProjectCardProps) {
           <Link href={`/projects/${project._id}`}>
             <Button variant="secondary" size="sm" className="font-medium">
               <Edit2 className="w-4 h-4 mr-2" />
-              Edit Project
+              {t('editProject')}
             </Button>
           </Link>
           
@@ -104,24 +107,24 @@ export function ProjectCard({ project, onDelete }: ProjectCardProps) {
                 disabled={isDeleting}
               >
                 <Trash2 className="w-4 h-4 mr-2" />
-                Delete
+                {tCommon('delete')}
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>프로젝트를 삭제하시겠습니까?</AlertDialogTitle>
+                <AlertDialogTitle>{t('deleteConfirm')}</AlertDialogTitle>
                 <AlertDialogDescription>
-                  이 작업은 되돌릴 수 없습니다. &quot;{project.title || 'Untitled Project'}&quot; 프로젝트와 모든 클립 정보가 영구적으로 삭제됩니다.
+                  {t('deleteWarning', { title: project.title || t('untitled') })}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel disabled={isDeleting}>취소</AlertDialogCancel>
+                <AlertDialogCancel disabled={isDeleting}>{tCommon('cancel')}</AlertDialogCancel>
                 <AlertDialogAction 
                   onClick={handleDelete}
                   disabled={isDeleting}
                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 >
-                  {isDeleting ? '삭제 중...' : '삭제'}
+                  {isDeleting ? tCommon('deleting') : tCommon('delete')}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -148,7 +151,7 @@ export function ProjectCard({ project, onDelete }: ProjectCardProps) {
       {/* Content Section */}
       <CardContent className="flex-1 p-5 space-y-3">
         <h3 className="font-semibold text-lg leading-tight line-clamp-2 text-zinc-900 dark:text-zinc-100 group-hover:text-primary transition-colors">
-          {project.title || "Untitled Project"}
+          {project.title || t('untitled')}
         </h3>
         
         <div className="flex items-center justify-between text-xs text-zinc-500">
@@ -156,7 +159,7 @@ export function ProjectCard({ project, onDelete }: ProjectCardProps) {
             <FileText className="w-3 h-3" />
             <span>
               {typeof project.notes === 'string' 
-                ? (project.notes.trim() ? '클립 있음' : '클립 없음')
+                ? (project.notes.trim() ? t('hasClips') : t('noClips'))
                 : `${project.notes?.length || 0} notes`
               }
             </span>

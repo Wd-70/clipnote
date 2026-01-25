@@ -32,11 +32,11 @@ import {
   Share2,
   Settings,
   Trash2,
-  Loader2,
 } from 'lucide-react';
 import Link from 'next/link';
 import type { ParsedClip } from '@/types';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 
 interface Project {
   _id: string;
@@ -52,6 +52,9 @@ export default function EditorPage() {
   const params = useParams();
   const router = useRouter();
   const projectId = params.id as string;
+  const t = useTranslations('editor');
+  const tCommon = useTranslations('common');
+  const tPoints = useTranslations('points');
 
   const playerRef = useRef<VideoPlayerRef>(null);
   const notesEditorRef = useRef<NotesEditorRef>(null);
@@ -89,14 +92,14 @@ export default function EditorPage() {
         setNotes(notesValue);
       } catch (error) {
         console.error('Failed to load project:', error);
-        alert('프로젝트를 불러오는데 실패했습니다.');
+        toast.error(t('projectNotFound'));
       } finally {
         setIsLoading(false);
       }
     }
     
     fetchProject();
-  }, [projectId]);
+  }, [projectId, t]);
 
   // Observe header width to determine button layout
   useEffect(() => {
@@ -190,11 +193,11 @@ export default function EditorPage() {
       console.log('Notes saved');
     } catch (error) {
       console.error('Failed to save notes:', error);
-      alert('노트 저장에 실패했습니다.');
+      toast.error(tCommon('saveFailed'));
     } finally {
       setIsSaving(false);
     }
-  }, [params.id]);
+  }, [params.id, tCommon]);
 
   // Open export dialog
   const handleExport = useCallback(() => {
@@ -222,11 +225,11 @@ export default function EditorPage() {
       const data = await response.json();
       console.log('[EditorPage] Delete success:', data);
 
-      toast.success('프로젝트가 삭제되었습니다');
+      toast.success(t('projectDeleted') || 'Project deleted');
       router.push('/dashboard');
     } catch (error) {
       console.error('[EditorPage] Delete failed:', error);
-      toast.error('프로젝트 삭제에 실패했습니다');
+      toast.error(t('deleteFailed') || 'Failed to delete project');
       setIsDeleting(false);
     }
   };
@@ -235,7 +238,7 @@ export default function EditorPage() {
     return (
       <div className="h-screen flex items-center justify-center">
         <div className="text-center">
-          <p className="text-lg text-muted-foreground">프로젝트를 불러오는 중...</p>
+          <p className="text-lg text-muted-foreground">{t('loadingProject')}</p>
         </div>
       </div>
     );
@@ -245,9 +248,9 @@ export default function EditorPage() {
     return (
       <div className="h-screen flex items-center justify-center">
         <div className="text-center">
-          <p className="text-lg text-muted-foreground">프로젝트를 찾을 수 없습니다.</p>
+          <p className="text-lg text-muted-foreground">{t('projectNotFound')}</p>
           <Button asChild className="mt-4">
-            <Link href="/dashboard">대시보드로 돌아가기</Link>
+            <Link href="/dashboard">{t('backToDashboard')}</Link>
           </Button>
         </div>
       </div>
@@ -281,7 +284,7 @@ export default function EditorPage() {
                 <Badge variant="outline" className="text-xs">
                   {project.platform}
                 </Badge>
-                {!isCompact && <span>{clips.length} 클립</span>}
+                {!isCompact && <span>{tCommon('clips', { count: clips.length })}</span>}
               </div>
             </div>
           </div>
@@ -296,7 +299,7 @@ export default function EditorPage() {
               className="h-8"
             >
               <Play className="h-4 w-4" />
-              {!isNarrow && <span className="ml-2">클립 재생</span>}
+              {!isNarrow && <span className="ml-2">{t('playClips')}</span>}
             </Button>
 
             {/* Export button */}
@@ -308,7 +311,7 @@ export default function EditorPage() {
               className="h-8"
             >
               <Download className="h-4 w-4" />
-              {!isNarrow && <span className="ml-2">내보내기</span>}
+              {!isNarrow && <span className="ml-2">{t('export')}</span>}
             </Button>
 
             {/* Share button */}
@@ -346,19 +349,19 @@ export default function EditorPage() {
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>프로젝트를 삭제하시겠습니까?</AlertDialogTitle>
+                  <AlertDialogTitle>{t('deleteProject')}</AlertDialogTitle>
                   <AlertDialogDescription>
-                    이 작업은 되돌릴 수 없습니다. &quot;{project.title}&quot; 프로젝트와 모든 클립 정보가 영구적으로 삭제됩니다.
+                    {t('deleteWarning', { title: project.title })}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel disabled={isDeleting}>취소</AlertDialogCancel>
+                  <AlertDialogCancel disabled={isDeleting}>{tCommon('cancel')}</AlertDialogCancel>
                   <AlertDialogAction 
                     onClick={handleDelete}
                     disabled={isDeleting}
                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                   >
-                    {isDeleting ? '삭제 중...' : '삭제'}
+                    {isDeleting ? tCommon('deleting') : tCommon('delete')}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
@@ -407,8 +410,8 @@ export default function EditorPage() {
         <div className="flex flex-col gap-4 min-h-[600px] lg:min-h-0 lg:overflow-hidden pt-4 lg:pt-0">
           <Tabs defaultValue="notes" className="flex-1 flex flex-col lg:overflow-hidden">
             <TabsList className="grid w-full grid-cols-2 shrink-0">
-              <TabsTrigger value="notes">노트</TabsTrigger>
-              <TabsTrigger value="analysis">AI 분석</TabsTrigger>
+              <TabsTrigger value="notes">{t('notes')}</TabsTrigger>
+              <TabsTrigger value="analysis">{t('aiAnalysis')}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="notes" className="flex-1 mt-4 data-[state=active]:flex data-[state=active]:flex-col lg:overflow-hidden min-h-0">
@@ -431,18 +434,18 @@ export default function EditorPage() {
                 <CardHeader>
                   <CardTitle className="text-base flex items-center gap-2">
                     <Sparkles className="h-4 w-4" />
-                    AI 분석
+                    {t('aiAnalysis')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-center py-8">
                     <Sparkles className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
                     <p className="text-muted-foreground mb-4">
-                      AI가 영상을 분석하여 하이라이트를 자동으로 찾아드립니다
+                      {t('aiDescription')}
                     </p>
                     <Button>
                       <Sparkles className="h-4 w-4 mr-2" />
-                      AI 분석 시작 (10 포인트)
+                      {t('startAnalysis', { points: 10 })}
                     </Button>
                   </div>
                 </CardContent>
@@ -456,14 +459,14 @@ export default function EditorPage() {
       {isVirtualMode && (
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
           <Play className="h-4 w-4 animate-pulse" />
-          <span className="text-sm font-medium">클립 재생 중</span>
+          <span className="text-sm font-medium">{t('clipPlaying')}</span>
           <Button
             size="sm"
             variant="secondary"
             className="h-6 px-2 text-xs"
             onClick={() => setVirtualMode(false)}
           >
-            종료
+            {t('stop')}
           </Button>
         </div>
       )}

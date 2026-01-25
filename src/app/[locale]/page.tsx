@@ -8,7 +8,6 @@ import {
   Zap, 
   FileVideo, 
   CheckCircle2, 
-  Play,
   Wand2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -16,6 +15,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { ThemeToggle } from '@/components/layout/theme-toggle';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 // Animation variants
 const container = {
@@ -42,6 +42,51 @@ const fadeInUp = {
 };
 
 export default function LandingPage() {
+  const t = useTranslations('landing');
+  const tNav = useTranslations('nav');
+  const tCommon = useTranslations('common');
+
+  const features = [
+    {
+      icon: Wand2,
+      title: t('feature1Title'),
+      desc: t('feature1Desc')
+    },
+    {
+      icon: FileVideo,
+      title: t('feature2Title'),
+      desc: t('feature2Desc')
+    },
+    {
+      icon: Scissors,
+      title: t('feature3Title'),
+      desc: t('feature3Desc')
+    },
+    {
+      icon: Zap,
+      title: t('feature4Title'),
+      desc: t('feature4Desc')
+    }
+  ];
+
+  const steps = [
+    {
+      step: "01",
+      title: t('step1Title'),
+      desc: t('step1Desc')
+    },
+    {
+      step: "02",
+      title: t('step2Title'),
+      desc: t('step2Desc')
+    },
+    {
+      step: "03",
+      title: t('step3Title'),
+      desc: t('step3Desc')
+    }
+  ];
+
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden selection:bg-primary/20">
       {/* Navigation */}
@@ -54,14 +99,14 @@ export default function LandingPage() {
             ClipNote
           </div>
           <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
-            <Link href="#features" className="hover:text-foreground transition-colors">기능</Link>
-            <Link href="#how-it-works" className="hover:text-foreground transition-colors">사용법</Link>
-            <Link href="#pricing" className="hover:text-foreground transition-colors">요금제</Link>
+            <Link href="#features" className="hover:text-foreground transition-colors">{tNav('features')}</Link>
+            <Link href="#how-it-works" className="hover:text-foreground transition-colors">{tNav('howItWorks')}</Link>
+            <Link href="#pricing" className="hover:text-foreground transition-colors">{tNav('pricing')}</Link>
           </nav>
           <div className="flex items-center gap-4">
             <ThemeToggle />
             <Button variant="default" size="sm" className="hidden sm:flex" asChild>
-              <Link href="/dashboard">시작하기</Link>
+              <Link href="/dashboard">{t('getStartedFree')}</Link>
             </Button>
           </div>
         </div>
@@ -86,32 +131,31 @@ export default function LandingPage() {
               <motion.div variants={item}>
                 <Badge variant="secondary" className="px-4 py-1.5 rounded-full text-sm border-primary/20 bg-primary/5 hover:bg-primary/10 transition-colors">
                   <Sparkles className="w-3.5 h-3.5 mr-2 text-primary fill-primary/20" />
-                  AI 기반 스마트 비디오 에디터
+                  {t('badge')}
                 </Badge>
               </motion.div>
               
               <motion.h1 variants={item} className="text-5xl md:text-7xl font-bold tracking-tight leading-[1.1]">
-                노트처럼 적으면,<br />
+                {t('heroTitle1')}<br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-blue-600">
-                  영상이 됩니다
+                  {t('heroTitle2')}
                 </span>
               </motion.h1>
               
               <motion.p variants={item} className="text-xl text-muted-foreground max-w-2xl leading-relaxed">
-                복잡한 타임라인 편집은 그만. 텍스트로 영상을 자르고 관리하세요.<br className="hidden md:block"/>
-                ClipNote가 당신의 영상 작업을 10배 더 빠르게 만듭니다.
+                {t('heroDescription')}
               </motion.p>
 
               <motion.div variants={item} className="flex flex-col sm:flex-row gap-4 mt-8 w-full sm:w-auto">
                 <Button size="lg" className="h-14 px-8 text-lg rounded-full shadow-lg shadow-primary/20 group" asChild>
                   <Link href="/dashboard">
-                    무료로 시작하기 
+                    {t('getStartedFree')} 
                     <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                   </Link>
                 </Button>
                 <Button size="lg" variant="outline" className="h-14 px-8 text-lg rounded-full" asChild>
                   <Link href="#how-it-works">
-                    사용법 보기
+                    {t('watchDemo')}
                   </Link>
                 </Button>
               </motion.div>
@@ -129,33 +173,12 @@ export default function LandingPage() {
               transition={fadeInUp.transition}
               className="text-center mb-16"
             >
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">왜 ClipNote인가요?</h2>
-              <p className="text-lg text-muted-foreground">기존 편집 도구의 한계를 넘어선 새로운 경험</p>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">{t('whyClipNote')}</h2>
+              <p className="text-lg text-muted-foreground">{t('whyClipNoteDesc')}</p>
             </motion.div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {[
-                {
-                  icon: Wand2,
-                  title: "AI 자동 분석",
-                  desc: "Gemini AI가 영상의 핵심 구간과 하이라이트를 자동으로 찾아냅니다."
-                },
-                {
-                  icon: FileVideo,
-                  title: "타임라인 노트",
-                  desc: "타임라인을 드래그하는 대신 텍스트를 작성하여 정밀하게 구간을 설정하세요."
-                },
-                {
-                  icon: Scissors,
-                  title: "가상 편집",
-                  desc: "원본 파일을 렌더링하지 않고 seekTo 기술로 즉시 미리보기가 가능합니다."
-                },
-                {
-                  icon: Zap,
-                  title: "스마트 내보내기",
-                  desc: "필요한 부분만 FFmpeg로 고속 렌더링하여 클립으로 저장하세요."
-                }
-              ].map((feature, idx) => (
+              {features.map((feature, idx) => (
                 <motion.div
                   key={idx}
                   initial={{ opacity: 0, y: 30 }}
@@ -192,8 +215,8 @@ export default function LandingPage() {
               transition={fadeInUp.transition}
               className="text-center mb-16"
             >
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">어떻게 작동하나요?</h2>
-              <p className="text-lg text-muted-foreground">단 3단계로 끝나는 비디오 클리핑</p>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">{t('howItWorksTitle')}</h2>
+              <p className="text-lg text-muted-foreground">{t('howItWorksDesc')}</p>
             </motion.div>
 
             <div className="relative max-w-4xl mx-auto">
@@ -201,23 +224,7 @@ export default function LandingPage() {
               <div className="hidden md:block absolute top-12 left-10 right-10 h-0.5 bg-gradient-to-r from-muted via-primary/30 to-muted z-0" />
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-12 relative z-10">
-                {[
-                  {
-                    step: "01",
-                    title: "영상 링크 입력",
-                    desc: "YouTube나 스트리밍 다시보기 링크만 입력하세요. 다운로드는 필요 없습니다."
-                  },
-                  {
-                    step: "02",
-                    title: "AI 분석 및 노트",
-                    desc: "AI가 분석한 내용을 바탕으로 필요한 구간을 텍스트로 선택하세요."
-                  },
-                  {
-                    step: "03",
-                    title: "클립 생성",
-                    desc: "버튼 하나로 선택한 구간이 고화질 영상 파일로 저장됩니다."
-                  }
-                ].map((item, idx) => (
+                {steps.map((stepItem, idx) => (
                   <motion.div 
                     key={idx}
                     initial={{ opacity: 0, y: 30 }}
@@ -227,10 +234,10 @@ export default function LandingPage() {
                     className="flex flex-col items-center text-center bg-background p-6 rounded-2xl border border-border shadow-sm"
                   >
                     <div className="w-24 h-24 rounded-full bg-secondary flex items-center justify-center text-3xl font-bold text-primary mb-6 shadow-inner ring-8 ring-background">
-                      {item.step}
+                      {stepItem.step}
                     </div>
-                    <h3 className="text-xl font-bold mb-3">{item.title}</h3>
-                    <p className="text-muted-foreground leading-relaxed">{item.desc}</p>
+                    <h3 className="text-xl font-bold mb-3">{stepItem.title}</h3>
+                    <p className="text-muted-foreground leading-relaxed">{stepItem.desc}</p>
                   </motion.div>
                 ))}
               </div>
@@ -248,8 +255,8 @@ export default function LandingPage() {
               transition={fadeInUp.transition}
               className="text-center mb-16"
             >
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">심플한 요금제</h2>
-              <p className="text-lg text-muted-foreground">투명하고 합리적인 가격으로 시작하세요</p>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">{t('pricingTitle')}</h2>
+              <p className="text-lg text-muted-foreground">{t('pricingDesc')}</p>
             </motion.div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
@@ -262,32 +269,32 @@ export default function LandingPage() {
               >
                 <Card className="h-full border-muted p-6 flex flex-col">
                   <CardHeader className="p-0 mb-8">
-                    <Badge variant="outline" className="w-fit mb-4">Starter</Badge>
+                    <Badge variant="outline" className="w-fit mb-4">{t('starterPlan')}</Badge>
                     <div className="flex items-baseline gap-2">
-                      <span className="text-4xl font-bold">Free</span>
-                      <span className="text-muted-foreground">/ forever</span>
+                      <span className="text-4xl font-bold">{t('starterPrice')}</span>
+                      <span className="text-muted-foreground">{t('starterPriceUnit')}</span>
                     </div>
                     <CardDescription className="mt-2 text-base">
-                      가볍게 시작하는 크리에이터를 위한 플랜
+                      {t('starterDesc')}
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="p-0 flex-1">
                     <ul className="space-y-4 mb-8">
                       <li className="flex items-center gap-3">
                         <CheckCircle2 className="w-5 h-5 text-muted-foreground" />
-                        <span>월 60분 무료 분석</span>
+                        <span>{t('starterFeature1')}</span>
                       </li>
                       <li className="flex items-center gap-3">
                         <CheckCircle2 className="w-5 h-5 text-muted-foreground" />
-                        <span>기본 화질 (720p) 내보내기</span>
+                        <span>{t('starterFeature2')}</span>
                       </li>
                       <li className="flex items-center gap-3">
                         <CheckCircle2 className="w-5 h-5 text-muted-foreground" />
-                        <span>최대 5개 프로젝트</span>
+                        <span>{t('starterFeature3')}</span>
                       </li>
                     </ul>
                     <Button variant="outline" className="w-full h-12 text-lg" asChild>
-                      <Link href="/dashboard">무료로 시작하기</Link>
+                      <Link href="/dashboard">{t('getStartedFree')}</Link>
                     </Button>
                   </CardContent>
                 </Card>
@@ -304,36 +311,36 @@ export default function LandingPage() {
                 <div className="absolute -inset-[1px] rounded-xl bg-gradient-to-b from-primary to-blue-600 opacity-20 blur-sm -z-10" />
                 <Card className="h-full border-primary/20 p-6 flex flex-col bg-card/80 backdrop-blur-sm">
                   <CardHeader className="p-0 mb-8">
-                    <Badge className="w-fit mb-4 bg-primary/10 text-primary hover:bg-primary/20 border-0">Pro</Badge>
+                    <Badge className="w-fit mb-4 bg-primary/10 text-primary hover:bg-primary/20 border-0">{t('proPlan')}</Badge>
                     <div className="flex items-baseline gap-2">
-                      <span className="text-4xl font-bold">₩9,900</span>
-                      <span className="text-muted-foreground">/ 월</span>
+                      <span className="text-4xl font-bold">{t('proPrice')}</span>
+                      <span className="text-muted-foreground">{t('proPriceUnit')}</span>
                     </div>
                     <CardDescription className="mt-2 text-base">
-                      전문적인 작업을 위한 모든 기능
+                      {t('proDesc')}
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="p-0 flex-1">
                     <ul className="space-y-4 mb-8">
                       <li className="flex items-center gap-3">
                         <CheckCircle2 className="w-5 h-5 text-primary" />
-                        <span className="font-medium">무제한 분석</span>
+                        <span className="font-medium">{t('proFeature1')}</span>
                       </li>
                       <li className="flex items-center gap-3">
                         <CheckCircle2 className="w-5 h-5 text-primary" />
-                        <span>4K 고화질 내보내기</span>
+                        <span>{t('proFeature2')}</span>
                       </li>
                       <li className="flex items-center gap-3">
                         <CheckCircle2 className="w-5 h-5 text-primary" />
-                        <span>우선 처리 시스템</span>
+                        <span>{t('proFeature3')}</span>
                       </li>
                       <li className="flex items-center gap-3">
                         <CheckCircle2 className="w-5 h-5 text-primary" />
-                        <span>무제한 프로젝트 저장</span>
+                        <span>{t('proFeature4')}</span>
                       </li>
                     </ul>
                     <Button className="w-full h-12 text-lg shadow-lg shadow-primary/20" asChild>
-                      <Link href="/dashboard">Pro 시작하기</Link>
+                      <Link href="/dashboard">{t('startPro')}</Link>
                     </Button>
                   </CardContent>
                 </Card>
@@ -353,15 +360,14 @@ export default function LandingPage() {
                 transition={{ duration: 0.5 }}
               >
                 <h2 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight">
-                  지금 바로 영상을 <br className="hidden sm:block"/>
-                  나만의 노트로 만들어보세요
+                  {t('ctaTitle')}
                 </h2>
                 <p className="text-xl text-muted-foreground mb-10">
-                  신규 가입 시 60분 무료 분석 포인트가 제공됩니다.
+                  {t('ctaDesc')}
                 </p>
                 <Button size="lg" className="h-14 px-10 text-lg rounded-full" asChild>
                   <Link href="/dashboard">
-                    ClipNote 시작하기
+                    {t('ctaButton')}
                   </Link>
                 </Button>
               </motion.div>
@@ -376,11 +382,11 @@ export default function LandingPage() {
              <Scissors size={16} />
              ClipNote
           </div>
-          <p>© 2026 ClipNote. All rights reserved.</p>
+          <p>{t('copyright')}</p>
           <div className="flex gap-6">
-            <Link href="#" className="hover:text-foreground">Terms</Link>
-            <Link href="#" className="hover:text-foreground">Privacy</Link>
-            <Link href="#" className="hover:text-foreground">Contact</Link>
+            <Link href="#" className="hover:text-foreground">{tCommon('terms')}</Link>
+            <Link href="#" className="hover:text-foreground">{tCommon('privacy')}</Link>
+            <Link href="#" className="hover:text-foreground">{tCommon('contact')}</Link>
           </div>
         </div>
       </footer>

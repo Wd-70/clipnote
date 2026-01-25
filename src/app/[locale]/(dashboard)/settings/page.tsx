@@ -5,8 +5,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { getTranslations } from 'next-intl/server';
 
 async function SettingsContent() {
+  const t = await getTranslations('settingsPage');
+  const tCommon = await getTranslations('common');
+  
   // TODO: Fetch real user settings from API
   const userEmail = "dev@clipnote.local";
   const userName = "Development User";
@@ -14,9 +18,9 @@ async function SettingsContent() {
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">설정</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">{t('title')}</h1>
         <p className="text-muted-foreground mt-2">
-          계정 정보와 앱 설정을 관리하세요.
+          {t('description')}
         </p>
       </div>
 
@@ -27,20 +31,20 @@ async function SettingsContent() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <User className="w-5 h-5" />
-            계정 정보
+            {t('account')}
           </CardTitle>
-          <CardDescription>프로필 정보를 수정하세요</CardDescription>
+          <CardDescription>{t('profile')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email">이메일</Label>
+            <Label htmlFor="email">{t('email')}</Label>
             <Input id="email" type="email" value={userEmail} disabled />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="name">이름</Label>
-            <Input id="name" type="text" defaultValue={userName} placeholder="이름을 입력하세요" />
+            <Label htmlFor="name">{t('name')}</Label>
+            <Input id="name" type="text" defaultValue={userName} placeholder={t('name')} />
           </div>
-          <Button>프로필 업데이트</Button>
+          <Button>{t('saveChanges')}</Button>
         </CardContent>
       </Card>
 
@@ -49,16 +53,16 @@ async function SettingsContent() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Bell className="w-5 h-5" />
-            알림 설정
+            {t('notifications')}
           </CardTitle>
-          <CardDescription>알림 수신 방법을 선택하세요</CardDescription>
+          <CardDescription>{t('preferences')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor="email-notifications">이메일 알림</Label>
+              <Label htmlFor="email-notifications">{t('notifications')}</Label>
               <p className="text-sm text-muted-foreground">
-                AI 분석 완료 시 이메일 알림을 받습니다
+                Receive email notifications when AI analysis completes
               </p>
             </div>
             <input type="checkbox" id="email-notifications" defaultChecked className="w-4 h-4" />
@@ -66,9 +70,9 @@ async function SettingsContent() {
           <Separator />
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor="marketing">마케팅 수신</Label>
+              <Label htmlFor="marketing">Marketing</Label>
               <p className="text-sm text-muted-foreground">
-                새로운 기능 및 이벤트 소식을 받습니다
+                Receive updates about new features and events
               </p>
             </div>
             <input type="checkbox" id="marketing" className="w-4 h-4" />
@@ -81,16 +85,16 @@ async function SettingsContent() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Palette className="w-5 h-5" />
-            테마 설정
+            {t('theme')}
           </CardTitle>
-          <CardDescription>앱 테마를 변경하세요</CardDescription>
+          <CardDescription>{t('preferences')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor="dark-mode">다크 모드</Label>
+              <Label htmlFor="dark-mode">{t('theme')}</Label>
               <p className="text-sm text-muted-foreground">
-                어두운 테마로 전환합니다
+                Switch to dark theme
               </p>
             </div>
             <input type="checkbox" id="dark-mode" className="w-4 h-4" />
@@ -103,26 +107,26 @@ async function SettingsContent() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Shield className="w-5 h-5" />
-            개인정보 보호
+            {t('dangerZone')}
           </CardTitle>
-          <CardDescription>개인정보 및 보안 설정</CardDescription>
+          <CardDescription>{t('deleteAccountDesc')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-4">
             <div>
-              <h4 className="font-medium mb-2">데이터 내보내기</h4>
+              <h4 className="font-medium mb-2">Export Data</h4>
               <p className="text-sm text-muted-foreground mb-3">
-                모든 프로젝트 데이터를 JSON 형식으로 내보냅니다
+                Export all your project data in JSON format
               </p>
-              <Button variant="outline">데이터 내보내기</Button>
+              <Button variant="outline">Export Data</Button>
             </div>
             <Separator />
             <div>
-              <h4 className="font-medium mb-2 text-red-600 dark:text-red-400">계정 삭제</h4>
+              <h4 className="font-medium mb-2 text-red-600 dark:text-red-400">{t('deleteAccount')}</h4>
               <p className="text-sm text-muted-foreground mb-3">
-                계정을 삭제하면 모든 데이터가 영구적으로 삭제됩니다
+                {t('deleteAccountDesc')}
               </p>
-              <Button variant="destructive">계정 삭제</Button>
+              <Button variant="destructive">{t('deleteAccount')}</Button>
             </div>
           </div>
         </CardContent>
@@ -131,14 +135,14 @@ async function SettingsContent() {
       {/* Development Info */}
       <Card className="border-dashed">
         <CardHeader>
-          <CardTitle className="text-sm">개발 모드</CardTitle>
+          <CardTitle className="text-sm">Development Mode</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-2 text-xs text-muted-foreground font-mono">
-            <p>사용자 ID: dev-user-id</p>
-            <p>이메일: {userEmail}</p>
-            <p>환경: Development</p>
-            <p>데이터베이스: JSON-DB (.dev-db/)</p>
+            <p>User ID: dev-user-id</p>
+            <p>Email: {userEmail}</p>
+            <p>Environment: Development</p>
+            <p>Database: JSON-DB (.dev-db/)</p>
           </div>
         </CardContent>
       </Card>
@@ -146,9 +150,11 @@ async function SettingsContent() {
   );
 }
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
+  const tCommon = await getTranslations('common');
+  
   return (
-    <Suspense fallback={<div className="h-96 flex items-center justify-center">설정을 불러오는 중...</div>}>
+    <Suspense fallback={<div className="h-96 flex items-center justify-center">{tCommon('loading')}</div>}>
       <SettingsContent />
     </Suspense>
   );

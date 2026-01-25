@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 
 interface ShareDialogProps {
   open: boolean;
@@ -46,6 +47,10 @@ export function ShareDialog({
   projectTitle,
   clipCount,
 }: ShareDialogProps) {
+  const t = useTranslations('share');
+  const tCommon = useTranslations('common');
+  const tError = useTranslations('error');
+  
   const [shareData, setShareData] = useState<ShareData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
@@ -86,15 +91,15 @@ export function ShareDialog({
       const data = await response.json();
 
       if (!response.ok) {
-        toast.error(data.error || '공유 링크 생성에 실패했습니다.');
+        toast.error(data.error || t('createFailed'));
         return;
       }
 
       setShareData(data.data);
-      toast.success('공유 링크가 생성되었습니다!');
+      toast.success(t('linkCreated'));
     } catch (error) {
       console.error('Failed to create share:', error);
-      toast.error('공유 링크 생성에 실패했습니다.');
+      toast.error(t('createFailed'));
     } finally {
       setIsCreating(false);
     }
@@ -109,15 +114,15 @@ export function ShareDialog({
       });
 
       if (!response.ok) {
-        toast.error('공유 링크 삭제에 실패했습니다.');
+        toast.error(t('deleteFailed'));
         return;
       }
 
       setShareData(null);
-      toast.success('공유 링크가 삭제되었습니다.');
+      toast.success(t('linkDeleted'));
     } catch (error) {
       console.error('Failed to delete share:', error);
-      toast.error('공유 링크 삭제에 실패했습니다.');
+      toast.error(t('deleteFailed'));
     } finally {
       setIsDeleting(false);
     }
@@ -128,12 +133,12 @@ export function ShareDialog({
     try {
       await navigator.clipboard.writeText(text);
       setCopiedStates((prev) => ({ ...prev, [key]: true }));
-      toast.success('클립보드에 복사되었습니다!');
+      toast.success(tError('clipboardSuccess'));
       setTimeout(() => {
         setCopiedStates((prev) => ({ ...prev, [key]: false }));
       }, 2000);
     } catch {
-      toast.error('클립보드 복사에 실패했습니다.');
+      toast.error(tError('clipboardFailed'));
     }
   };
 
@@ -156,7 +161,7 @@ export function ShareDialog({
                 <Share2 className="h-5 w-5" />
               </div>
               <div>
-                <DialogTitle className="text-xl">클립 공유하기</DialogTitle>
+                <DialogTitle className="text-xl">{t('title')}</DialogTitle>
                 <DialogDescription className="mt-1">
                   {projectTitle}
                 </DialogDescription>
@@ -167,12 +172,12 @@ export function ShareDialog({
           {/* Quick Stats */}
           <div className="flex gap-2 mt-4">
             <Badge variant="secondary" className="gap-1.5">
-              {clipCount}개 클립
+              {tCommon('clips', { count: clipCount })}
             </Badge>
             {shareData && (
               <Badge variant="outline" className="gap-1.5">
                 <Eye className="h-3 w-3" />
-                {shareData.viewCount}회 조회
+                {t('views', { count: shareData.viewCount })}
               </Badge>
             )}
           </div>
@@ -190,7 +195,7 @@ export function ShareDialog({
               <div className="space-y-2">
                 <label className="text-sm font-medium flex items-center gap-2">
                   <Link2 className="h-4 w-4 text-primary" />
-                  공유 링크
+                  {t('shareLink')}
                 </label>
                 {/* URL Display */}
                 <div className="bg-muted rounded-lg px-3 py-2 text-sm font-mono break-all select-all">
@@ -209,12 +214,12 @@ export function ShareDialog({
                     {copiedStates['url'] ? (
                       <>
                         <Check className="h-4 w-4 mr-2" />
-                        복사됨!
+                        {tCommon('copied')}
                       </>
                     ) : (
                       <>
                         <Copy className="h-4 w-4 mr-2" />
-                        복사
+                        {tCommon('copy')}
                       </>
                     )}
                   </Button>
@@ -224,7 +229,7 @@ export function ShareDialog({
                   >
                     <a href={shareUrl} target="_blank" rel="noopener noreferrer">
                       <ExternalLink className="h-4 w-4 mr-2" />
-                      열기
+                      {tCommon('open')}
                     </a>
                   </Button>
                 </div>
@@ -236,7 +241,7 @@ export function ShareDialog({
               <div className="space-y-2">
                 <label className="text-sm font-medium flex items-center gap-2">
                   <Code2 className="h-4 w-4 text-primary" />
-                  임베드 코드
+                  {t('embedCode')}
                 </label>
                 <div className="relative">
                   <div className="bg-zinc-950 dark:bg-zinc-900 rounded-lg p-3 text-xs font-mono text-zinc-300 overflow-x-auto">
@@ -256,18 +261,18 @@ export function ShareDialog({
                     {copiedStates['embed'] ? (
                       <>
                         <Check className="h-3 w-3 mr-1" />
-                        복사됨
+                        {tCommon('copied')}
                       </>
                     ) : (
                       <>
                         <Copy className="h-3 w-3 mr-1" />
-                        복사
+                        {tCommon('copy')}
                       </>
                     )}
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  다른 웹사이트나 블로그에 위 코드를 붙여넣으세요.
+                  {t('embedHint')}
                 </p>
               </div>
 
@@ -276,7 +281,7 @@ export function ShareDialog({
               {/* Delete Share */}
               <div className="flex items-center justify-between">
                 <div className="text-sm text-muted-foreground">
-                  공유 링크를 삭제하면 더 이상 접근할 수 없습니다.
+                  {t('deleteWarning')}
                 </div>
                 <Button
                   variant="outline"
@@ -290,7 +295,7 @@ export function ShareDialog({
                   ) : (
                     <Trash2 className="h-4 w-4 mr-1" />
                   )}
-                  삭제
+                  {tCommon('delete')}
                 </Button>
               </div>
             </>
@@ -300,10 +305,9 @@ export function ShareDialog({
               <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-violet-500/20 to-purple-600/20 flex items-center justify-center mb-4">
                 <Share2 className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="text-lg font-semibold mb-2">클립 공유 시작하기</h3>
+              <h3 className="text-lg font-semibold mb-2">{t('startSharing')}</h3>
               <p className="text-sm text-muted-foreground mb-6 max-w-sm mx-auto">
-                공유 링크를 생성하면 누구나 이 프로젝트의 클립을 볼 수 있습니다.
-                다른 사이트에 임베드할 수도 있어요!
+                {t('startSharingDescription')}
               </p>
               <Button
                 onClick={createShare}
@@ -315,11 +319,11 @@ export function ShareDialog({
                 ) : (
                   <Link2 className="h-4 w-4" />
                 )}
-                공유 링크 생성
+                {t('createLink')}
               </Button>
               {clipCount === 0 && (
                 <p className="text-xs text-destructive mt-3">
-                  클립이 없습니다. 먼저 노트에 타임스탬프를 추가하세요.
+                  {t('noClips')}
                 </p>
               )}
             </div>

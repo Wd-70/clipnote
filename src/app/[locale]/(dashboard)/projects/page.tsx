@@ -6,8 +6,12 @@ import { ProjectCard } from "@/components/dashboard/project-card";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { NewProjectDialog } from "@/components/dashboard/new-project-dialog";
 import { IProject } from "@/types";
+import { getTranslations } from 'next-intl/server';
 
 async function ProjectsContent() {
+  const t = await getTranslations('projects');
+  const tDashboard = await getTranslations('dashboard');
+  
   // Fetch real projects from API
   let projects: IProject[] = [];
   
@@ -32,9 +36,9 @@ async function ProjectsContent() {
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">내 프로젝트</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">{t('title')}</h1>
           <p className="text-muted-foreground mt-2">
-            모든 비디오 프로젝트를 관리하고 편집하세요.
+            {t('description')}
           </p>
         </div>
         <NewProjectDialog />
@@ -45,7 +49,7 @@ async function ProjectsContent() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
-            총 {projects.length}개의 프로젝트
+            {t('totalProjects', { count: projects.length })}
           </p>
         </div>
 
@@ -63,7 +67,7 @@ async function ProjectsContent() {
               <NewProjectDialog>
                 <Button className="mt-4">
                   <Plus className="w-4 h-4 mr-2" />
-                  첫 프로젝트 만들기
+                  {tDashboard('createFirst')}
                 </Button>
               </NewProjectDialog>
             } 
@@ -74,9 +78,11 @@ async function ProjectsContent() {
   );
 }
 
-export default function ProjectsPage() {
+export default async function ProjectsPage() {
+  const t = await getTranslations('projects');
+  
   return (
-    <Suspense fallback={<div className="h-96 flex items-center justify-center">프로젝트 목록을 불러오는 중...</div>}>
+    <Suspense fallback={<div className="h-96 flex items-center justify-center">{t('loading')}</div>}>
       <ProjectsContent />
     </Suspense>
   );

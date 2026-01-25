@@ -16,17 +16,71 @@
     "edit": "編集",
     "confirm": "確認",
     "clips": "{count}個のクリップ",
-    "points": "pt"
+    "points": "pt",
+    "terms": "利用規約",
+    "privacy": "プライバシーポリシー",
+    "contact": "お問い合わせ"
   },
   "nav": {
     "dashboard": "ダッシュボード",
     "projects": "マイプロジェクト",
     "points": "ポイント",
-    "settings": "設定"
+    "settings": "設定",
+    "features": "機能",
+    "howItWorks": "使い方",
+    "pricing": "料金プラン"
   },
   "sidebar": {
     "currentPoints": "保有ポイント",
     "recharge": "チャージ"
+  },
+  "landing": {
+    "badge": "AIベースのスマート動画エディター",
+    "heroTitle1": "ノートのように書けば、",
+    "heroTitle2": "動画になります",
+    "heroDescription": "複雑なタイムライン編集はもう不要。テキストで動画をカットして管理しましょう。ClipNoteであなたの動画作業を10倍速くします。",
+    "getStartedFree": "無料で始める",
+    "watchDemo": "使い方を見る",
+    "whyClipNote": "なぜClipNote？",
+    "whyClipNoteDesc": "従来の編集ツールの限界を超えた新しい体験",
+    "feature1Title": "AI自動分析",
+    "feature1Desc": "Gemini AIが動画の重要なシーンとハイライトを自動で検出します。",
+    "feature2Title": "タイムラインノート",
+    "feature2Desc": "タイムラインをドラッグする代わりに、テキストを書いて正確に区間を設定しましょう。",
+    "feature3Title": "バーチャル編集",
+    "feature3Desc": "seekTo技術により、元ファイルをレンダリングせずに即座にプレビューできます。",
+    "feature4Title": "スマートエクスポート",
+    "feature4Desc": "必要な部分だけをFFmpegで高速レンダリングしてクリップとして保存。",
+    "howItWorksTitle": "どのように動作しますか？",
+    "howItWorksDesc": "たった3ステップで完了するビデオクリッピング",
+    "step1Title": "動画リンクを入力",
+    "step1Desc": "YouTubeや配信のアーカイブリンクを入力するだけ。ダウンロードは不要です。",
+    "step2Title": "AI分析とノート",
+    "step2Desc": "AIが分析した内容をもとに、必要な区間をテキストで選択しましょう。",
+    "step3Title": "クリップ作成",
+    "step3Desc": "ボタン一つで選択した区間が高画質の動画ファイルとして保存されます。",
+    "pricingTitle": "シンプルな料金プラン",
+    "pricingDesc": "透明で合理的な価格で始めましょう",
+    "starterPlan": "Starter",
+    "starterPrice": "無料",
+    "starterPriceUnit": "/ 永久",
+    "starterDesc": "気軽に始めたいクリエイター向けのプラン",
+    "starterFeature1": "月60分の無料分析",
+    "starterFeature2": "720p画質でエクスポート",
+    "starterFeature3": "最大5プロジェクト",
+    "proPlan": "Pro",
+    "proPrice": "¥990",
+    "proPriceUnit": "/ 月",
+    "proDesc": "プロフェッショナルな作業のためのすべての機能",
+    "proFeature1": "無制限の分析",
+    "proFeature2": "4K高画質エクスポート",
+    "proFeature3": "優先処理システム",
+    "proFeature4": "無制限のプロジェクト保存",
+    "startPro": "Proを始める",
+    "ctaTitle": "今すぐ動画をあなただけのノートにしましょう",
+    "ctaDesc": "新規登録で60分の無料分析ポイントがもらえます。",
+    "ctaButton": "ClipNoteを始める",
+    "copyright": "© 2026 ClipNote. All rights reserved."
   },
   "dashboard": {
     "title": "ダッシュボード",
@@ -36,11 +90,59 @@
     "createFirst": "最初のプロジェクトを作成",
     "loadingDashboard": "ダッシュボードを読み込み中..."
   },
+  "projects": {
+    "title": "マイプロジェクト",
+    "description": "すべての動画プロジェクトを管理・編集できます。",
+    "totalProjects": "合計{count}件のプロジェクト",
+    "loading": "プロジェクト一覧を読み込み中..."
+  },
+  "projectCard": {
+    "editProject": "プロジェクトを編集",
+    "deleteConfirm": "プロジェクトを削除しますか？",
+    "deleteWarning": "この操作は取り消せません。「{title}」プロジェクトとすべてのクリップ情報が完全に削除されます。",
+    "hasClips": "クリップあり",
+    "noClips": "クリップなし",
+    "deleted": "プロジェクトを削除しました",
+    "deleteFailed": "プロジェクトの削除に失敗しました",
+    "untitled": "無題のプロジェクト"
+  },
   "points": {
     "availableBalance": "利用可能残高",
     "pts": "ポイント",
     "estimatedMinutes": "約{minutes}分のAI分析が可能",
     "recharge": "ポイントをチャージ"
+  },
+  "pointsPage": {
+    "title": "ポイント管理",
+    "description": "AI分析クレジットを管理・チャージできます。",
+    "currentBalance": "現在の残高",
+    "chargePoints": "ポイントをチャージ",
+    "usageHistory": "利用履歴",
+    "noHistory": "まだ利用履歴がありません。",
+    "chargeOptions": "チャージオプション",
+    "option1": "1,000ポイント",
+    "option1Price": "¥500",
+    "option2": "3,000ポイント",
+    "option2Price": "¥1,200",
+    "option3": "10,000ポイント",
+    "option3Price": "¥3,500",
+    "comingSoon": "決済機能は準備中です"
+  },
+  "settingsPage": {
+    "title": "設定",
+    "description": "アカウント設定と環境設定を管理できます。",
+    "account": "アカウント",
+    "profile": "プロフィール",
+    "email": "メールアドレス",
+    "name": "名前",
+    "preferences": "環境設定",
+    "language": "言語",
+    "theme": "テーマ",
+    "notifications": "通知",
+    "saveChanges": "変更を保存",
+    "dangerZone": "危険ゾーン",
+    "deleteAccount": "アカウント削除",
+    "deleteAccountDesc": "アカウントを削除すると、すべてのデータが完全に削除されます。"
   },
   "emptyState": {
     "title": "プロジェクトがありません",
@@ -97,6 +199,20 @@
     "createFailed": "共有リンクの作成に失敗しました。",
     "deleteFailed": "共有リンクの削除に失敗しました。"
   },
+  "sharePage": {
+    "title": "共有されたクリップ",
+    "clips": "{count}個のクリップ",
+    "totalDuration": "合計再生時間",
+    "playAll": "すべて再生",
+    "pause": "一時停止",
+    "prev": "前へ",
+    "next": "次へ",
+    "volume": "音量",
+    "fullscreen": "全画面",
+    "sharedBy": "共有者",
+    "clipNotFound": "クリップが見つかりません",
+    "clipNotFoundDesc": "リクエストされた共有リンクは存在しないか、削除された可能性があります。"
+  },
   "export": {
     "title": "クリップをエクスポート",
     "description": "{count}個のクリップをダウンロードし、1つの動画に結合します",
@@ -118,7 +234,10 @@
     "allInOne": "全コマンド（1行）",
     "allInOneDesc": "すべてのステップを一度に実行",
     "copyAll": "すべてコピー",
-    "requiredTools": "必要なツール"
+    "requiredTools": "必要なツール",
+    "scriptComment": "ClipNoteエクスポートスクリプト",
+    "projectComment": "プロジェクト",
+    "clipsComment": "クリップ数"
   },
   "notesEditor": {
     "placeholder": "クリップしたい部分のタイムスタンプを入力してください。\n\n例：\n0:30 - 1:45 イントロ\n2:00 - 3:30 ハイライト\n\nヒント：Ctrl+Tで現在の再生位置のタイムスタンプを挿入できます。",
@@ -131,7 +250,8 @@
     "errorCode": "エラーコード",
     "clipboardSuccess": "クリップボードにコピーしました！",
     "clipboardFailed": "クリップボードへのコピーに失敗しました。",
-    "saveFailed": "保存に失敗しました。"
+    "saveFailed": "保存に失敗しました。",
+    "loadFailed": "読み込みに失敗しました。"
   },
   "notFound": {
     "title": "404",
