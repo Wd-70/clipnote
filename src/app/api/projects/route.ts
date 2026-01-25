@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { getDB } from '@/lib/db/adapter';
 import { parseVideoUrl } from '@/lib/utils/video';
-import { extractYouTubeVideoId, fetchYouTubeVideoInfo } from '@/lib/utils/youtube';
+import { fetchYouTubeVideoInfo } from '@/lib/utils/youtube';
+import { fetchChzzkVideoInfo } from '@/lib/utils/chzzk';
 
 // GET /api/projects - List user's projects
 export async function GET() {
@@ -85,7 +86,7 @@ export async function POST(req: NextRequest) {
     const db = await getDB();
     console.log('[API POST /api/projects] Creating project for userId:', session.user.id);
     
-    // If no title provided, try to fetch from YouTube API
+    // If no title provided, try to fetch from platform API
     let projectTitle = title;
     let thumbnailUrl: string | undefined;
     let duration: number | undefined;
@@ -101,6 +102,19 @@ export async function POST(req: NextRequest) {
         console.log('[API POST /api/projects] Fetched YouTube title:', projectTitle);
       } else {
         console.warn('[API POST /api/projects] Failed to fetch YouTube info, using default title');
+        projectTitle = 'Untitled Project';
+      }
+    } else if (!projectTitle && videoInfo.platform === 'CHZZK') {
+      console.log('[API POST /api/projects] No title provided, fetching from Chzzk API...');
+      const chzzkInfo = await fetchChzzkVideoInfo(videoInfo.videoId);
+      
+      if (chzzkInfo) {
+        projectTitle = chzzkInfo.title;
+        thumbnailUrl = chzzkInfo.thumbnailUrl;
+        duration = chzzkInfo.duration;
+        console.log('[API POST /api/projects] Fetched Chzzk title:', projectTitle);
+      } else {
+        console.warn('[API POST /api/projects] Failed to fetch Chzzk info, using default title');
         projectTitle = 'Untitled Project';
       }
     } else if (!projectTitle) {
