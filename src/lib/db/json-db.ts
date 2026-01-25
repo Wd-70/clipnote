@@ -217,7 +217,7 @@ interface JsonProject {
   _id?: string;
   userId: string;
   videoUrl: string;
-  platform: 'YOUTUBE' | 'CHZZK';
+  platform: 'YOUTUBE' | 'CHZZK' | 'TWITCH';
   videoId: string;
   title: string;
   thumbnailUrl?: string;
@@ -236,7 +236,7 @@ interface JsonProject {
 interface JsonAnalysisCache {
   _id?: string;
   videoId: string;
-  platform: 'YOUTUBE' | 'CHZZK';
+  platform: 'YOUTUBE' | 'CHZZK' | 'TWITCH';
   duration: number;
   analysisResult: {
     summary: string;
@@ -257,7 +257,7 @@ interface JsonSharedProject {
   userId: string;
   title: string;
   videoUrl: string;
-  platform: 'YOUTUBE' | 'CHZZK';
+  platform: 'YOUTUBE' | 'CHZZK' | 'TWITCH';
   videoId: string;
   thumbnailUrl?: string;
   clips: Array<{

@@ -25,7 +25,7 @@ export interface IProject {
   _id?: string | Types.ObjectId;
   userId: Types.ObjectId;
   videoUrl: string;
-  platform: 'YOUTUBE' | 'CHZZK';
+  platform: 'YOUTUBE' | 'CHZZK' | 'TWITCH';
   videoId: string;
   title: string;
   thumbnailUrl?: string;
@@ -51,7 +51,7 @@ export interface IAnalysisResult {
 
 export interface IAnalysisCache {
   videoId: string;
-  platform: 'YOUTUBE' | 'CHZZK';
+  platform: 'YOUTUBE' | 'CHZZK' | 'TWITCH';
   duration: number;
   analysisResult: IAnalysisResult;
   cachedAt: Date;
@@ -74,7 +74,7 @@ export interface ParsedClip {
 }
 
 // Video platform detection
-export type VideoPlatform = 'YOUTUBE' | 'CHZZK' | 'UNKNOWN';
+export type VideoPlatform = 'YOUTUBE' | 'CHZZK' | 'TWITCH' | 'UNKNOWN';
 
 export interface VideoInfo {
   platform: VideoPlatform;

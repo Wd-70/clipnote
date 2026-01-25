@@ -19,6 +19,33 @@ import { formatDuration, detectPlatform, extractVideoId } from '@/lib/utils/vide
 import { cn } from '@/lib/utils';
 import type { ParsedClip, VideoPlatform } from '@/types';
 
+// Twitch Player type definition
+interface TwitchPlayerInstance {
+  play: () => void;
+  pause: () => void;
+  seek: (seconds: number) => void;
+  getCurrentTime: () => number;
+  getDuration: () => number;
+  setVolume: (volume: number) => void; // 0-1
+  getVolume: () => number;
+  setMuted: (muted: boolean) => void;
+  getMuted: () => boolean;
+}
+
+declare global {
+  interface Window {
+    Twitch?: {
+      Player: new (elementId: string, options: {
+        video: string;
+        width?: string | number;
+        height?: string | number;
+        parent?: string[];
+        autoplay?: boolean;
+      }) => TwitchPlayerInstance;
+    };
+  }
+}
+
 export interface VideoPlayerRef {
   seekTo: (seconds: number) => void;
   getCurrentTime: () => number;
@@ -60,6 +87,10 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
     const chzzkVideoRef = useRef<HTMLVideoElement>(null);
     const hlsRef = useRef<Hls | null>(null);
     
+    // Twitch refs
+    const twitchPlayerRef = useRef<TwitchPlayerInstance | null>(null);
+    const twitchContainerRef = useRef<HTMLDivElement>(null);
+    
     // Shared refs
     const containerRef = useRef<HTMLDivElement>(null);
     const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -76,6 +107,10 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
     // Chzzk-specific state
     const [chzzkLoading, setChzzkLoading] = useState(false);
     const [chzzkError, setChzzkError] = useState<string | null>(null);
+    
+    // Twitch-specific state
+    const [twitchLoading, setTwitchLoading] = useState(false);
+    const [twitchError, setTwitchError] = useState<string | null>(null);
 
     // Detect platform and extract video ID using shared utilities
     const platform: VideoPlatform = detectPlatform(url);
@@ -181,6 +216,115 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
     }, [platform, videoId, onDuration]);
 
     // =========================================================================
+    // Twitch Player Initialization
+    // =========================================================================
+    useEffect(() => {
+      if (platform !== 'TWITCH' || !videoId) return;
+
+      setTwitchLoading(true);
+      setTwitchError(null);
+
+      // Load Twitch Embed SDK
+      const loadTwitchSDK = () => {
+        return new Promise<void>((resolve, reject) => {
+          if (window.Twitch) {
+            resolve();
+            return;
+          }
+
+          const script = document.createElement('script');
+          script.src = 'https://player.twitch.tv/js/embed/v1.js';
+          script.async = true;
+          script.onload = () => resolve();
+          script.onerror = () => reject(new Error('Failed to load Twitch SDK'));
+          document.body.appendChild(script);
+        });
+      };
+
+      const initTwitchPlayer = async () => {
+        try {
+          await loadTwitchSDK();
+
+          if (!twitchContainerRef.current || !window.Twitch) {
+            throw new Error('Twitch SDK not available');
+          }
+
+          // Get parent domain for Twitch embed
+          const parentDomain = window.location.hostname;
+
+          // Create unique ID for this player instance
+          const playerId = `twitch-player-${videoId}`;
+          twitchContainerRef.current.id = playerId;
+
+          const player = new window.Twitch.Player(playerId, {
+            video: videoId,
+            width: '100%',
+            height: '100%',
+            parent: [parentDomain],
+            autoplay: false,
+          });
+
+          twitchPlayerRef.current = player;
+
+          // Twitch Player events (using addEventListener pattern)
+          const playerElement = player as unknown as {
+            addEventListener: (event: string, callback: () => void) => void;
+          };
+
+          playerElement.addEventListener('ready', () => {
+            setIsReady(true);
+            setTwitchLoading(false);
+            const dur = player.getDuration();
+            if (dur) {
+              setDuration(dur);
+              onDuration?.(dur);
+            }
+          });
+
+          playerElement.addEventListener('play', () => setPlaying(true));
+          playerElement.addEventListener('pause', () => setPlaying(false));
+
+        } catch (error) {
+          console.error('[TwitchPlayer] Error initializing:', error);
+          setTwitchError(error instanceof Error ? error.message : 'Failed to load video');
+          setTwitchLoading(false);
+        }
+      };
+
+      initTwitchPlayer();
+
+      return () => {
+        twitchPlayerRef.current = null;
+      };
+    }, [platform, videoId, onDuration]);
+
+    // Twitch progress tracking
+    useEffect(() => {
+      if (platform !== 'TWITCH' || !isReady || !twitchPlayerRef.current) return;
+
+      progressIntervalRef.current = setInterval(() => {
+        if (twitchPlayerRef.current && !seeking) {
+          const time = twitchPlayerRef.current.getCurrentTime();
+          setCurrentTime(time);
+          const dur = twitchPlayerRef.current.getDuration();
+          if (dur > 0) {
+            setDuration(dur);
+            onProgress?.({
+              played: time / dur,
+              playedSeconds: time,
+            });
+          }
+        }
+      }, 100);
+
+      return () => {
+        if (progressIntervalRef.current) {
+          clearInterval(progressIntervalRef.current);
+        }
+      };
+    }, [platform, isReady, seeking, onProgress]);
+
+    // =========================================================================
     // Chzzk Video Event Handlers
     // =========================================================================
     useEffect(() => {
@@ -242,6 +386,9 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
         } else if (platform === 'CHZZK' && chzzkVideoRef.current) {
           chzzkVideoRef.current.currentTime = seconds;
           setCurrentTime(seconds);
+        } else if (platform === 'TWITCH' && twitchPlayerRef.current) {
+          twitchPlayerRef.current.seek(seconds);
+          setCurrentTime(seconds);
         }
       },
       getCurrentTime: () => currentTime,
@@ -251,6 +398,8 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
           youtubePlayerRef.current.playVideo();
         } else if (platform === 'CHZZK' && chzzkVideoRef.current) {
           chzzkVideoRef.current.play();
+        } else if (platform === 'TWITCH' && twitchPlayerRef.current) {
+          twitchPlayerRef.current.play();
         }
       },
       pause: () => {
@@ -258,6 +407,8 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
           youtubePlayerRef.current.pauseVideo();
         } else if (platform === 'CHZZK' && chzzkVideoRef.current) {
           chzzkVideoRef.current.pause();
+        } else if (platform === 'TWITCH' && twitchPlayerRef.current) {
+          twitchPlayerRef.current.pause();
         }
       },
       setVolume: (newVolume: number) => {
@@ -277,6 +428,10 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
           chzzkVideoRef.current.volume = normalizedVolume;
           chzzkVideoRef.current.muted = newVolume === 0;
           setMuted(newVolume === 0);
+        } else if (platform === 'TWITCH' && twitchPlayerRef.current) {
+          twitchPlayerRef.current.setVolume(normalizedVolume);
+          twitchPlayerRef.current.setMuted(newVolume === 0);
+          setMuted(newVolume === 0);
         }
       },
       getVolume: () => volume,
@@ -286,6 +441,8 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
           youtubePlayerRef.current.mute();
         } else if (platform === 'CHZZK' && chzzkVideoRef.current) {
           chzzkVideoRef.current.muted = true;
+        } else if (platform === 'TWITCH' && twitchPlayerRef.current) {
+          twitchPlayerRef.current.setMuted(true);
         }
       },
       unmute: () => {
@@ -294,6 +451,8 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
           youtubePlayerRef.current.unMute();
         } else if (platform === 'CHZZK' && chzzkVideoRef.current) {
           chzzkVideoRef.current.muted = false;
+        } else if (platform === 'TWITCH' && twitchPlayerRef.current) {
+          twitchPlayerRef.current.setMuted(false);
         }
       },
       isMuted: () => muted,
@@ -368,6 +527,8 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
         youtubePlayerRef.current.seekTo(newTime, true);
       } else if (platform === 'CHZZK' && chzzkVideoRef.current) {
         chzzkVideoRef.current.currentTime = newTime;
+      } else if (platform === 'TWITCH' && twitchPlayerRef.current) {
+        twitchPlayerRef.current.seek(newTime);
       }
     }, [platform, duration]);
 
@@ -386,6 +547,9 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
       } else if (platform === 'CHZZK' && chzzkVideoRef.current) {
         chzzkVideoRef.current.volume = newVolume / 100;
         chzzkVideoRef.current.muted = newVolume === 0;
+      } else if (platform === 'TWITCH' && twitchPlayerRef.current) {
+        twitchPlayerRef.current.setVolume(newVolume / 100);
+        twitchPlayerRef.current.setMuted(newVolume === 0);
       }
     }, [platform]);
 
@@ -403,6 +567,12 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
         } else {
           chzzkVideoRef.current.play();
         }
+      } else if (platform === 'TWITCH' && twitchPlayerRef.current) {
+        if (playing) {
+          twitchPlayerRef.current.pause();
+        } else {
+          twitchPlayerRef.current.play();
+        }
       }
     }, [platform, playing]);
 
@@ -419,6 +589,9 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
       } else if (platform === 'CHZZK' && chzzkVideoRef.current) {
         chzzkVideoRef.current.muted = !muted;
         setMuted(!muted);
+      } else if (platform === 'TWITCH' && twitchPlayerRef.current) {
+        twitchPlayerRef.current.setMuted(!muted);
+        setMuted(!muted);
       }
     }, [platform, muted]);
 
@@ -428,6 +601,8 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
         youtubePlayerRef.current.seekTo(newTime, true);
       } else if (platform === 'CHZZK' && chzzkVideoRef.current) {
         chzzkVideoRef.current.currentTime = newTime;
+      } else if (platform === 'TWITCH' && twitchPlayerRef.current) {
+        twitchPlayerRef.current.seek(newTime);
       }
       setCurrentTime(newTime);
     }, [platform, currentTime]);
@@ -438,6 +613,8 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
         youtubePlayerRef.current.seekTo(newTime, true);
       } else if (platform === 'CHZZK' && chzzkVideoRef.current) {
         chzzkVideoRef.current.currentTime = newTime;
+      } else if (platform === 'TWITCH' && twitchPlayerRef.current) {
+        twitchPlayerRef.current.seek(newTime);
       }
       setCurrentTime(newTime);
     }, [platform, currentTime, duration]);
@@ -570,9 +747,58 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
               />
             </>
           )}
+
+          {/* Twitch Embed Player */}
+          {platform === 'TWITCH' && (
+            <>
+              {/* Loading State */}
+              {twitchLoading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black">
+                  <div className="text-center">
+                    <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto mb-3" />
+                    <p className="text-sm text-white/60">Twitch 영상 로딩 중...</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Error State */}
+              {twitchError && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black">
+                  <div className="text-center p-6">
+                    <div className="mb-4">
+                      <svg
+                        className="w-16 h-16 mx-auto text-white/30"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                        />
+                      </svg>
+                    </div>
+                    <p className="text-white/60 font-medium">Twitch 영상을 로드할 수 없습니다</p>
+                    <p className="text-sm text-white/40 mt-2">{twitchError}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Twitch Player Container */}
+              <div
+                ref={twitchContainerRef}
+                className={cn(
+                  "w-full h-full",
+                  (twitchLoading || twitchError) && "invisible"
+                )}
+              />
+            </>
+          )}
           
           {/* Overlay for share/embed pages */}
-          {disableDirectPlay && platform === 'YOUTUBE' && (
+          {disableDirectPlay && (platform === 'YOUTUBE' || platform === 'TWITCH') && (
             <div 
               className="absolute inset-0 z-10 cursor-pointer" 
               aria-label="Video overlay"

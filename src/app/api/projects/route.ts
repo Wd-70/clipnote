@@ -4,6 +4,7 @@ import { getDB } from '@/lib/db/adapter';
 import { parseVideoUrl } from '@/lib/utils/video';
 import { fetchYouTubeVideoInfo } from '@/lib/utils/youtube';
 import { fetchChzzkVideoInfo } from '@/lib/utils/chzzk';
+import { fetchTwitchVideoInfo } from '@/lib/utils/twitch';
 
 // GET /api/projects - List user's projects
 export async function GET() {
@@ -78,7 +79,7 @@ export async function POST(req: NextRequest) {
 
     if (!videoInfo || videoInfo.platform === 'UNKNOWN') {
       return NextResponse.json(
-        { error: 'Invalid video URL. Supported platforms: YouTube, Chzzk' },
+        { error: 'Invalid video URL. Supported platforms: YouTube, Chzzk, Twitch' },
         { status: 400 }
       );
     }
@@ -115,6 +116,20 @@ export async function POST(req: NextRequest) {
         console.log('[API POST /api/projects] Fetched Chzzk title:', projectTitle);
       } else {
         console.warn('[API POST /api/projects] Failed to fetch Chzzk info, using default title');
+        projectTitle = 'Untitled Project';
+      }
+    } else if (!projectTitle && videoInfo.platform === 'TWITCH') {
+      console.log('[API POST /api/projects] No title provided, fetching from Twitch API...');
+      const twitchInfo = await fetchTwitchVideoInfo(videoInfo.videoId);
+      
+      if (twitchInfo) {
+        projectTitle = twitchInfo.title;
+        thumbnailUrl = twitchInfo.thumbnailUrl;
+        duration = twitchInfo.duration;
+        console.log('[API POST /api/projects] Fetched Twitch title:', projectTitle);
+      } else {
+        // Twitch API requires credentials, so fallback to default title is normal
+        console.log('[API POST /api/projects] Twitch API not configured or video not found, using default title');
         projectTitle = 'Untitled Project';
       }
     } else if (!projectTitle) {

@@ -20,6 +20,10 @@ export function detectPlatform(url: string): VideoPlatform {
       return 'CHZZK';
     }
 
+    if (hostname.includes('twitch.tv')) {
+      return 'TWITCH';
+    }
+
     return 'UNKNOWN';
   } catch {
     return 'UNKNOWN';
@@ -63,6 +67,15 @@ export function extractVideoId(url: string): string | null {
       const videoIndex = pathParts.indexOf('video');
       if (videoIndex !== -1 && pathParts[videoIndex + 1]) {
         return pathParts[videoIndex + 1];
+      }
+    }
+
+    if (platform === 'TWITCH') {
+      // twitch.tv/videos/VIDEO_ID
+      const pathParts = urlObj.pathname.split('/');
+      const videosIndex = pathParts.indexOf('videos');
+      if (videosIndex !== -1 && pathParts[videosIndex + 1]) {
+        return pathParts[videosIndex + 1];
       }
     }
 
@@ -117,6 +130,11 @@ export function getEmbedUrl(platform: VideoPlatform, videoId: string): string {
 
   if (platform === 'CHZZK') {
     return `https://chzzk.naver.com/embed/video/${videoId}`;
+  }
+
+  if (platform === 'TWITCH') {
+    // Note: parent parameter must be added dynamically based on deployment domain
+    return `https://player.twitch.tv/?video=${videoId}`;
   }
 
   return '';
