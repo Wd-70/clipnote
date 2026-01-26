@@ -21,7 +21,8 @@ interface ChzzkApiResponse {
     videoNo: number;
     videoId: string;
     videoTitle: string;
-    videoImageUrl: string;
+    videoImageUrl?: string; // Some videos use this
+    thumbnailImageUrl?: string; // Some videos use this (more common)
     videoCategoryValue: string;
     duration: number; // in seconds
     publishDate: string;
@@ -68,7 +69,8 @@ export async function fetchChzzkVideoInfo(videoId: string): Promise<ChzzkVideoIn
     return {
       title: video.videoTitle,
       description: video.videoCategoryValue || '',
-      thumbnailUrl: video.videoImageUrl || '',
+      // Try thumbnailImageUrl first (more common), fallback to videoImageUrl
+      thumbnailUrl: video.thumbnailImageUrl || video.videoImageUrl || '',
       duration: video.duration,
       channelName: video.channel.channelName,
       channelId: video.channel.channelId,
