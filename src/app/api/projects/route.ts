@@ -7,7 +7,8 @@ import { fetchChzzkVideoInfo } from '@/lib/utils/chzzk';
 import { fetchTwitchVideoInfo } from '@/lib/utils/twitch';
 
 // GET /api/projects - List user's projects
-export async function GET() {
+// Query params: folderId, sort
+export async function GET(req: NextRequest) {
   try {
     let session = await auth();
     
@@ -27,16 +28,43 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const db = await getDB();
-    let projects = db.Project.find({ userId: session.user.id });
+    const { searchParams } = new URL(req.url);
+    const folderId = searchParams.get('folderId');
+    const sort = searchParams.get('sort') || 'created-desc';
 
-    // Sort by createdAt descending (newest first)
-    // Cast to any[] to avoid TypeScript confusion between Mongoose and JSON DB types
-    (projects as any[]).sort((a: any, b: any) => {
-      const dateA = new Date(a.createdAt || 0).getTime();
-      const dateB = new Date(b.createdAt || 0).getTime();
-      return dateB - dateA; // Descending order
-    });
+    const db = await getDB();
+    let projects = db.Project.find({ userId: session.user.id }) as any[];
+
+    // Filter by folderId if specified
+    if (folderId === 'root' || folderId === 'null' || folderId === '') {
+      projects = projects.filter((p: any) => !p.folderId);
+    } else if (folderId) {
+      projects = projects.filter((p: any) => p.folderId === folderId);
+    }
+
+    // Sort based on sort parameter
+    switch (sort) {
+      case 'name-asc':
+        projects.sort((a: any, b: any) => (a.title || '').localeCompare(b.title || ''));
+        break;
+      case 'name-desc':
+        projects.sort((a: any, b: any) => (b.title || '').localeCompare(a.title || ''));
+        break;
+      case 'created-asc':
+        projects.sort((a: any, b: any) => 
+          new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime()
+        );
+        break;
+      case 'manual':
+        projects.sort((a: any, b: any) => (a.order || 0) - (b.order || 0));
+        break;
+      case 'created-desc':
+      default:
+        projects.sort((a: any, b: any) => 
+          new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+        );
+        break;
+    }
 
     return NextResponse.json({ data: projects });
   } catch (error) {
