@@ -20,10 +20,28 @@ export interface INote {
   timestamp: Date;
 }
 
+// Folder types
+export interface IFolder {
+  _id?: string | Types.ObjectId;
+  userId: string | Types.ObjectId;
+  name: string;
+  parentId?: string | null; // null = root level
+  color?: string; // optional folder color for visual distinction
+  icon?: string; // optional icon name (lucide icon)
+  order: number; // for manual sorting
+  depth: number; // 0 = root, max 2 (3 levels total)
+  // Subscription feature: auto-collect from channel
+  autoCollectChannelId?: string;
+  autoCollectPlatform?: 'YOUTUBE' | 'CHZZK' | 'TWITCH';
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 // Project types
 export interface IProject {
   _id?: string | Types.ObjectId;
   userId: Types.ObjectId;
+  folderId?: string | null; // null = uncategorized (root level)
   videoUrl: string;
   platform: 'YOUTUBE' | 'CHZZK' | 'TWITCH';
   videoId: string;
@@ -32,6 +50,7 @@ export interface IProject {
   duration?: number;
   notes: string | INote[]; // Support both string (raw text) and structured notes
   isAutoCollected: boolean;
+  order?: number; // for manual sorting within folder
   createdAt: Date;
   updatedAt: Date;
 }

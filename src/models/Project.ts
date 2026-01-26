@@ -35,13 +35,19 @@ const ProjectSchema = new Schema<ProjectDocument>(
       required: true,
       index: true,
     },
+    folderId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Folder',
+      default: null,
+      index: true,
+    },
     videoUrl: {
       type: String,
       required: true,
     },
     platform: {
       type: String,
-      enum: ['YOUTUBE', 'CHZZK'],
+      enum: ['YOUTUBE', 'CHZZK', 'TWITCH'],
       required: true,
     },
     videoId: {
@@ -63,6 +69,10 @@ const ProjectSchema = new Schema<ProjectDocument>(
       type: Boolean,
       default: false,
     },
+    order: {
+      type: Number,
+      default: 0,
+    },
   },
   {
     timestamps: true,
@@ -71,6 +81,7 @@ const ProjectSchema = new Schema<ProjectDocument>(
 
 // Compound indexes for common queries
 ProjectSchema.index({ userId: 1, createdAt: -1 });
+ProjectSchema.index({ userId: 1, folderId: 1, order: 1 });
 ProjectSchema.index({ videoId: 1, platform: 1 });
 
 export const Project: Model<ProjectDocument> =

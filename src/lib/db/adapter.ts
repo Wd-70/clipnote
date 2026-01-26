@@ -26,6 +26,7 @@ export interface DBUser {
 export interface DBProject {
   _id?: string;
   userId: string;
+  folderId?: string | null;
   videoUrl: string;
   platform: 'YOUTUBE' | 'CHZZK' | 'TWITCH';
   videoId: string;
@@ -39,6 +40,22 @@ export interface DBProject {
     timestamp: string;
   }>;
   isAutoCollected: boolean;
+  order?: number;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+}
+
+export interface DBFolder {
+  _id?: string;
+  userId: string;
+  name: string;
+  parentId?: string | null;
+  color?: string;
+  icon?: string;
+  order: number;
+  depth: number;
+  autoCollectChannelId?: string;
+  autoCollectPlatform?: 'YOUTUBE' | 'CHZZK' | 'TWITCH';
   createdAt?: Date | string;
   updatedAt?: Date | string;
 }
@@ -87,13 +104,15 @@ export const db = USE_MONGODB
       await connectMongo();
       const { User } = await import('@/models/User');
       const { Project } = await import('@/models/Project');
+      const { Folder } = await import('@/models/Folder');
       const { AnalysisCache } = await import('@/models/AnalysisCache');
       const { SharedProject } = await import('@/models/SharedProject');
-      return { User, Project, AnalysisCache, SharedProject };
+      return { User, Project, Folder, AnalysisCache, SharedProject };
     })()
   : Promise.resolve({
       User: JsonDB.User,
       Project: JsonDB.Project,
+      Folder: JsonDB.Folder,
       AnalysisCache: JsonDB.AnalysisCache,
       SharedProject: JsonDB.SharedProject,
     });

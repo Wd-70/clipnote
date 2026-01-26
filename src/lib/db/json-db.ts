@@ -5,6 +5,7 @@ import path from 'path';
 const DB_PATH = path.join(process.cwd(), '.dev-db');
 const USERS_FILE = path.join(DB_PATH, 'users.json');
 const PROJECTS_FILE = path.join(DB_PATH, 'projects.json');
+const FOLDERS_FILE = path.join(DB_PATH, 'folders.json');
 const ANALYSIS_CACHE_FILE = path.join(DB_PATH, 'analysis-cache.json');
 const SHARED_PROJECTS_FILE = path.join(DB_PATH, 'shared-projects.json');
 
@@ -216,6 +217,7 @@ interface JsonUser {
 interface JsonProject {
   _id?: string;
   userId: string;
+  folderId?: string | null; // null = uncategorized (root level)
   videoUrl: string;
   platform: 'YOUTUBE' | 'CHZZK' | 'TWITCH';
   videoId: string;
@@ -229,6 +231,22 @@ interface JsonProject {
     timestamp: string;
   }>;
   isAutoCollected: boolean;
+  order?: number; // for manual sorting within folder
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+interface JsonFolder {
+  _id?: string;
+  userId: string;
+  name: string;
+  parentId?: string | null; // null = root level
+  color?: string;
+  icon?: string;
+  order: number;
+  depth: number; // 0 = root, max 2 (3 levels total)
+  autoCollectChannelId?: string;
+  autoCollectPlatform?: 'YOUTUBE' | 'CHZZK' | 'TWITCH';
   createdAt?: string;
   updatedAt?: string;
 }
@@ -274,6 +292,7 @@ interface JsonSharedProject {
 export const JsonDB = {
   User: new JsonCollection<JsonUser>(USERS_FILE),
   Project: new JsonCollection<JsonProject>(PROJECTS_FILE),
+  Folder: new JsonCollection<JsonFolder>(FOLDERS_FILE),
   AnalysisCache: new JsonCollection<JsonAnalysisCache>(ANALYSIS_CACHE_FILE),
   SharedProject: new JsonCollection<JsonSharedProject>(SHARED_PROJECTS_FILE),
 };
