@@ -28,7 +28,15 @@ export async function GET() {
     }
 
     const db = await getDB();
-    const projects = db.Project.find({ userId: session.user.id });
+    let projects = db.Project.find({ userId: session.user.id });
+
+    // Sort by createdAt descending (newest first)
+    // Cast to any[] to avoid TypeScript confusion between Mongoose and JSON DB types
+    (projects as any[]).sort((a: any, b: any) => {
+      const dateA = new Date(a.createdAt || 0).getTime();
+      const dateB = new Date(b.createdAt || 0).getTime();
+      return dateB - dateA; // Descending order
+    });
 
     return NextResponse.json({ data: projects });
   } catch (error) {

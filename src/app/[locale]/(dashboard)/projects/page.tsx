@@ -56,7 +56,7 @@ async function ProjectsContent() {
         {projects.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {projects.map((project) => (
-              <div key={project.videoId || String(project._id)} className="h-full">
+              <div key={String(project._id)} className="h-full">
                 <ProjectCard project={project} />
               </div>
             ))}
