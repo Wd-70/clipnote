@@ -77,8 +77,9 @@ function DroppableTreeItem({
   };
 
   return (
-    <div ref={setNodeRef} className="select-none">
+    <div className="select-none">
       <div
+        ref={setNodeRef}
         role="treeitem"
         tabIndex={0}
         aria-expanded={hasChildren ? isExpanded : undefined}

@@ -11,9 +11,9 @@
     "isAutoCollected": false,
     "_id": "mkpf0qjf5spqwu38to5",
     "createdAt": "2026-01-22T12:15:39.867Z",
-    "updatedAt": "2026-01-27T03:45:21.369Z",
-    "folderId": "mkw1z3evvvzjhik7v9i",
-    "order": 1
+    "updatedAt": "2026-01-27T12:02:41.551Z",
+    "folderId": null,
+    "order": 0
   },
   {
     "userId": "dev-user-id",
@@ -27,9 +27,9 @@
     "isAutoCollected": false,
     "_id": "mkpf17316xcpa2xgtr8",
     "createdAt": "2026-01-22T12:16:01.309Z",
-    "updatedAt": "2026-01-27T03:45:21.367Z",
-    "folderId": "mkw1z3evvvzjhik7v9i",
-    "order": 0
+    "updatedAt": "2026-01-27T12:02:41.552Z",
+    "folderId": null,
+    "order": 1
   },
   {
     "userId": "dev-user-id",

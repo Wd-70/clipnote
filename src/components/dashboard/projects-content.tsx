@@ -31,6 +31,7 @@ import {
   useSensors,
   DragStartEvent,
   DragEndEvent,
+  DragOverEvent,
 } from '@dnd-kit/core';
 import {
   SortableContext,
@@ -284,10 +285,21 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
         const project = sortedProjects.find((p) => p._id?.toString() === projectId);
         if (project) {
           setActiveProject(project);
+          console.log('Drag started:', { projectId, projectTitle: project.title });
         }
       }
     },
     [sortedProjects]
+  );
+
+  const handleProjectDragOver = useCallback(
+    (event: DragOverEvent) => {
+      const { over } = event;
+      if (over) {
+        console.log('Dragging over:', over.id, over.data);
+      }
+    },
+    []
   );
 
   const handleProjectDragEnd = useCallback(
@@ -359,7 +371,7 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              orderedIds,
+              projectIds: orderedIds,
               folderId: navigation.currentFolderId,
             }),
           });
@@ -383,6 +395,7 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
       sensors={sensors}
       collisionDetection={closestCenter}
       onDragStart={handleProjectDragStart}
+      onDragOver={handleProjectDragOver}
       onDragEnd={handleProjectDragEnd}
     >
       <div className="flex gap-6">
@@ -613,8 +626,15 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
           duration: 200,
           easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)',
         }}
+        style={{
+          cursor: 'grabbing',
+        }}
       >
-        {activeProject && <ProjectDragOverlay project={activeProject} />}
+        {activeProject && (
+          <div style={{ transform: 'translate(-50%, -50%)' }}>
+            <ProjectDragOverlay project={activeProject} />
+          </div>
+        )}
       </DragOverlay>
     </div>
     </DndContext>
