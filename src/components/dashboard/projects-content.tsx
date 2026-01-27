@@ -18,26 +18,17 @@ import {
 } from '@/components/ui/sheet';
 
 import { ProjectCard } from '@/components/dashboard/project-card';
-import { SortableProjectCard, ProjectDragOverlay } from '@/components/dashboard/sortable-project-card';
+import { SortableProjectCard } from '@/components/dashboard/sortable-project-card';
 import { EmptyState } from '@/components/dashboard/empty-state';
 import { NewProjectDialog } from '@/components/dashboard/new-project-dialog';
+import { useProjectDnd } from '@/contexts/project-dnd-context';
 import {
-  DndContext,
-  DragOverlay,
-  closestCenter,
-  pointerWithin,
-  rectIntersection,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
   DragStartEvent,
   DragEndEvent,
   DragOverEvent,
 } from '@dnd-kit/core';
 import {
   SortableContext,
-  sortableKeyboardCoordinates,
   rectSortingStrategy,
   arrayMove,
 } from '@dnd-kit/sortable';
@@ -170,18 +161,7 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
 
   // DnD state for projects
   const [activeProject, setActiveProject] = useState<IProject | null>(null);
-
-  // DnD sensors
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
+  const { registerHandlers, unregisterHandlers } = useProjectDnd();
 
   // Fetch projects
   const fetchProjects = useCallback(async () => {
@@ -407,36 +387,19 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
     [sortedProjects, navigation.currentFolderId, fetchProjects, tBulk]
   );
 
-  // Custom collision detection: prioritize folders over projects
-  const customCollisionDetection = useCallback((args: any) => {
-    // First check if pointer is within any droppable
-    const pointerCollisions = pointerWithin(args);
-    
-    // If we found collisions, prefer folder-drop targets
-    if (pointerCollisions.length > 0) {
-      const folderCollision = pointerCollisions.find((collision: any) =>
-        collision.id.toString().startsWith('folder-drop-')
-      );
-      
-      if (folderCollision) {
-        console.log('✅ Folder collision detected:', folderCollision.id);
-        return [folderCollision];
-      }
-    }
-    
-    // Fall back to closest center for project reordering
-    return closestCenter(args);
-  }, []);
+  // Register DnD handlers
+  useEffect(() => {
+    registerHandlers({
+      onDragStart: handleProjectDragStart,
+      onDragOver: handleProjectDragOver,
+      onDragEnd: handleProjectDragEnd,
+      getActiveProject: () => activeProject,
+    });
+    return () => unregisterHandlers();
+  }, [handleProjectDragStart, handleProjectDragOver, handleProjectDragEnd, activeProject, registerHandlers, unregisterHandlers]);
 
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={customCollisionDetection}
-      onDragStart={handleProjectDragStart}
-      onDragOver={handleProjectDragOver}
-      onDragEnd={handleProjectDragEnd}
-    >
-      <div className="flex gap-6">
+    <div className="flex gap-6">
         {/* Desktop Folder Sidebar (4K+ only - below 3xl, folders are shown in sidebar) */}
         <aside className="hidden 3xl:block w-64 shrink-0">
         <div className="sticky top-6 border rounded-lg bg-card">
@@ -657,24 +620,6 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
           return success;
         }}
       />
-
-      {/* Global Drag Overlay */}
-      <DragOverlay
-        dropAnimation={{
-          duration: 200,
-          easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)',
-        }}
-        style={{
-          cursor: 'grabbing',
-        }}
-      >
-        {activeProject && (
-          <div style={{ transform: 'translate(288px, 0)' }}>
-            <ProjectDragOverlay project={activeProject} />
-          </div>
-        )}
-      </DragOverlay>
     </div>
-    </DndContext>
   );
 }

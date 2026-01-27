@@ -1,5 +1,6 @@
 import { SidebarWithFolders } from '@/components/layout/sidebar-with-folders';
 import { FolderSidebarProvider } from '@/contexts/folder-sidebar-context';
+import { ProjectDndProvider } from '@/contexts/project-dnd-context';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Menu } from 'lucide-react';
@@ -11,7 +12,8 @@ export default function DashboardLayout({
 }) {
   return (
     <FolderSidebarProvider>
-      <div className="flex min-h-screen bg-background">
+      <ProjectDndProvider>
+        <div className="flex min-h-screen bg-background">
         {/* Desktop Sidebar */}
         <aside className="hidden md:block w-64 border-r fixed inset-y-0 z-30 bg-background/50 backdrop-blur-sm">
           <SidebarWithFolders />
@@ -46,6 +48,7 @@ export default function DashboardLayout({
           </main>
         </div>
       </div>
+      </ProjectDndProvider>
     </FolderSidebarProvider>
   );
 }
