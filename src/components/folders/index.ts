@@ -15,3 +15,13 @@ export { CreateFolderDialog } from './create-folder-dialog';
 export { RenameFolderDialog } from './rename-folder-dialog';
 export { DeleteFolderDialog } from './delete-folder-dialog';
 export { MoveFolderDialog, MoveToFolderDialog } from './move-folder-dialog';
+
+// Bulk action components
+export { BulkActionBar, BulkActionButtons } from './bulk-action-bar';
+
+// Context menu components
+export { ProjectContextMenu, ProjectInlineActions } from './project-context-menu';
+export type { ProjectAction } from './project-context-menu';
+
+// Toolbar components
+export { ProjectsToolbar, ProjectsToolbarCompact } from './projects-toolbar';
