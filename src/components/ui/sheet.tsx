@@ -48,12 +48,14 @@ function SheetContent({
   className,
   children,
   side = "right",
+  disablePortal = false,
   ...props
 }: React.ComponentProps<typeof SheetPrimitive.Content> & {
   side?: "top" | "right" | "bottom" | "left"
+  disablePortal?: boolean
 }) {
-  return (
-    <SheetPortal>
+  const content = (
+    <>
       <SheetOverlay />
       <SheetPrimitive.Content
         data-slot="sheet-content"
@@ -77,8 +79,14 @@ function SheetContent({
           <span className="sr-only">Close</span>
         </SheetPrimitive.Close>
       </SheetPrimitive.Content>
-    </SheetPortal>
-  )
+    </>
+  );
+
+  if (disablePortal) {
+    return content;
+  }
+
+  return <SheetPortal>{content}</SheetPortal>;
 }
 
 function SheetHeader({ className, ...props }: React.ComponentProps<"div">) {

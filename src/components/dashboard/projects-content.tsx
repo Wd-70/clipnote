@@ -473,13 +473,13 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
           <div className="min-w-0">
             <div className="flex items-center gap-2 mb-2">
               {/* Mobile folder button (only on mobile - md-3xl uses sidebar toggle) */}
-              <Sheet open={mobileFolderOpen} onOpenChange={setMobileFolderOpen}>
+               <Sheet open={mobileFolderOpen} onOpenChange={setMobileFolderOpen}>
                 <SheetTrigger asChild>
                   <Button variant="outline" size="icon" className="md:hidden shrink-0">
                     <FolderOpen className="h-4 w-4" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-72 p-0">
+                 <SheetContent side="left" className="w-72 p-0" disablePortal>
                   <SheetHeader className="p-4 border-b">
                     <SheetTitle>{tFolders('title')}</SheetTitle>
                   </SheetHeader>

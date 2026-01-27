@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { useDroppable } from '@dnd-kit/core';
 import { FolderPlus, Home } from 'lucide-react';
@@ -59,6 +60,11 @@ function DroppableTreeItem({
       folderId,
     },
   });
+
+  // Debug: Log when droppable is registered
+  useEffect(() => {
+    console.log('🔵 Droppable registered:', `folder-drop-${folderId}`, { name: node.name });
+  }, [folderId, node.name]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
@@ -231,6 +237,11 @@ export function DroppableFolderTree({
       folderId: null,
     },
   });
+
+  // Debug: Log when root droppable is registered
+  useEffect(() => {
+    console.log('🔵 Root droppable registered: folder-drop-root');
+  }, []);
 
   if (isLoading) {
     return (
