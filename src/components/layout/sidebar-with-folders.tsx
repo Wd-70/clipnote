@@ -18,7 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ThemeToggle } from '@/components/layout/theme-toggle';
 import { LanguageSwitcher } from '@/components/layout/language-switcher';
-import { FolderTree } from '@/components/folders/folder-tree';
+import { DroppableFolderTree } from '@/components/folders/droppable-folder-tree';
 import { useFolderSidebar } from '@/contexts/folder-sidebar-context';
 
 interface SidebarWithFoldersProps {
@@ -117,11 +117,11 @@ export function SidebarWithFolders({ className }: SidebarWithFoldersProps) {
 
         {/* Folder tree - takes remaining space */}
         <div className="flex-1 overflow-hidden">
-          <FolderTree
+          <DroppableFolderTree
             tree={folderTree}
             currentFolderId={currentFolderId ?? null}
             expandedIds={expandedIds}
-            onFolderSelect={(id) => {
+            onFolderSelect={(id: string | null) => {
               onFolderSelect?.(id);
             }}
             onToggleExpand={onToggleExpand ?? (() => {})}
