@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useMemo, useRef, type ReactNode } from 'react';
 import {
   DndContext,
   DragOverlay,
@@ -35,8 +35,16 @@ interface DndHandlers {
 const ProjectDndContext = createContext<ProjectDndState | null>(null);
 
 export function ProjectDndProvider({ children }: { children: ReactNode }) {
-  const [handlers, setHandlers] = useState<DndHandlers | null>(null);
+  const handlersRef = useRef<DndHandlers | null>(null);
   const [activeProject, setActiveProject] = useState<IProject | null>(null);
+
+  const registerHandlers = useCallback((h: DndHandlers) => {
+    handlersRef.current = h;
+  }, []);
+
+  const unregisterHandlers = useCallback(() => {
+    handlersRef.current = null;
+  }, []);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -59,36 +67,39 @@ export function ProjectDndProvider({ children }: { children: ReactNode }) {
 
   const handleDragStart = useCallback(
     (event: DragStartEvent) => {
-      handlers?.onDragStart(event);
-      const project = handlers?.getActiveProject();
+      handlersRef.current?.onDragStart(event);
+      const project = handlersRef.current?.getActiveProject();
       setActiveProject(project ?? null);
     },
-    [handlers]
+    []
   );
 
   const handleDragOver = useCallback(
     (event: DragOverEvent) => {
-      handlers?.onDragOver(event);
+      handlersRef.current?.onDragOver(event);
     },
-    [handlers]
+    []
   );
 
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
-      handlers?.onDragEnd(event);
+      handlersRef.current?.onDragEnd(event);
       setActiveProject(null);
     },
-    [handlers]
+    []
+  );
+
+  const contextValue = useMemo(
+    () => ({
+      activeProject,
+      registerHandlers,
+      unregisterHandlers,
+    }),
+    [activeProject, registerHandlers, unregisterHandlers]
   );
 
   return (
-    <ProjectDndContext.Provider
-      value={{
-        activeProject,
-        registerHandlers: setHandlers,
-        unregisterHandlers: () => setHandlers(null),
-      }}
-    >
+    <ProjectDndContext.Provider value={contextValue}>
       <DndContext
         sensors={sensors}
         collisionDetection={customCollisionDetection}
