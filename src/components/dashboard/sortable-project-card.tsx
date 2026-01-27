@@ -94,6 +94,7 @@ export function SortableProjectCard({
             'cursor-grab active:cursor-grabbing hover:bg-accent'
           )}
           onClick={(e) => e.stopPropagation()}
+          suppressHydrationWarning
         >
           <GripVertical className="h-4 w-4 text-muted-foreground" />
         </div>

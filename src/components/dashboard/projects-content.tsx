@@ -631,7 +631,7 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
         }}
       >
         {activeProject && (
-          <div style={{ transform: 'translate(-50%, -50%)' }}>
+          <div style={{ transform: 'translate(10px, 0)' }}>
             <ProjectDragOverlay project={activeProject} />
           </div>
         )}
