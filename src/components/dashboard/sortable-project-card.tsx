@@ -28,6 +28,7 @@ export function SortableProjectCard({
     attributes,
     listeners,
     setNodeRef,
+    setActivatorNodeRef,
     transform,
     transition,
     isDragging,
@@ -83,6 +84,7 @@ export function SortableProjectCard({
       {/* Drag Handle (visible on hover, not in selection mode) */}
       {!isSelectionMode && (
         <div
+          ref={setActivatorNodeRef}
           {...attributes}
           {...listeners}
           className={cn(

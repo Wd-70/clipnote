@@ -50,6 +50,7 @@ import {
   BulkActionBar,
   ProjectsToolbar,
 } from '@/components/folders';
+import { DroppableFolderTree } from '@/components/folders/droppable-folder-tree';
 
 import { useFolderTree } from '@/hooks/use-folder-tree';
 import { useFolderNavigation, useProjectFilter } from '@/hooks/use-folder-navigation';
@@ -294,15 +295,51 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
       const { active, over } = event;
       setActiveProject(null);
 
-      if (!over || active.id === over.id) {
+      if (!over) {
         return;
       }
 
       const activeId = (active.id as string).replace('project-', '');
-      const overId = (over.id as string).replace('project-', '');
+      const overId = over.id as string;
 
+      // Check if dropping on a folder
+      if (overId.startsWith('folder-drop-')) {
+        const targetFolderId = overId === 'folder-drop-root' 
+          ? null 
+          : overId.replace('folder-drop-', '');
+
+        // Move project to folder
+        try {
+          const response = await fetch('/api/projects/bulk', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'move',
+              projectIds: [activeId],
+              folderId: targetFolderId,
+            }),
+          });
+
+          if (response.ok) {
+            toast.success(tBulk('moved', { count: 1 }));
+            fetchProjects();
+          } else {
+            toast.error('Failed to move project');
+          }
+        } catch (error) {
+          toast.error('Failed to move project');
+        }
+        return;
+      }
+
+      // Otherwise, reordering projects
+      if (active.id === over.id) {
+        return;
+      }
+
+      const overProjectId = overId.replace('project-', '');
       const oldIndex = sortedProjects.findIndex((p) => p._id?.toString() === activeId);
-      const newIndex = sortedProjects.findIndex((p) => p._id?.toString() === overId);
+      const newIndex = sortedProjects.findIndex((p) => p._id?.toString() === overProjectId);
 
       if (oldIndex !== -1 && newIndex !== -1) {
         const newOrder = arrayMove(sortedProjects, oldIndex, newIndex);
@@ -338,7 +375,7 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
         }
       }
     },
-    [sortedProjects, navigation.currentFolderId, fetchProjects]
+    [sortedProjects, navigation.currentFolderId, fetchProjects, tBulk]
   );
 
   return (
@@ -352,7 +389,7 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
               {tFolders('title')}
             </h2>
           </div>
-          <FolderTree
+          <DroppableFolderTree
             tree={folderTree.tree}
             currentFolderId={navigation.currentFolderId}
             expandedIds={folderTree.expandedIds}
@@ -389,7 +426,7 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
                   <SheetHeader className="p-4 border-b">
                     <SheetTitle>{tFolders('title')}</SheetTitle>
                   </SheetHeader>
-                  <FolderTree
+                  <DroppableFolderTree
                     tree={folderTree.tree}
                     currentFolderId={navigation.currentFolderId}
                     expandedIds={folderTree.expandedIds}
@@ -495,7 +532,12 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
             </SortableContext>
 
             {/* Drag Overlay */}
-            <DragOverlay dropAnimation={null}>
+            <DragOverlay
+              dropAnimation={{
+                duration: 200,
+                easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)',
+              }}
+            >
               {activeProject && <ProjectDragOverlay project={activeProject} />}
             </DragOverlay>
           </DndContext>
