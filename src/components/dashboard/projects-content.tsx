@@ -18,8 +18,26 @@ import {
 } from '@/components/ui/sheet';
 
 import { ProjectCard } from '@/components/dashboard/project-card';
+import { SortableProjectCard, ProjectDragOverlay } from '@/components/dashboard/sortable-project-card';
 import { EmptyState } from '@/components/dashboard/empty-state';
 import { NewProjectDialog } from '@/components/dashboard/new-project-dialog';
+import {
+  DndContext,
+  DragOverlay,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragStartEvent,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  rectSortingStrategy,
+  arrayMove,
+} from '@dnd-kit/sortable';
 
 import {
   FolderTree,
@@ -36,6 +54,7 @@ import {
 import { useFolderTree } from '@/hooks/use-folder-tree';
 import { useFolderNavigation, useProjectFilter } from '@/hooks/use-folder-navigation';
 import { useBulkSelection, useBulkProjectActions } from '@/hooks/use-bulk-selection';
+import { useFolderSidebar } from '@/contexts/folder-sidebar-context';
 import type { IProject, IFolder } from '@/types';
 
 interface ProjectsContentProps {
@@ -92,6 +111,50 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
     onError: (error) => toast.error(error),
   });
 
+  // Folder sidebar context (sync state for sidebar folder view)
+  const folderSidebar = useFolderSidebar();
+
+  // Sync folder state to context (for sidebar to display)
+  useEffect(() => {
+    folderSidebar.setFolderTree(folderTree.tree);
+  }, [folderTree.tree]);
+
+  useEffect(() => {
+    folderSidebar.setCurrentFolderId(navigation.currentFolderId);
+  }, [navigation.currentFolderId]);
+
+  useEffect(() => {
+    folderSidebar.setExpandedIds(folderTree.expandedIds);
+  }, [folderTree.expandedIds]);
+
+  useEffect(() => {
+    folderSidebar.setIsFolderLoading(folderTree.isLoading);
+  }, [folderTree.isLoading]);
+
+  // Set callbacks for sidebar folder actions
+  useEffect(() => {
+    folderSidebar.setOnFolderSelect(() => navigation.navigateTo);
+    folderSidebar.setOnToggleExpand(() => folderTree.toggleExpanded);
+    folderSidebar.setOnCreateFolder(() => (parentId: string | null) => {
+      // If parentId is null (clicking "New Folder"), default to current folder
+      setCreateFolderParentId(parentId ?? navigation.currentFolderId);
+      setCreateFolderOpen(true);
+    });
+    folderSidebar.setOnRenameFolder(() => setRenameFolderTarget);
+    folderSidebar.setOnDeleteFolder(() => setDeleteFolderTarget);
+    folderSidebar.setOnMoveFolder(() => setMoveFolderTarget);
+    
+    return () => {
+      // Cleanup callbacks on unmount
+      folderSidebar.setOnFolderSelect(null);
+      folderSidebar.setOnToggleExpand(null);
+      folderSidebar.setOnCreateFolder(null);
+      folderSidebar.setOnRenameFolder(null);
+      folderSidebar.setOnDeleteFolder(null);
+      folderSidebar.setOnMoveFolder(null);
+    };
+  }, [navigation.navigateTo, folderTree.toggleExpanded]);
+
   // Dialog states
   const [createFolderOpen, setCreateFolderOpen] = useState(false);
   const [createFolderParentId, setCreateFolderParentId] = useState<string | null>(null);
@@ -100,6 +163,21 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
   const [moveFolderTarget, setMoveFolderTarget] = useState<IFolder | null>(null);
   const [moveProjectsOpen, setMoveProjectsOpen] = useState(false);
   const [mobileFolderOpen, setMobileFolderOpen] = useState(false);
+
+  // DnD state for projects
+  const [activeProject, setActiveProject] = useState<IProject | null>(null);
+
+  // DnD sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   // Fetch projects
   const fetchProjects = useCallback(async () => {
@@ -193,10 +271,80 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
   // Sort projects
   const sortedProjects = [...filteredProjects].sort(projectFilter.sortComparator);
 
+  // Project IDs for sortable context
+  const projectIds = sortedProjects.map((p) => `project-${p._id?.toString()}`);
+
+  // DnD handlers for projects
+  const handleProjectDragStart = useCallback(
+    (event: DragStartEvent) => {
+      const idStr = event.active.id as string;
+      if (idStr.startsWith('project-')) {
+        const projectId = idStr.replace('project-', '');
+        const project = sortedProjects.find((p) => p._id?.toString() === projectId);
+        if (project) {
+          setActiveProject(project);
+        }
+      }
+    },
+    [sortedProjects]
+  );
+
+  const handleProjectDragEnd = useCallback(
+    async (event: DragEndEvent) => {
+      const { active, over } = event;
+      setActiveProject(null);
+
+      if (!over || active.id === over.id) {
+        return;
+      }
+
+      const activeId = (active.id as string).replace('project-', '');
+      const overId = (over.id as string).replace('project-', '');
+
+      const oldIndex = sortedProjects.findIndex((p) => p._id?.toString() === activeId);
+      const newIndex = sortedProjects.findIndex((p) => p._id?.toString() === overId);
+
+      if (oldIndex !== -1 && newIndex !== -1) {
+        const newOrder = arrayMove(sortedProjects, oldIndex, newIndex);
+        const orderedIds = newOrder.map((p) => p._id?.toString() ?? '');
+
+        // Optimistically update local state
+        setProjects((prev) => {
+          const otherProjects = prev.filter(
+            (p) => !orderedIds.includes(p._id?.toString() ?? '')
+          );
+          return [...otherProjects, ...newOrder];
+        });
+
+        // Call API to persist order
+        try {
+          const response = await fetch('/api/projects/reorder', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              orderedIds,
+              folderId: navigation.currentFolderId,
+            }),
+          });
+
+          if (!response.ok) {
+            // Revert on failure
+            fetchProjects();
+            toast.error('Failed to reorder projects');
+          }
+        } catch (error) {
+          fetchProjects();
+          toast.error('Failed to reorder projects');
+        }
+      }
+    },
+    [sortedProjects, navigation.currentFolderId, fetchProjects]
+  );
+
   return (
     <div className="flex gap-6">
-      {/* Desktop Folder Sidebar */}
-      <aside className="hidden lg:block w-64 shrink-0">
+      {/* Desktop Folder Sidebar (4K+ only - below 3xl, folders are shown in sidebar) */}
+      <aside className="hidden 3xl:block w-64 shrink-0">
         <div className="sticky top-6 border rounded-lg bg-card">
           <div className="p-3 border-b">
             <h2 className="font-semibold text-sm flex items-center gap-2">
@@ -211,7 +359,8 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
             onFolderSelect={navigation.navigateTo}
             onToggleExpand={folderTree.toggleExpanded}
             onCreateFolder={(parentId) => {
-              setCreateFolderParentId(parentId);
+              // If parentId is null (clicking "New Folder"), default to current folder
+              setCreateFolderParentId(parentId ?? navigation.currentFolderId);
               setCreateFolderOpen(true);
             }}
             onRenameFolder={setRenameFolderTarget}
@@ -229,10 +378,10 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <div className="flex items-center gap-2 mb-2">
-              {/* Mobile folder button */}
+              {/* Mobile folder button (only on mobile - md-3xl uses sidebar toggle) */}
               <Sheet open={mobileFolderOpen} onOpenChange={setMobileFolderOpen}>
                 <SheetTrigger asChild>
-                  <Button variant="outline" size="icon" className="lg:hidden shrink-0">
+                  <Button variant="outline" size="icon" className="md:hidden shrink-0">
                     <FolderOpen className="h-4 w-4" />
                   </Button>
                 </SheetTrigger>
@@ -250,7 +399,8 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
                     }}
                     onToggleExpand={folderTree.toggleExpanded}
                     onCreateFolder={(parentId) => {
-                      setCreateFolderParentId(parentId);
+                      // If parentId is null (clicking "New Folder"), default to current folder
+                      setCreateFolderParentId(parentId ?? navigation.currentFolderId);
                       setCreateFolderOpen(true);
                       setMobileFolderOpen(false);
                     }}
@@ -309,7 +459,7 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
           }}
         />
 
-        {/* Projects Grid/List */}
+        {/* Projects Grid/List with DnD */}
         {isLoadingProjects ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -317,59 +467,38 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
             ))}
           </div>
         ) : sortedProjects.length > 0 ? (
-          <div
-            className={
-              navigation.viewMode === 'grid'
-                ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6'
-                : 'space-y-3'
-            }
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragStart={handleProjectDragStart}
+            onDragEnd={handleProjectDragEnd}
           >
-            {sortedProjects.map((project) => (
+            <SortableContext items={projectIds} strategy={rectSortingStrategy}>
               <div
-                key={project._id?.toString()}
                 className={
-                  bulkSelection.isSelectionMode
-                    ? 'relative cursor-pointer'
-                    : ''
-                }
-                onClick={
-                  bulkSelection.isSelectionMode
-                    ? () => bulkSelection.toggle(project._id?.toString() ?? '')
-                    : undefined
+                  navigation.viewMode === 'grid'
+                    ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6'
+                    : 'space-y-3'
                 }
               >
-                {bulkSelection.isSelectionMode && (
-                  <div
-                    className={`absolute top-2 left-2 z-10 h-5 w-5 rounded border-2 flex items-center justify-center ${
-                      bulkSelection.isSelected(project._id?.toString() ?? '')
-                        ? 'bg-primary border-primary text-primary-foreground'
-                        : 'bg-background border-muted-foreground/30'
-                    }`}
-                  >
-                    {bulkSelection.isSelected(project._id?.toString() ?? '') && (
-                      <svg
-                        className="h-3 w-3"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth={3}
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                    )}
-                  </div>
-                )}
-                <ProjectCard
-                  project={project}
-                  onDelete={fetchProjects}
-                />
+                {sortedProjects.map((project) => (
+                  <SortableProjectCard
+                    key={project._id?.toString()}
+                    project={project}
+                    onDelete={fetchProjects}
+                    isSelectionMode={bulkSelection.isSelectionMode}
+                    isSelected={bulkSelection.isSelected(project._id?.toString() ?? '')}
+                    onToggleSelect={() => bulkSelection.toggle(project._id?.toString() ?? '')}
+                  />
+                ))}
               </div>
-            ))}
-          </div>
+            </SortableContext>
+
+            {/* Drag Overlay */}
+            <DragOverlay dropAnimation={null}>
+              {activeProject && <ProjectDragOverlay project={activeProject} />}
+            </DragOverlay>
+          </DndContext>
         ) : (
           <EmptyState
             action={

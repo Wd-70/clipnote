@@ -1,6 +1,8 @@
 // Folder tree components
 export { FolderTree } from './folder-tree';
+export { SortableFolderTree } from './sortable-folder-tree';
 export { FolderTreeItem } from './folder-tree-item';
+export { SortableFolderItem, FolderDragOverlay } from './sortable-folder-item';
 export type { FolderContextAction } from './folder-tree-item';
 
 // Folder icon and color utilities

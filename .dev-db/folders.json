@@ -1,1 +1,26 @@
-[]
+[
+  {
+    "userId": "dev-user-id",
+    "name": "아야",
+    "parentId": null,
+    "color": null,
+    "icon": null,
+    "order": 0,
+    "depth": 0,
+    "_id": "mkw1z3evvvzjhik7v9i",
+    "createdAt": "2026-01-27T03:44:51.463Z",
+    "updatedAt": "2026-01-27T04:50:03.397Z"
+  },
+  {
+    "userId": "dev-user-id",
+    "name": "허니츄러스",
+    "parentId": null,
+    "color": null,
+    "icon": null,
+    "order": 1,
+    "depth": 0,
+    "_id": "mkw4a9t68drb21ch9u6",
+    "createdAt": "2026-01-27T04:49:32.202Z",
+    "updatedAt": "2026-01-27T04:49:32.202Z"
+  }
+]

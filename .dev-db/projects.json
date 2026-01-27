@@ -11,7 +11,9 @@
     "isAutoCollected": false,
     "_id": "mkpf0qjf5spqwu38to5",
     "createdAt": "2026-01-22T12:15:39.867Z",
-    "updatedAt": "2026-01-22T13:24:07.434Z"
+    "updatedAt": "2026-01-27T03:45:21.369Z",
+    "folderId": "mkw1z3evvvzjhik7v9i",
+    "order": 1
   },
   {
     "userId": "dev-user-id",
@@ -25,7 +27,9 @@
     "isAutoCollected": false,
     "_id": "mkpf17316xcpa2xgtr8",
     "createdAt": "2026-01-22T12:16:01.309Z",
-    "updatedAt": "2026-01-22T12:16:01.309Z"
+    "updatedAt": "2026-01-27T03:45:21.367Z",
+    "folderId": "mkw1z3evvvzjhik7v9i",
+    "order": 0
   },
   {
     "userId": "dev-user-id",
@@ -39,6 +43,8 @@
     "isAutoCollected": false,
     "_id": "mkv7phehkdb5izmk71r",
     "createdAt": "2026-01-26T13:37:34.554Z",
-    "updatedAt": "2026-01-26T13:37:34.554Z"
+    "updatedAt": "2026-01-27T04:49:48.162Z",
+    "folderId": "mkw4a9t68drb21ch9u6",
+    "order": 0
   }
 ]
