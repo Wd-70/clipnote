@@ -379,9 +379,15 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
   );
 
   return (
-    <div className="flex gap-6">
-      {/* Desktop Folder Sidebar (4K+ only - below 3xl, folders are shown in sidebar) */}
-      <aside className="hidden 3xl:block w-64 shrink-0">
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragStart={handleProjectDragStart}
+      onDragEnd={handleProjectDragEnd}
+    >
+      <div className="flex gap-6">
+        {/* Desktop Folder Sidebar (4K+ only - below 3xl, folders are shown in sidebar) */}
+        <aside className="hidden 3xl:block w-64 shrink-0">
         <div className="sticky top-6 border rounded-lg bg-card">
           <div className="p-3 border-b">
             <h2 className="font-semibold text-sm flex items-center gap-2">
@@ -504,43 +510,26 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
             ))}
           </div>
         ) : sortedProjects.length > 0 ? (
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragStart={handleProjectDragStart}
-            onDragEnd={handleProjectDragEnd}
-          >
-            <SortableContext items={projectIds} strategy={rectSortingStrategy}>
-              <div
-                className={
-                  navigation.viewMode === 'grid'
-                    ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6'
-                    : 'space-y-3'
-                }
-              >
-                {sortedProjects.map((project) => (
-                  <SortableProjectCard
-                    key={project._id?.toString()}
-                    project={project}
-                    onDelete={fetchProjects}
-                    isSelectionMode={bulkSelection.isSelectionMode}
-                    isSelected={bulkSelection.isSelected(project._id?.toString() ?? '')}
-                    onToggleSelect={() => bulkSelection.toggle(project._id?.toString() ?? '')}
-                  />
-                ))}
-              </div>
-            </SortableContext>
-
-            {/* Drag Overlay */}
-            <DragOverlay
-              dropAnimation={{
-                duration: 200,
-                easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)',
-              }}
+          <SortableContext items={projectIds} strategy={rectSortingStrategy}>
+            <div
+              className={
+                navigation.viewMode === 'grid'
+                  ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6'
+                  : 'space-y-3'
+              }
             >
-              {activeProject && <ProjectDragOverlay project={activeProject} />}
-            </DragOverlay>
-          </DndContext>
+              {sortedProjects.map((project) => (
+                <SortableProjectCard
+                  key={project._id?.toString()}
+                  project={project}
+                  onDelete={fetchProjects}
+                  isSelectionMode={bulkSelection.isSelectionMode}
+                  isSelected={bulkSelection.isSelected(project._id?.toString() ?? '')}
+                  onToggleSelect={() => bulkSelection.toggle(project._id?.toString() ?? '')}
+                />
+              ))}
+            </div>
+          </SortableContext>
         ) : (
           <EmptyState
             action={
@@ -617,6 +606,17 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
           return success;
         }}
       />
+
+      {/* Global Drag Overlay */}
+      <DragOverlay
+        dropAnimation={{
+          duration: 200,
+          easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)',
+        }}
+      >
+        {activeProject && <ProjectDragOverlay project={activeProject} />}
+      </DragOverlay>
     </div>
+    </DndContext>
   );
 }
