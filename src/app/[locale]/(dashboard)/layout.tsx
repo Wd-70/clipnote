@@ -30,7 +30,7 @@ export default function DashboardLayout({
                   <span className="sr-only">Toggle sidebar</span>
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="p-0 w-72" disablePortal>
+              <SheetContent side="left" className="p-0 w-72">
                 <SheetHeader className="sr-only">
                   <SheetTitle>Navigation Menu</SheetTitle>
                 </SheetHeader>
