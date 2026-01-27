@@ -57,7 +57,6 @@ export function ProjectDndProvider({ children }: { children: ReactNode }) {
         c.id.toString().startsWith('folder-drop-')
       );
       if (folderCollision) {
-        console.log('✅ Folder collision detected:', folderCollision.id);
         return [folderCollision];
       }
     }

@@ -267,7 +267,6 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
         const project = sortedProjects.find((p) => p._id?.toString() === projectId);
         if (project) {
           setActiveProject(project);
-          console.log('Drag started:', { projectId, projectTitle: project.title });
           return project;
         }
       }
@@ -277,17 +276,8 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
   );
 
   const handleProjectDragOver = useCallback(
-    (event: DragOverEvent) => {
-      const { over } = event;
-      if (over) {
-        console.log('🎯 Dragging over:', {
-          id: over.id,
-          data: over.data?.current,
-          rect: over.rect,
-        });
-      } else {
-        console.log('❌ Not over any droppable');
-      }
+    (_event: DragOverEvent) => {
+      // Visual feedback is handled by droppable isOver state
     },
     []
   );
@@ -297,14 +287,7 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
       const { active, over } = event;
       setActiveProject(null);
 
-      console.log('🎬 Drag ended:', {
-        activeId: active.id,
-        overId: over?.id,
-        overData: over?.data?.current,
-      });
-
       if (!over) {
-        console.log('⚠️ No drop target');
         return;
       }
 
@@ -316,8 +299,6 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
         const targetFolderId = overId === 'folder-drop-root' 
           ? null 
           : overId.replace('folder-drop-', '');
-        
-        console.log('📁 Dropping on folder:', { targetFolderId, isRoot: targetFolderId === null });
 
         // Move project to folder
         try {
