@@ -29,14 +29,16 @@
   },
   {
     "userId": "dev-user-id",
-    "videoUrl": "https://chzzk.naver.com/video/11363594",
+    "videoUrl": "https://chzzk.naver.com/video/11237584",
     "platform": "CHZZK",
-    "videoId": "11363594",
-    "title": "Untitled Project",
-    "notes": "0:05.0 - 0:06.6 \n2:55:58.8 - 2:56:06.5 \n4:30:11.2 - 4:30:21.4 ",
+    "videoId": "11237584",
+    "title": "슈마메2를 해도 될까요?",
+    "thumbnailUrl": "https://nng-phinf.pstatic.net/MjAyNjAxMTdfODMg/MDAxNzY4NjUzNzU5MjUx.2IA2wSRnZKUQsy1kwsFyeRKGUaylg_FVB4DY8VCcyPgg.jjCa2VAZrlDAoqsXIPo5uergKbOVP3zz5DRMsGV1Inwg.PNG/image.png?type=o500x280_blur",
+    "duration": 20114,
+    "notes": [],
     "isAutoCollected": false,
-    "_id": "mkt3ladzxt0ofzflx2",
-    "createdAt": "2026-01-25T02:06:48.023Z",
-    "updatedAt": "2026-01-25T07:32:44.589Z"
+    "_id": "mkv7phehkdb5izmk71r",
+    "createdAt": "2026-01-26T13:37:34.554Z",
+    "updatedAt": "2026-01-26T13:37:34.554Z"
   }
 ]

@@ -375,7 +375,8 @@ export function useFolderTree(
     if (initialFolders.length === 0) {
       fetchFolders();
     }
-  }, [initialFolders.length, fetchFolders]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return {
     // State

@@ -8,7 +8,7 @@ async function getInitialProjects(): Promise<IProject[]> {
   try {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 
                     (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '') || 
-                    'http://localhost:3500';
+                    'http://localhost:7847';
     
     const response = await fetch(`${baseUrl}/api/projects?sort=created-desc`, {
       cache: 'no-store',
