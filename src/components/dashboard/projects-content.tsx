@@ -25,6 +25,8 @@ import {
   DndContext,
   DragOverlay,
   closestCenter,
+  pointerWithin,
+  rectIntersection,
   KeyboardSensor,
   PointerSensor,
   useSensor,
@@ -296,7 +298,13 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
     (event: DragOverEvent) => {
       const { over } = event;
       if (over) {
-        console.log('Dragging over:', over.id, over.data);
+        console.log('🎯 Dragging over:', {
+          id: over.id,
+          data: over.data?.current,
+          rect: over.rect,
+        });
+      } else {
+        console.log('❌ Not over any droppable');
       }
     },
     []
@@ -307,7 +315,14 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
       const { active, over } = event;
       setActiveProject(null);
 
+      console.log('🎬 Drag ended:', {
+        activeId: active.id,
+        overId: over?.id,
+        overData: over?.data?.current,
+      });
+
       if (!over) {
+        console.log('⚠️ No drop target');
         return;
       }
 
@@ -319,6 +334,8 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
         const targetFolderId = overId === 'folder-drop-root' 
           ? null 
           : overId.replace('folder-drop-', '');
+        
+        console.log('📁 Dropping on folder:', { targetFolderId, isRoot: targetFolderId === null });
 
         // Move project to folder
         try {
@@ -390,10 +407,31 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
     [sortedProjects, navigation.currentFolderId, fetchProjects, tBulk]
   );
 
+  // Custom collision detection: prioritize folders over projects
+  const customCollisionDetection = useCallback((args: any) => {
+    // First check if pointer is within any droppable
+    const pointerCollisions = pointerWithin(args);
+    
+    // If we found collisions, prefer folder-drop targets
+    if (pointerCollisions.length > 0) {
+      const folderCollision = pointerCollisions.find((collision: any) =>
+        collision.id.toString().startsWith('folder-drop-')
+      );
+      
+      if (folderCollision) {
+        console.log('✅ Folder collision detected:', folderCollision.id);
+        return [folderCollision];
+      }
+    }
+    
+    // Fall back to closest center for project reordering
+    return closestCenter(args);
+  }, []);
+
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCenter}
+      collisionDetection={customCollisionDetection}
       onDragStart={handleProjectDragStart}
       onDragOver={handleProjectDragOver}
       onDragEnd={handleProjectDragEnd}
@@ -631,7 +669,7 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
         }}
       >
         {activeProject && (
-          <div style={{ transform: 'translate(10px, 0)' }}>
+          <div style={{ transform: 'translate(288px, 0)' }}>
             <ProjectDragOverlay project={activeProject} />
           </div>
         )}
