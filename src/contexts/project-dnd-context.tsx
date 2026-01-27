@@ -26,10 +26,9 @@ interface ProjectDndState {
 }
 
 interface DndHandlers {
-  onDragStart: (event: DragStartEvent) => void;
+  onDragStart: (event: DragStartEvent) => IProject | null;
   onDragOver: (event: DragOverEvent) => void;
   onDragEnd: (event: DragEndEvent) => void;
-  getActiveProject: () => IProject | null;
 }
 
 const ProjectDndContext = createContext<ProjectDndState | null>(null);
@@ -67,8 +66,7 @@ export function ProjectDndProvider({ children }: { children: ReactNode }) {
 
   const handleDragStart = useCallback(
     (event: DragStartEvent) => {
-      handlersRef.current?.onDragStart(event);
-      const project = handlersRef.current?.getActiveProject();
+      const project = handlersRef.current?.onDragStart(event);
       setActiveProject(project ?? null);
     },
     []

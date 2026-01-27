@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Plus, FolderOpen } from 'lucide-react';
@@ -161,13 +161,7 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
 
   // DnD state for projects
   const [activeProject, setActiveProject] = useState<IProject | null>(null);
-  const activeProjectRef = useRef<IProject | null>(null);
   const { registerHandlers, unregisterHandlers } = useProjectDnd();
-
-  // Keep ref in sync with state (avoids useEffect dependency on activeProject)
-  useEffect(() => {
-    activeProjectRef.current = activeProject;
-  }, [activeProject]);
 
   // Fetch projects
   const fetchProjects = useCallback(async () => {
@@ -266,7 +260,7 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
 
   // DnD handlers for projects
   const handleProjectDragStart = useCallback(
-    (event: DragStartEvent) => {
+    (event: DragStartEvent): IProject | null => {
       const idStr = event.active.id as string;
       if (idStr.startsWith('project-')) {
         const projectId = idStr.replace('project-', '');
@@ -274,8 +268,10 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
         if (project) {
           setActiveProject(project);
           console.log('Drag started:', { projectId, projectTitle: project.title });
+          return project;
         }
       }
+      return null;
     },
     [sortedProjects]
   );
@@ -399,7 +395,6 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
       onDragStart: handleProjectDragStart,
       onDragOver: handleProjectDragOver,
       onDragEnd: handleProjectDragEnd,
-      getActiveProject: () => activeProjectRef.current,
     });
     return () => unregisterHandlers();
   }, [handleProjectDragStart, handleProjectDragOver, handleProjectDragEnd, registerHandlers, unregisterHandlers]);
