@@ -356,12 +356,18 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
         const newOrder = arrayMove(sortedProjects, oldIndex, newIndex);
         const orderedIds = newOrder.map((p) => p._id?.toString() ?? '');
 
-        // Optimistically update local state
+        // Optimistically update local state with new order values
         setProjects((prev) => {
+          // Update order field for reordered projects
+          const reorderedWithNewOrder = newOrder.map((p, index) => ({
+            ...p,
+            order: index,
+          }));
+          
           const otherProjects = prev.filter(
             (p) => !orderedIds.includes(p._id?.toString() ?? '')
           );
-          return [...otherProjects, ...newOrder];
+          return [...otherProjects, ...reorderedWithNewOrder];
         });
 
         // Call API to persist order
