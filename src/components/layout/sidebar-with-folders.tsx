@@ -184,7 +184,7 @@ export function SidebarWithFolders({ className }: SidebarWithFoldersProps) {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="hidden md:flex 3xl:hidden w-full justify-between pl-20 h-9 text-xs text-muted-foreground hover:text-foreground"
+                        className="hidden md:flex 3xl:hidden w-full justify-between ml-6 h-9 text-xs text-muted-foreground hover:text-foreground"
                         onClick={() => setShowFolders(true)}
                       >
                         <span className="flex items-center gap-2">
