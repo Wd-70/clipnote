@@ -412,7 +412,7 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
             onDeleteFolder={setDeleteFolderTarget}
             onMoveFolder={setMoveFolderTarget}
             isLoading={folderTree.isLoading}
-            className="h-[400px]"
+            className="h-[calc(100vh-180px)]"
           />
         </div>
       </aside>
