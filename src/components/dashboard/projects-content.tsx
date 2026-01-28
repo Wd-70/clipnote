@@ -389,7 +389,7 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
   return (
     <div className="flex gap-6">
         {/* Desktop Folder Sidebar (4K+ only - below 3xl, folders are shown in sidebar) */}
-        <aside className="hidden 3xl:block w-64 shrink-0">
+        <aside className="hidden 2xl:block w-64 shrink-0">
         <div className="sticky top-6 border rounded-lg bg-card">
           <div className="p-3 border-b">
             <h2 className="font-semibold text-sm flex items-center gap-2">
