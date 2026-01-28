@@ -179,12 +179,12 @@ export function SidebarWithFolders({ className }: SidebarWithFoldersProps) {
                         </span>
                       </Link>
                     </Button>
-                    {/* Folder toggle button */}
+                    {/* Folder toggle button - only visible on medium screens (768px-1919px) */}
                     {isActiveRoute(item.href) && (
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="w-full justify-between pl-11 h-9 text-xs text-muted-foreground hover:text-foreground"
+                        className="hidden md:flex 2xl:hidden w-full justify-between pl-14 h-9 text-xs text-muted-foreground hover:text-foreground"
                         onClick={() => setShowFolders(true)}
                       >
                         <span className="flex items-center gap-2">
