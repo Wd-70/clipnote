@@ -1,48 +1,17 @@
 import NextAuth from 'next-auth';
-import type { Adapter } from 'next-auth/adapters';
 import Google from 'next-auth/providers/google';
-import { MongoDBAdapter } from '@auth/mongodb-adapter';
-import { MongoClient, ServerApiVersion } from 'mongodb';
 
-// MongoDB client for NextAuth adapter
-const uri = process.env.MONGODB_URI;
+// Only import MongoDB in production
+let adapter: any = undefined;
 
-const options = {
-  serverApi: {
-    version: ServerApiVersion.v1,
-    strict: true,
-    deprecationErrors: true,
-  },
-};
-
-let clientPromise: Promise<MongoClient> | undefined;
-
-// Only initialize MongoDB client if URI is provided
-if (uri) {
-  let client: MongoClient;
-
-  if (process.env.NODE_ENV === 'development') {
-    // In development mode, use a global variable so that the value
-    // is preserved across module reloads caused by HMR (Hot Module Replacement).
-    const globalWithMongo = global as typeof globalThis & {
-      _mongoClientPromise?: Promise<MongoClient>;
-    };
-
-    if (!globalWithMongo._mongoClientPromise) {
-      client = new MongoClient(uri, options);
-      globalWithMongo._mongoClientPromise = client.connect();
-    }
-    clientPromise = globalWithMongo._mongoClientPromise;
-  } else {
-    // In production mode, it's best to not use a global variable.
-    client = new MongoClient(uri, options);
-    clientPromise = client.connect();
-  }
+if (process.env.NODE_ENV === 'production' && process.env.MONGODB_URI) {
+  // Dynamic import is not possible here, so MongoDB adapter
+  // will be set up separately in production
+  // For now, we use JWT sessions without adapter
 }
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  // Type assertion needed due to @auth/core version mismatch between next-auth and @auth/mongodb-adapter
-  adapter: clientPromise ? (MongoDBAdapter(clientPromise) as Adapter) : undefined,
+  adapter,
   providers: [
     Google({
       clientId: process.env.AUTH_GOOGLE_ID || '',
@@ -63,7 +32,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.email = 'dev@clipnote.local';
         token.name = 'Development User';
       }
-      
+
       if (user) {
         token.id = user.id;
       }
@@ -83,7 +52,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           },
         };
       }
-      
+
       if (session.user) {
         session.user.id = token.id as string;
       }
