@@ -196,20 +196,22 @@ export function SidebarWithFolders({ className }: SidebarWithFoldersProps) {
                         </span>
                       </Link>
                     </Button>
-                    {/* Folder toggle button - only visible on medium screens (768px-1919px) */}
+                    {/* Folder toggle button - only visible on medium screens (768px-1535px) */}
                     {isActiveRoute(item.href) && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="hidden md:flex 2xl:hidden w-full justify-between ml-6 h-9 text-xs text-muted-foreground hover:text-foreground"
-                        onClick={() => setShowFolders(true)}
-                      >
+                      <div className="hidden md:block 2xl:hidden pl-6">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="w-full justify-between h-9 text-xs text-muted-foreground hover:text-foreground"
+                          onClick={() => setShowFolders(true)}
+                        >
                         <span className="flex items-center gap-2">
                           <FolderOpen className="h-3.5 w-3.5" />
                           {tFolders('title')}
                         </span>
                         <ChevronRight className="h-3.5 w-3.5" />
-                      </Button>
+                        </Button>
+                      </div>
                     )}
                   </div>
                 ) : (
