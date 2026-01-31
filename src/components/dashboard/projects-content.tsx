@@ -486,7 +486,7 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
             </p>
           </div>
 
-          <NewProjectDialog onProjectCreated={fetchProjects} />
+          <NewProjectDialog onProjectCreated={fetchProjects} folderId={navigation.currentFolderId} />
         </div>
 
         <Separator />
@@ -535,7 +535,7 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
         ) : (
           <EmptyState
             action={
-              <NewProjectDialog onProjectCreated={fetchProjects}>
+              <NewProjectDialog onProjectCreated={fetchProjects} folderId={navigation.currentFolderId}>
                 <Button className="mt-4">
                   <Plus className="w-4 h-4 mr-2" />
                   {tDashboard('createFirst')}

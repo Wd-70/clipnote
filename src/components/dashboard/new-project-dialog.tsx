@@ -22,9 +22,10 @@ type Platform = 'YOUTUBE' | 'CHZZK' | 'UNKNOWN';
 interface NewProjectDialogProps {
   children?: React.ReactNode;
   onProjectCreated?: () => void;
+  folderId?: string | null;
 }
 
-export function NewProjectDialog({ children, onProjectCreated }: NewProjectDialogProps) {
+export function NewProjectDialog({ children, onProjectCreated, folderId }: NewProjectDialogProps) {
   const t = useTranslations('newProject');
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -61,8 +62,8 @@ export function NewProjectDialog({ children, onProjectCreated }: NewProjectDialo
       }
 
       // Call actual API
-      console.log("Creating project:", { url, title, platform });
-      
+      console.log("Creating project:", { url, title, platform, folderId });
+
       const response = await fetch('/api/projects', {
         method: 'POST',
         headers: {
@@ -71,6 +72,7 @@ export function NewProjectDialog({ children, onProjectCreated }: NewProjectDialo
         body: JSON.stringify({
           videoUrl: url,
           title: title || undefined,
+          folderId: folderId || undefined,
         }),
       });
 

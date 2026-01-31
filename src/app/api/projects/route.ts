@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { videoUrl, title } = body;
+    const { videoUrl, title, folderId } = body;
 
     if (!videoUrl) {
       return NextResponse.json(
@@ -182,6 +182,7 @@ export async function POST(req: NextRequest) {
       duration,
       notes: [],
       isAutoCollected: false,
+      folderId: folderId || undefined,
     });
 
     console.log('[API POST /api/projects] Project created successfully');
