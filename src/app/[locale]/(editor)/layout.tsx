@@ -41,7 +41,10 @@ export default function EditorLayout({
             </header>
 
             {/* Editor Content - no max-width constraint, minimal padding */}
-            <main className="flex-1 flex flex-col lg:min-h-0 lg:overflow-auto">
+            <main
+              className="flex-1 flex flex-col lg:min-h-0 lg:overflow-auto"
+              style={{ scrollbarGutter: 'stable' }}
+            >
               {children}
             </main>
           </div>
