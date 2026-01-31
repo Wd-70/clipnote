@@ -87,22 +87,17 @@ export function ClipList({
               <div
                 key={clip.id}
                 className={cn(
-                  'group flex items-center gap-2 p-2 rounded-lg border transition-all cursor-pointer',
+                  'group flex items-center gap-1.5 p-2 rounded-lg border transition-all cursor-pointer overflow-hidden',
                   'hover:border-primary/50 hover:bg-muted/30',
                   currentClipIndex === index &&
                     'border-primary bg-primary/5 shadow-sm'
                 )}
                 onClick={() => onClipClick?.(clip, index)}
               >
-                {/* Drag handle (for future reordering) */}
-                <div className="text-muted-foreground/40 hover:text-muted-foreground cursor-grab">
-                  <GripVertical className="h-4 w-4" />
-                </div>
-
                 {/* Clip number */}
                 <div
                   className={cn(
-                    'flex items-center justify-center w-6 h-6 rounded-full text-xs font-medium',
+                    'flex items-center justify-center w-5 h-5 rounded-full text-xs font-medium shrink-0',
                     currentClipIndex === index
                       ? 'bg-primary text-primary-foreground'
                       : 'bg-muted text-muted-foreground'
@@ -112,53 +107,52 @@ export function ClipList({
                 </div>
 
                 {/* Clip info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs text-muted-foreground">
+                <div className="flex-1 min-w-0 overflow-hidden">
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <span className="font-mono whitespace-nowrap">
                       {formatSecondsToTime(clip.startTime)}
                     </span>
-                    <span className="text-muted-foreground/40">→</span>
-                    <span className="font-mono text-xs text-muted-foreground">
+                    <span className="text-muted-foreground/40">-</span>
+                    <span className="font-mono whitespace-nowrap">
                       {formatSecondsToTime(clip.endTime)}
                     </span>
+                    <Badge variant="outline" className="text-[10px] px-1 py-0 ml-1 hidden sm:inline-flex">
+                      {formatSecondsToTime(clip.duration)}
+                    </Badge>
                   </div>
                   {clip.text && (
                     <p className="text-sm truncate mt-0.5">{clip.text}</p>
                   )}
                 </div>
 
-                {/* Duration badge */}
-                <Badge variant="outline" className="text-xs shrink-0">
-                  {formatSecondsToTime(clip.duration)}
-                </Badge>
-
-                {/* Play button */}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onClipClick?.(clip, index);
-                  }}
-                >
-                  <Play className="h-3 w-3" />
-                </Button>
-
-                {/* Delete button */}
-                {onClipDelete && (
+                {/* Action buttons - show on hover */}
+                <div className="flex items-center shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
+                    className="h-6 w-6"
                     onClick={(e) => {
                       e.stopPropagation();
-                      onClipDelete(clip, index);
+                      onClipClick?.(clip, index);
                     }}
                   >
-                    <Trash2 className="h-3 w-3" />
+                    <Play className="h-3 w-3" />
                   </Button>
-                )}
+
+                  {onClipDelete && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-destructive hover:text-destructive"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onClipDelete(clip, index);
+                      }}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  )}
+                </div>
               </div>
             ))}
           </div>
