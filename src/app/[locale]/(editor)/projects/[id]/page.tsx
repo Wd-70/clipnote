@@ -394,13 +394,13 @@ export default function EditorPage() {
               className="shrink-0"
             />
 
-            {/* Clip List - Min height on mobile, flex on desktop */}
+            {/* Clip List - Min height on mobile, fills remaining space on desktop */}
             <ClipList
               clips={clips}
               currentClipIndex={currentClipIndex}
               onClipClick={handleClipClick}
               onPlayAll={playAllClips}
-              className="min-h-[280px] max-h-[400px] lg:max-h-none lg:flex-1 lg:min-h-[200px] lg:overflow-hidden"
+              className="min-h-[280px] max-h-[400px] lg:max-h-none lg:flex-1 lg:min-h-0"
             />
           </div>
 
@@ -424,7 +424,7 @@ export default function EditorPage() {
                   currentTime={currentTime}
                   videoDuration={duration}
                   onInsertTimestamp={handleInsertTimestamp}
-                  className="min-h-[450px] lg:min-h-0 lg:flex-1"
+                  className="min-h-[450px] lg:min-h-0 lg:h-full"
                 />
               </TabsContent>
 

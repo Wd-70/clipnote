@@ -13,16 +13,16 @@ export default function EditorLayout({
   return (
     <FolderSidebarProvider>
       <ProjectDndProvider>
-        <div className="flex min-h-screen bg-background">
+        <div className="flex min-h-screen lg:h-screen bg-background">
           {/* Desktop Sidebar */}
           <aside className="hidden md:block w-64 border-r fixed inset-y-0 z-30 bg-background/50 backdrop-blur-sm">
             <SidebarWithFolders />
           </aside>
 
           {/* Main Layout */}
-          <div className="flex-1 flex flex-col md:ml-64 transition-all duration-300">
+          <div className="flex-1 flex flex-col md:ml-64 transition-all duration-300 lg:h-screen lg:overflow-hidden">
             {/* Mobile Header with menu */}
-            <header className="h-14 border-b md:hidden flex items-center px-4 bg-background/50 backdrop-blur-sm sticky top-0 z-40">
+            <header className="h-14 border-b md:hidden flex items-center px-4 bg-background/50 backdrop-blur-sm sticky top-0 z-40 shrink-0">
               <Sheet>
                 <SheetTrigger asChild>
                   <Button variant="ghost" size="icon" className="mr-2">
@@ -41,7 +41,7 @@ export default function EditorLayout({
             </header>
 
             {/* Editor Content - no max-width constraint, minimal padding */}
-            <main className="flex-1 flex flex-col">
+            <main className="flex-1 flex flex-col min-h-0 lg:overflow-hidden">
               {children}
             </main>
           </div>

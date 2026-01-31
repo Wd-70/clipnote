@@ -145,7 +145,7 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
   );
 
   return (
-    <div className={cn('flex flex-col h-full', className)}>
+    <div className={cn('flex flex-col', className)}>
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-4">
