@@ -499,9 +499,6 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
           onViewModeChange={navigation.setViewMode}
           isSelectionMode={bulkSelection.isSelectionMode}
           onToggleSelectionMode={bulkSelection.toggleSelectionMode}
-          onCreateProject={() => {
-            // Trigger new project dialog - handled by NewProjectDialog
-          }}
         />
 
         {/* Projects Grid/List with DnD */}
