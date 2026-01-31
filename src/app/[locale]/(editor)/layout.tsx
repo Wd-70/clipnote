@@ -20,7 +20,7 @@ export default function EditorLayout({
           </aside>
 
           {/* Main Layout */}
-          <div className="flex-1 flex flex-col md:ml-64 transition-all duration-300 lg:h-screen lg:overflow-hidden">
+          <div className="flex-1 flex flex-col md:ml-64 transition-all duration-300 lg:h-screen lg:overflow-auto">
             {/* Mobile Header with menu */}
             <header className="h-14 border-b md:hidden flex items-center px-4 bg-background/50 backdrop-blur-sm sticky top-0 z-40 shrink-0">
               <Sheet>
@@ -41,7 +41,7 @@ export default function EditorLayout({
             </header>
 
             {/* Editor Content - no max-width constraint, minimal padding */}
-            <main className="flex-1 flex flex-col min-h-0 lg:overflow-hidden">
+            <main className="flex-1 flex flex-col">
               {children}
             </main>
           </div>
