@@ -106,23 +106,30 @@ export default function EditorPage() {
     const headerElement = headerRef.current;
     if (!headerElement) return;
 
-    // Debounce resize updates to avoid excessive re-renders
+    // Debounce resize updates to reduce re-renders during resize
     let timeoutId: NodeJS.Timeout;
+    let rafId: number;
 
     const resizeObserver = new ResizeObserver((entries) => {
+      // Cancel any pending updates
       clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => {
-        for (const entry of entries) {
-          const width = Math.floor(entry.contentRect.width);
-          setHeaderWidth(prevWidth => {
-            // Only update if width changed significantly (avoid sub-pixel updates)
-            if (Math.abs(prevWidth - width) > 1) {
-              return width;
-            }
-            return prevWidth;
-          });
-        }
-      }, 16); // ~60fps throttle
+      cancelAnimationFrame(rafId);
+
+      // Use requestAnimationFrame + debounce for smoother updates
+      rafId = requestAnimationFrame(() => {
+        timeoutId = setTimeout(() => {
+          for (const entry of entries) {
+            const width = Math.floor(entry.contentRect.width);
+            setHeaderWidth(prevWidth => {
+              // Only update if width changed significantly (>20px threshold)
+              if (Math.abs(prevWidth - width) > 20) {
+                return width;
+              }
+              return prevWidth;
+            });
+          }
+        }, 150); // Increased debounce for smoother resize
+      });
     });
 
     resizeObserver.observe(headerElement);
@@ -133,6 +140,7 @@ export default function EditorPage() {
 
     return () => {
       clearTimeout(timeoutId);
+      cancelAnimationFrame(rafId);
       resizeObserver.disconnect();
     };
   }, [isLoading, project]);
@@ -371,9 +379,9 @@ export default function EditorPage() {
       </header>
 
       {/* Main content */}
-      <div className="flex-1 p-4 lg:min-h-0 lg:overflow-hidden lg:flex lg:flex-col">
+      <div className="flex-1 p-4 lg:min-h-0 lg:overflow-hidden lg:flex lg:flex-col" style={{ contain: 'layout' }}>
         {/* PC: min 900px height, fills remaining space. Both columns same height */}
-        <div className="lg:grid lg:grid-cols-2 gap-4 lg:min-h-[900px] lg:flex-1">
+        <div className="lg:grid lg:grid-cols-2 gap-4 lg:min-h-[900px] lg:flex-1" style={{ contain: 'layout style' }}>
           {/* Left column: Video Player, Timeline, Clip List */}
           <div className="flex flex-col gap-4 lg:h-full lg:overflow-hidden">
             <VideoPlayer
