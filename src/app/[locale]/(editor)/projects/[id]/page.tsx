@@ -275,7 +275,7 @@ export default function EditorPage() {
   const isNarrow = headerWidth > 0 && headerWidth < 720;
 
   return (
-    <div className="flex flex-col lg:h-full">
+    <div className="flex flex-col lg:min-h-full">
       {/* Header */}
       <header ref={headerRef} className="border-b px-2 sm:px-4 py-2 sm:py-3 bg-background/95 backdrop-blur sticky top-0 z-10 shrink-0">
         <div className="flex items-center justify-between gap-2">
@@ -379,7 +379,7 @@ export default function EditorPage() {
       </header>
 
       {/* Main content */}
-      <div className="flex-1 p-4 lg:min-h-0 lg:overflow-hidden lg:flex lg:flex-col" style={{ contain: 'layout' }}>
+      <div className="flex-1 p-4 lg:flex lg:flex-col" style={{ contain: 'layout' }}>
         {/* PC: min 900px height, fills remaining space. Both columns same height */}
         <div className="lg:grid lg:grid-cols-2 gap-4 lg:min-h-[900px] lg:flex-1" style={{ contain: 'layout style' }}>
           {/* Left column: Video Player, Timeline, Clip List */}
