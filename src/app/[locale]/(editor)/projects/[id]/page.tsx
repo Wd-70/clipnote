@@ -379,9 +379,9 @@ export default function EditorPage() {
       </header>
 
       {/* Main content */}
-      <div className="flex-1 p-4 lg:flex lg:flex-col" style={{ contain: 'layout' }}>
-        {/* PC: min 900px height, fills remaining space. Both columns same height */}
-        <div className="lg:grid lg:grid-cols-2 gap-4 lg:min-h-[900px] lg:flex-1" style={{ contain: 'layout style' }}>
+      <div className="flex-1 p-4" style={{ contain: 'layout' }}>
+        {/* PC: min 900px or viewport height (whichever is larger). Both columns same height */}
+        <div className="lg:grid lg:grid-cols-2 gap-4 lg:h-[max(900px,calc(100vh-100px))]" style={{ contain: 'layout style' }}>
           {/* Left column: Video Player, Timeline, Clip List */}
           <div className="flex flex-col gap-4 lg:h-full lg:overflow-hidden">
             <VideoPlayer
