@@ -82,12 +82,12 @@ export default function EditorPage() {
         }
         const data = await response.json();
         const projectData = data.data;
-        
+
         setProject(projectData);
-        
+
         // Handle notes field: convert array to empty string, or use string as-is
-        const notesValue = Array.isArray(projectData.notes) 
-          ? '' 
+        const notesValue = Array.isArray(projectData.notes)
+          ? ''
           : (projectData.notes || '');
         setNotes(notesValue);
       } catch (error) {
@@ -97,7 +97,7 @@ export default function EditorPage() {
         setIsLoading(false);
       }
     }
-    
+
     fetchProject();
   }, [projectId, t]);
 
@@ -108,7 +108,7 @@ export default function EditorPage() {
 
     // Debounce resize updates to avoid excessive re-renders
     let timeoutId: NodeJS.Timeout;
-    
+
     const resizeObserver = new ResizeObserver((entries) => {
       clearTimeout(timeoutId);
       timeoutId = setTimeout(() => {
@@ -126,11 +126,11 @@ export default function EditorPage() {
     });
 
     resizeObserver.observe(headerElement);
-    
+
     // Initial measurement
     const initialWidth = Math.floor(headerElement.getBoundingClientRect().width);
     setHeaderWidth(initialWidth);
-    
+
     return () => {
       clearTimeout(timeoutId);
       resizeObserver.disconnect();
@@ -267,9 +267,9 @@ export default function EditorPage() {
   const isNarrow = headerWidth > 0 && headerWidth < 720;
 
   return (
-    <div className="min-h-screen lg:h-screen flex flex-col -mx-4 md:-mx-8 -mt-6">
+    <div className="h-screen flex flex-col overflow-hidden">
       {/* Header */}
-      <header ref={headerRef} className="border-b px-2 sm:px-4 py-2 sm:py-3 bg-background/95 backdrop-blur sticky top-0 z-10">
+      <header ref={headerRef} className="border-b px-2 sm:px-4 py-2 sm:py-3 bg-background/95 backdrop-blur shrink-0">
         <div className="flex items-center justify-between gap-2">
           {/* Left: Back button + Title */}
           <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -292,8 +292,8 @@ export default function EditorPage() {
           {/* Right: Action buttons - dynamically responsive based on header width */}
           <div className="flex items-center gap-1 shrink-0">
             {/* Play button */}
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size={isNarrow ? "icon" : "sm"}
               onClick={() => playAllClips()}
               className="h-8"
@@ -303,10 +303,10 @@ export default function EditorPage() {
             </Button>
 
             {/* Export button */}
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size={isNarrow ? "icon" : "sm"}
-              onClick={handleExport} 
+              onClick={handleExport}
               disabled={clips.length === 0}
               className="h-8"
             >
@@ -315,9 +315,9 @@ export default function EditorPage() {
             </Button>
 
             {/* Share button */}
-            <Button 
-              variant="outline" 
-              size="icon" 
+            <Button
+              variant="outline"
+              size="icon"
               onClick={() => setIsShareDialogOpen(true)}
               className="h-8 w-8"
             >
@@ -326,20 +326,20 @@ export default function EditorPage() {
 
             {/* Settings button - hide when narrow */}
             {!isNarrow && (
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="icon"
                 className="h-8 w-8"
               >
                 <Settings className="h-4 w-4" />
               </Button>
             )}
-            
+
             {/* Delete button - always visible */}
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="icon"
                   className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8"
                   disabled={isDeleting}
@@ -356,7 +356,7 @@ export default function EditorPage() {
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel disabled={isDeleting}>{tCommon('cancel')}</AlertDialogCancel>
-                  <AlertDialogAction 
+                  <AlertDialogAction
                     onClick={handleDelete}
                     disabled={isDeleting}
                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
@@ -370,86 +370,88 @@ export default function EditorPage() {
         </div>
       </header>
 
-      {/* Main content */}
-      <div className="flex-1 lg:grid lg:grid-cols-2 gap-4 p-4 lg:overflow-hidden min-h-0">
-        {/* Left column: Video Player, Timeline, Clip List */}
-        <div className="flex flex-col gap-4 lg:h-full lg:overflow-hidden">
-          <VideoPlayer
-            ref={playerRef}
-            url={project.videoUrl}
-            clips={clips}
-            onDuration={setDuration}
-            onProgress={handleProgress}
-            className="shrink-0"
-          />
+      {/* Main content - scrollable on mobile, fixed grid on desktop */}
+      <div className="flex-1 overflow-y-auto lg:overflow-hidden">
+        <div className="lg:grid lg:grid-cols-2 gap-4 p-4 lg:h-full">
+          {/* Left column: Video Player, Timeline, Clip List */}
+          <div className="flex flex-col gap-4 lg:h-full lg:overflow-hidden">
+            <VideoPlayer
+              ref={playerRef}
+              url={project.videoUrl}
+              clips={clips}
+              onDuration={setDuration}
+              onProgress={handleProgress}
+              className="shrink-0"
+            />
 
-          {/* Clip Timeline - Virtual playback controls */}
-          <ClipTimeline
-            clips={clips}
-            playerRef={playerRef}
-            currentTime={currentTime}
-            isPlaying={isPlaying}
-            onPlayStateChange={setIsPlaying}
-            className="shrink-0"
-          />
+            {/* Clip Timeline - Virtual playback controls */}
+            <ClipTimeline
+              clips={clips}
+              playerRef={playerRef}
+              currentTime={currentTime}
+              isPlaying={isPlaying}
+              onPlayStateChange={setIsPlaying}
+              className="shrink-0"
+            />
 
-          {/* Clip List - Min height guaranteed, grows with content, scrolls when exceeds container */}
-          <ClipList
-            clips={clips}
-            currentClipIndex={currentClipIndex}
-            onClipClick={handleClipClick}
-            onPlayAll={playAllClips}
-            className="min-h-[250px] max-h-[400px] lg:max-h-none lg:flex-1 overflow-hidden"
-          />
-        </div>
+            {/* Clip List - Min height guaranteed, grows with content, scrolls when exceeds container */}
+            <ClipList
+              clips={clips}
+              currentClipIndex={currentClipIndex}
+              onClipClick={handleClipClick}
+              onPlayAll={playAllClips}
+              className="min-h-[250px] lg:flex-1 lg:min-h-0 overflow-hidden"
+            />
+          </div>
 
-        {/* Right column: Notes Editor & Analysis */}
-        <div className="flex flex-col gap-4 min-h-[400px] lg:min-h-0 lg:h-full lg:overflow-hidden pt-4 lg:pt-0">
-          <Tabs defaultValue="notes" className="flex-1 flex flex-col lg:overflow-hidden">
-            <TabsList className="grid w-full grid-cols-2 shrink-0">
-              <TabsTrigger value="notes">{t('notes')}</TabsTrigger>
-              <TabsTrigger value="analysis">{t('aiAnalysis')}</TabsTrigger>
-            </TabsList>
+          {/* Right column: Notes Editor & Analysis */}
+          <div className="flex flex-col gap-4 min-h-[400px] lg:min-h-0 lg:h-full lg:overflow-hidden pt-4 lg:pt-0">
+            <Tabs defaultValue="notes" className="flex-1 flex flex-col lg:overflow-hidden">
+              <TabsList className="grid w-full grid-cols-2 shrink-0">
+                <TabsTrigger value="notes">{t('notes')}</TabsTrigger>
+                <TabsTrigger value="analysis">{t('aiAnalysis')}</TabsTrigger>
+              </TabsList>
 
-            <TabsContent value="notes" className="flex-1 mt-4 data-[state=active]:flex data-[state=active]:flex-col lg:overflow-hidden min-h-0">
-              <NotesEditor
-                ref={notesEditorRef}
-                initialNotes={notes}
-                onNotesChange={setNotes}
-                onClipsChange={setClips}
-                onSave={handleSave}
-                onClipClick={handleClipClick}
-                currentClipIndex={currentClipIndex}
-                currentTime={currentTime}
-                videoDuration={duration}
-                onInsertTimestamp={handleInsertTimestamp}
-                className="flex-1 min-h-[400px] lg:min-h-0"
-              />
-            </TabsContent>
+              <TabsContent value="notes" className="flex-1 mt-4 data-[state=active]:flex data-[state=active]:flex-col lg:overflow-hidden min-h-0">
+                <NotesEditor
+                  ref={notesEditorRef}
+                  initialNotes={notes}
+                  onNotesChange={setNotes}
+                  onClipsChange={setClips}
+                  onSave={handleSave}
+                  onClipClick={handleClipClick}
+                  currentClipIndex={currentClipIndex}
+                  currentTime={currentTime}
+                  videoDuration={duration}
+                  onInsertTimestamp={handleInsertTimestamp}
+                  className="flex-1 min-h-[400px] lg:min-h-0"
+                />
+              </TabsContent>
 
-            <TabsContent value="analysis" className="flex-1 mt-4 data-[state=active]:flex data-[state=active]:flex-col lg:overflow-hidden">
-              <Card className="h-full min-h-[400px]">
-                <CardHeader>
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Sparkles className="h-4 w-4" />
-                    {t('aiAnalysis')}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center py-8">
-                    <Sparkles className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
-                    <p className="text-muted-foreground mb-4">
-                      {t('aiDescription')}
-                    </p>
-                    <Button>
-                      <Sparkles className="h-4 w-4 mr-2" />
-                      {t('startAnalysis', { points: 10 })}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+              <TabsContent value="analysis" className="flex-1 mt-4 data-[state=active]:flex data-[state=active]:flex-col lg:overflow-hidden">
+                <Card className="h-full min-h-[400px]">
+                  <CardHeader>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Sparkles className="h-4 w-4" />
+                      {t('aiAnalysis')}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center py-8">
+                      <Sparkles className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+                      <p className="text-muted-foreground mb-4">
+                        {t('aiDescription')}
+                      </p>
+                      <Button>
+                        <Sparkles className="h-4 w-4 mr-2" />
+                        {t('startAnalysis', { points: 10 })}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          </div>
         </div>
       </div>
 
@@ -471,8 +473,8 @@ export default function EditorPage() {
 
       {/* Export Dialog */}
       {project && (
-        <ExportDialog 
-          open={isExportDialogOpen} 
+        <ExportDialog
+          open={isExportDialogOpen}
           onOpenChange={setIsExportDialogOpen}
           clips={clips}
           videoUrl={project.videoUrl}
