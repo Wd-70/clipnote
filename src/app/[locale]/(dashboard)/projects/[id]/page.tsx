@@ -371,43 +371,40 @@ export default function EditorPage() {
       </header>
 
       {/* Main content */}
-      <div className="flex-1 lg:grid lg:grid-cols-2 gap-4 p-4 lg:overflow-hidden">
-        {/* Mobile: Scrollable vertical layout, Desktop: Grid layout */}
-        <div className="flex flex-col gap-4">
-          {/* Left: Video Player */}
-          <div className="flex flex-col gap-4 lg:overflow-hidden">
-            <VideoPlayer
-              ref={playerRef}
-              url={project.videoUrl}
-              clips={clips}
-              onDuration={setDuration}
-              onProgress={handleProgress}
-              className="shrink-0"
-            />
+      <div className="flex-1 lg:grid lg:grid-cols-2 gap-4 p-4 lg:overflow-hidden min-h-0">
+        {/* Left column: Video Player, Timeline, Clip List */}
+        <div className="flex flex-col gap-4 lg:h-full lg:overflow-hidden">
+          <VideoPlayer
+            ref={playerRef}
+            url={project.videoUrl}
+            clips={clips}
+            onDuration={setDuration}
+            onProgress={handleProgress}
+            className="shrink-0"
+          />
 
-            {/* Clip Timeline - Virtual playback controls */}
-            <ClipTimeline
-              clips={clips}
-              playerRef={playerRef}
-              currentTime={currentTime}
-              isPlaying={isPlaying}
-              onPlayStateChange={setIsPlaying}
-              className="shrink-0"
-            />
+          {/* Clip Timeline - Virtual playback controls */}
+          <ClipTimeline
+            clips={clips}
+            playerRef={playerRef}
+            currentTime={currentTime}
+            isPlaying={isPlaying}
+            onPlayStateChange={setIsPlaying}
+            className="shrink-0"
+          />
 
-            {/* Clip List - Takes remaining space on desktop, fixed height on mobile */}
-            <ClipList
-              clips={clips}
-              currentClipIndex={currentClipIndex}
-              onClipClick={handleClipClick}
-              onPlayAll={playAllClips}
-              className="lg:flex-1 lg:min-h-0"
-            />
-          </div>
+          {/* Clip List - Takes remaining space on desktop, max-height on mobile */}
+          <ClipList
+            clips={clips}
+            currentClipIndex={currentClipIndex}
+            onClipClick={handleClipClick}
+            onPlayAll={playAllClips}
+            className="flex-1 min-h-0 max-h-[400px] lg:max-h-none overflow-hidden"
+          />
         </div>
 
-        {/* Right: Notes Editor & Analysis */}
-        <div className="flex flex-col gap-4 min-h-[600px] lg:min-h-0 lg:overflow-hidden pt-4 lg:pt-0">
+        {/* Right column: Notes Editor & Analysis */}
+        <div className="flex flex-col gap-4 min-h-[400px] lg:min-h-0 lg:h-full lg:overflow-hidden pt-4 lg:pt-0">
           <Tabs defaultValue="notes" className="flex-1 flex flex-col lg:overflow-hidden">
             <TabsList className="grid w-full grid-cols-2 shrink-0">
               <TabsTrigger value="notes">{t('notes')}</TabsTrigger>

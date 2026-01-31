@@ -200,8 +200,8 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
       </div>
 
       {/* Editor */}
-      <Card className="flex-1 flex flex-col min-h-0">
-        <CardContent className="flex-1 p-4 flex flex-col min-h-0">
+      <Card className="flex-1 flex flex-col min-h-0 overflow-hidden">
+        <CardContent className="flex-1 p-4 flex flex-col min-h-0 overflow-hidden">
           <Textarea
             ref={textareaRef}
             value={notes}
@@ -213,9 +213,13 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
 02:45 - 03:30 핵심 내용 설명
 05:00 - 05:45 재미있는 장면
 
-Tip: 각 줄에 "시작시간 - 종료시간" 형식으로 작성하면 자동으로 클립이 생성됩니다.
+또는 시작 시간만 입력해도 됩니다:
+1:30 인트로
+2:45 본론 시작
+
+Tip: 각 줄에 타임스탬프를 작성하면 자동으로 클립이 생성됩니다.
 단축키: Ctrl+M으로 현재 재생 시간을 삽입할 수 있습니다.`}
-            className="flex-1 min-h-0 resize-none font-mono text-sm"
+            className="flex-1 min-h-0 resize-none font-mono text-sm overflow-auto"
           />
         </CardContent>
       </Card>

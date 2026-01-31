@@ -66,12 +66,12 @@ export function ClipList({
         </div>
       </CardHeader>
 
-      <CardContent className="pt-0 flex-1 flex flex-col lg:overflow-hidden">
+      <CardContent className="pt-0 flex-1 flex flex-col overflow-hidden min-h-0">
         {/* Play All Button */}
         {onPlayAll && (
           <Button
             onClick={onPlayAll}
-            className="w-full mb-3"
+            className="w-full mb-3 shrink-0"
             variant="default"
             size="sm"
           >
@@ -80,90 +80,8 @@ export function ClipList({
           </Button>
         )}
 
-        {/* Mobile: No ScrollArea, use page scroll */}
-        <div className="lg:hidden space-y-2">
-          {clips.map((clip, index) => (
-            <div
-              key={clip.id}
-              className={cn(
-                'group flex items-center gap-2 p-2 rounded-lg border transition-all cursor-pointer',
-                'hover:border-primary/50 hover:bg-muted/30',
-                currentClipIndex === index && 
-                  'border-primary bg-primary/5 shadow-sm'
-              )}
-              onClick={() => onClipClick?.(clip, index)}
-            >
-              {/* Drag handle (for future reordering) */}
-              <div className="text-muted-foreground/40 hover:text-muted-foreground cursor-grab">
-                <GripVertical className="h-4 w-4" />
-              </div>
-
-              {/* Clip number */}
-              <div
-                className={cn(
-                  'flex items-center justify-center w-6 h-6 rounded-full text-xs font-medium',
-                  currentClipIndex === index
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground'
-                )}
-              >
-                {index + 1}
-              </div>
-
-              {/* Clip info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="font-mono text-xs text-muted-foreground">
-                    {formatSecondsToTime(clip.startTime)}
-                  </span>
-                  <span className="text-muted-foreground/40">→</span>
-                  <span className="font-mono text-xs text-muted-foreground">
-                    {formatSecondsToTime(clip.endTime)}
-                  </span>
-                </div>
-                {clip.text && (
-                  <p className="text-sm truncate mt-0.5">{clip.text}</p>
-                )}
-              </div>
-
-              {/* Duration badge */}
-              <Badge variant="outline" className="text-xs shrink-0">
-                {formatSecondsToTime(clip.duration)}
-              </Badge>
-
-              {/* Play button */}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onClipClick?.(clip, index);
-                }}
-              >
-                <Play className="h-3 w-3" />
-              </Button>
-
-              {/* Delete button */}
-              {onClipDelete && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onClipDelete(clip, index);
-                  }}
-                >
-                  <Trash2 className="h-3 w-3" />
-                </Button>
-              )}
-            </div>
-          ))}
-        </div>
-
-        {/* Desktop: ScrollArea for internal scroll */}
-        <ScrollArea className="hidden lg:block flex-1 min-h-0">
+        {/* Clip list with scroll */}
+        <ScrollArea className="flex-1 min-h-0">
           <div className="space-y-2 pr-4">
             {clips.map((clip, index) => (
               <div
@@ -171,7 +89,7 @@ export function ClipList({
                 className={cn(
                   'group flex items-center gap-2 p-2 rounded-lg border transition-all cursor-pointer',
                   'hover:border-primary/50 hover:bg-muted/30',
-                  currentClipIndex === index && 
+                  currentClipIndex === index &&
                     'border-primary bg-primary/5 shadow-sm'
                 )}
                 onClick={() => onClipClick?.(clip, index)}
