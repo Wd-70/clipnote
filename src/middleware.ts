@@ -10,6 +10,10 @@ const intlMiddleware = createMiddleware(routing);
 const protectedRoutes = ['/dashboard', '/projects', '/points', '/settings'];
 const authRoutes = ['/login'];
 
+// Check if real OAuth is configured (same logic as auth.ts)
+const hasGoogleAuth = !!(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET);
+const useMockAuth = process.env.NODE_ENV === 'development' && !hasGoogleAuth;
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -27,16 +31,16 @@ export function middleware(request: NextRequest) {
 
   // Extract locale from the response or pathname
   const pathnameLocale = pathname.split('/')[1];
-  const locale = ['ko', 'en', 'ja', 'zh'].includes(pathnameLocale) 
-    ? pathnameLocale 
+  const locale = ['ko', 'en', 'ja', 'zh'].includes(pathnameLocale)
+    ? pathnameLocale
     : 'ko';
 
   // Get the pathname without locale prefix
   const pathnameWithoutLocale = pathname.replace(`/${locale}`, '') || '/';
 
-  // DEVELOPMENT MODE: Auto-login bypass
-  if (process.env.NODE_ENV === 'development') {
-    // Redirect from /login to /dashboard in dev mode
+  // MOCK AUTH MODE: Auto-login bypass (only when OAuth not configured)
+  if (useMockAuth) {
+    // Redirect from /login to /dashboard in mock auth mode
     if (authRoutes.some((route) => pathnameWithoutLocale.startsWith(route))) {
       const url = request.nextUrl.clone();
       url.pathname = `/${locale}/dashboard`;
@@ -45,7 +49,7 @@ export function middleware(request: NextRequest) {
     return response;
   }
 
-  // PRODUCTION MODE: Real authentication
+  // REAL AUTH MODE: Check authentication
   const sessionToken = request.cookies.get('authjs.session-token')?.value 
     || request.cookies.get('__Secure-authjs.session-token')?.value;
   

@@ -40,21 +40,31 @@ export function ClipTimeline({
 
   // Calculate total virtual duration (sum of all clip durations)
   const { totalVirtualDuration, clipRanges } = useMemo(() => {
-    let accumulated = 0;
-    const ranges = clips.map((clip) => {
-      const start = accumulated;
-      const duration = clip.endTime - clip.startTime;
-      accumulated += duration;
-      return {
-        clip,
-        virtualStart: start,
-        virtualEnd: accumulated,
-        actualStart: clip.startTime,
-        actualEnd: clip.endTime,
-        duration,
-      };
-    });
-    return { totalVirtualDuration: accumulated, clipRanges: ranges };
+    const { ranges } = clips.reduce(
+      (acc, clip) => {
+        const duration = clip.endTime - clip.startTime;
+        acc.ranges.push({
+          clip,
+          virtualStart: acc.accumulated,
+          virtualEnd: acc.accumulated + duration,
+          actualStart: clip.startTime,
+          actualEnd: clip.endTime,
+          duration,
+        });
+        acc.accumulated += duration;
+        return acc;
+      },
+      { accumulated: 0, ranges: [] as Array<{
+        clip: ParsedClip;
+        virtualStart: number;
+        virtualEnd: number;
+        actualStart: number;
+        actualEnd: number;
+        duration: number;
+      }> }
+    );
+    const totalDuration = ranges.length > 0 ? ranges[ranges.length - 1].virtualEnd : 0;
+    return { totalVirtualDuration: totalDuration, clipRanges: ranges };
   }, [clips]);
 
   // Convert actual video time to virtual timeline time

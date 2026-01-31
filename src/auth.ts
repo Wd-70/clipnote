@@ -1,17 +1,15 @@
 import NextAuth from 'next-auth';
 import Google from 'next-auth/providers/google';
 
-// Only import MongoDB in production
-let adapter: any = undefined;
+// Check if real OAuth is configured
+const hasGoogleAuth = !!(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET);
 
-if (process.env.NODE_ENV === 'production' && process.env.MONGODB_URI) {
-  // Dynamic import is not possible here, so MongoDB adapter
-  // will be set up separately in production
-  // For now, we use JWT sessions without adapter
-}
+// Use mock auth only in development when OAuth is not configured
+const useMockAuth = process.env.NODE_ENV === 'development' && !hasGoogleAuth;
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  adapter,
+  // Adapter is undefined - using JWT sessions only
+  // For MongoDB adapter, see auth.mongodb.ts.bak
   providers: [
     Google({
       clientId: process.env.AUTH_GOOGLE_ID || '',
@@ -26,8 +24,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   },
   callbacks: {
     async jwt({ token, user, account }) {
-      // DEVELOPMENT MODE: Mock user
-      if (process.env.NODE_ENV === 'development' && !token.id) {
+      // Mock auth: auto-assign dev user when no real auth
+      if (useMockAuth && !token.id) {
         token.id = 'dev-user-id';
         token.email = 'dev@clipnote.local';
         token.name = 'Development User';
@@ -42,8 +40,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       return token;
     },
     async session({ session, token }) {
-      // DEVELOPMENT MODE: Mock session
-      if (process.env.NODE_ENV === 'development') {
+      // Mock auth: return mock session when no real auth
+      if (useMockAuth) {
         return {
           ...session,
           user: {
@@ -71,9 +69,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   },
 });
 
-// Development mode helper: Always return a mock session
+// Development mode helper: Returns mock session only when mock auth is enabled
 export async function getDevSession() {
-  if (process.env.NODE_ENV === 'development') {
+  if (useMockAuth) {
     return {
       user: {
         id: 'dev-user-id',
@@ -81,7 +79,7 @@ export async function getDevSession() {
         name: 'Development User',
         image: null,
       },
-      expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
+      expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     };
   }
   return null;

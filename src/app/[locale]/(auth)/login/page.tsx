@@ -1,6 +1,7 @@
 'use client';
 
 import { signIn } from 'next-auth/react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Scissors } from 'lucide-react';
@@ -64,13 +65,13 @@ export default function LoginPage() {
 
           <p className="text-center text-sm text-muted-foreground">
             로그인하면{' '}
-            <a href="/terms" className="underline underline-offset-4 hover:text-primary">
+            <Link href="/terms" className="underline underline-offset-4 hover:text-primary">
               이용약관
-            </a>{' '}
+            </Link>{' '}
             및{' '}
-            <a href="/privacy" className="underline underline-offset-4 hover:text-primary">
+            <Link href="/privacy" className="underline underline-offset-4 hover:text-primary">
               개인정보처리방침
-            </a>
+            </Link>
             에 동의하게 됩니다.
           </p>
         </CardContent>
