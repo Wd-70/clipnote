@@ -393,13 +393,13 @@ export default function EditorPage() {
             className="shrink-0"
           />
 
-          {/* Clip List - Takes remaining space on desktop, max-height on mobile */}
+          {/* Clip List - Min height guaranteed, grows with content, scrolls when exceeds container */}
           <ClipList
             clips={clips}
             currentClipIndex={currentClipIndex}
             onClipClick={handleClipClick}
             onPlayAll={playAllClips}
-            className="flex-1 min-h-0 max-h-[400px] lg:max-h-none overflow-hidden"
+            className="min-h-[250px] max-h-[400px] lg:max-h-none lg:flex-1 overflow-hidden"
           />
         </div>
 
