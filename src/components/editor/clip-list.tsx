@@ -116,14 +116,16 @@ export function ClipList({
                     <span className="font-mono whitespace-nowrap">
                       {formatSecondsToTime(clip.endTime)}
                     </span>
-                    <Badge variant="outline" className="text-[10px] px-1 py-0 ml-1 hidden sm:inline-flex">
-                      {formatSecondsToTime(clip.duration)}
-                    </Badge>
                   </div>
                   {clip.text && (
-                    <p className="text-sm truncate mt-0.5">{clip.text}</p>
+                    <p className="text-sm mt-0.5 line-clamp-2">{clip.text}</p>
                   )}
                 </div>
+
+                {/* Duration badge - right aligned */}
+                <Badge variant="outline" className="text-[10px] px-1.5 py-0 shrink-0 hidden sm:inline-flex">
+                  {formatSecondsToTime(clip.duration)}
+                </Badge>
 
                 {/* Action buttons - show on hover */}
                 <div className="flex items-center shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
