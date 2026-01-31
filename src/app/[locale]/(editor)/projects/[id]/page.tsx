@@ -267,9 +267,9 @@ export default function EditorPage() {
   const isNarrow = headerWidth > 0 && headerWidth < 720;
 
   return (
-    <div className="flex flex-col min-h-full">
+    <div className="flex flex-col min-h-full lg:h-full lg:overflow-hidden">
       {/* Header */}
-      <header ref={headerRef} className="border-b px-2 sm:px-4 py-2 sm:py-3 bg-background/95 backdrop-blur sticky top-0 z-10">
+      <header ref={headerRef} className="border-b px-2 sm:px-4 py-2 sm:py-3 bg-background/95 backdrop-blur sticky top-0 z-10 shrink-0">
         <div className="flex items-center justify-between gap-2">
           {/* Left: Back button + Title */}
           <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -371,10 +371,10 @@ export default function EditorPage() {
       </header>
 
       {/* Main content */}
-      <div className="flex-1 p-4">
-        <div className="lg:grid lg:grid-cols-2 gap-4">
+      <div className="flex-1 p-4 lg:overflow-hidden lg:min-h-0">
+        <div className="lg:grid lg:grid-cols-2 gap-4 lg:h-full">
           {/* Left column: Video Player, Timeline, Clip List */}
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4 lg:h-full lg:overflow-hidden">
             <VideoPlayer
               ref={playerRef}
               url={project.videoUrl}
@@ -394,25 +394,25 @@ export default function EditorPage() {
               className="shrink-0"
             />
 
-            {/* Clip List - Min height guaranteed, internal scroll when content overflows */}
+            {/* Clip List - Min height on mobile, flex on desktop */}
             <ClipList
               clips={clips}
               currentClipIndex={currentClipIndex}
               onClipClick={handleClipClick}
               onPlayAll={playAllClips}
-              className="min-h-[280px] max-h-[400px]"
+              className="min-h-[280px] max-h-[400px] lg:max-h-none lg:flex-1 lg:min-h-[200px] lg:overflow-hidden"
             />
           </div>
 
           {/* Right column: Notes Editor & Analysis */}
-          <div className="flex flex-col gap-4 pt-4 lg:pt-0">
-            <Tabs defaultValue="notes" className="flex flex-col">
+          <div className="flex flex-col gap-4 pt-4 lg:pt-0 lg:h-full lg:overflow-hidden">
+            <Tabs defaultValue="notes" className="flex flex-col lg:flex-1 lg:overflow-hidden lg:min-h-0">
               <TabsList className="grid w-full grid-cols-2 shrink-0">
                 <TabsTrigger value="notes">{t('notes')}</TabsTrigger>
                 <TabsTrigger value="analysis">{t('aiAnalysis')}</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="notes" className="mt-4 data-[state=active]:flex data-[state=active]:flex-col">
+              <TabsContent value="notes" className="mt-4 data-[state=active]:flex data-[state=active]:flex-col lg:flex-1 lg:overflow-hidden lg:min-h-0">
                 <NotesEditor
                   ref={notesEditorRef}
                   initialNotes={notes}
@@ -424,12 +424,12 @@ export default function EditorPage() {
                   currentTime={currentTime}
                   videoDuration={duration}
                   onInsertTimestamp={handleInsertTimestamp}
-                  className="min-h-[450px]"
+                  className="min-h-[450px] lg:min-h-0 lg:flex-1"
                 />
               </TabsContent>
 
-              <TabsContent value="analysis" className="mt-4 data-[state=active]:flex data-[state=active]:flex-col">
-                <Card className="min-h-[450px]">
+              <TabsContent value="analysis" className="mt-4 data-[state=active]:flex data-[state=active]:flex-col lg:flex-1 lg:overflow-hidden lg:min-h-0">
+                <Card className="min-h-[450px] lg:min-h-0 lg:flex-1 lg:overflow-hidden">
                   <CardHeader>
                     <CardTitle className="text-base flex items-center gap-2">
                       <Sparkles className="h-4 w-4" />
