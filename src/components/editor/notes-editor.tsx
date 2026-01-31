@@ -29,6 +29,7 @@ interface NotesEditorProps {
   onClipClick?: (clip: ParsedClip, index: number) => void;
   currentClipIndex?: number;
   currentTime?: number;
+  videoDuration?: number;
   onInsertTimestamp?: () => void;
   className?: string;
 }
@@ -41,6 +42,7 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
   onClipClick,
   currentClipIndex = -1,
   currentTime = 0,
+  videoDuration,
   onInsertTimestamp,
   className,
 }, ref) => {
@@ -49,7 +51,7 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
   const [hasChanges, setHasChanges] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const { clips, totalDuration, clipCount } = useTimestampParser(notes);
+  const { clips, totalDuration, clipCount } = useTimestampParser(notes, videoDuration);
 
   useEffect(() => {
     onClipsChange?.(clips);

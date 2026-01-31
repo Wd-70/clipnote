@@ -1,9 +1,13 @@
 import type { ParsedClip } from '@/types';
 import { sanitizeFilename } from './string';
 
-// Regex pattern for MM:SS.d - MM:SS.d or HH:MM:SS.d - HH:MM:SS.d
-const TIMESTAMP_REGEX =
+// Regex pattern for MM:SS.d - MM:SS.d or HH:MM:SS.d - HH:MM:SS.d (range format)
+const TIMESTAMP_RANGE_REGEX =
   /(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\.(\d+))?\s*[-–—]\s*(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\.(\d+))?/g;
+
+// Regex pattern for single timestamp: MM:SS.d or HH:MM:SS.d
+const TIMESTAMP_SINGLE_REGEX =
+  /(?:^|[\s\[\(])(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\.(\d+))?(?=[\s\]\)\-–—]|$)/g;
 
 /**
  * Parse timestamp string to seconds
@@ -46,56 +50,132 @@ export function formatSecondsToTime(totalSeconds: number): string {
 }
 
 /**
- * Parse notes text and extract clips
+ * Parse a single timestamp from regex match to seconds
  */
-export function parseNotesToClips(notesText: string): ParsedClip[] {
+function parseTimestampMatch(match: RegExpExecArray, startIdx: number = 1): number {
+  const part1 = parseInt(match[startIdx], 10);
+  const part2 = parseInt(match[startIdx + 1], 10);
+  const part3 = match[startIdx + 2] ? parseInt(match[startIdx + 2], 10) : null;
+  const ms = match[startIdx + 3] ? parseFloat(`0.${match[startIdx + 3]}`) : 0;
+
+  if (part3 !== null) {
+    // HH:MM:SS format
+    return part1 * 3600 + part2 * 60 + part3 + ms;
+  } else {
+    // MM:SS format
+    return part1 * 60 + part2 + ms;
+  }
+}
+
+/**
+ * Extract single timestamp from a line (if no range found)
+ */
+function extractSingleTimestamp(line: string): { time: number; text: string } | null {
+  TIMESTAMP_SINGLE_REGEX.lastIndex = 0;
+  const match = TIMESTAMP_SINGLE_REGEX.exec(line);
+
+  if (match) {
+    const time = parseTimestampMatch(match, 1);
+    // Extract text after the timestamp
+    const textAfterTimestamp = line.substring(match.index + match[0].length).trim();
+    return { time, text: textAfterTimestamp };
+  }
+
+  return null;
+}
+
+/**
+ * Parse notes text and extract clips
+ * @param notesText - The notes text to parse
+ * @param videoDuration - Optional video duration for single-timestamp mode (last clip extends to end)
+ */
+export function parseNotesToClips(notesText: string, videoDuration?: number): ParsedClip[] {
   const clips: ParsedClip[] = [];
-  
+
   // Handle non-string inputs (array, null, undefined, etc.)
   if (!notesText || typeof notesText !== 'string') {
     return clips;
   }
-  
+
   const lines = notesText.split('\n');
 
+  // First pass: collect all timestamps (both range and single)
+  interface ParsedLine {
+    lineIndex: number;
+    type: 'range' | 'single';
+    startTime: number;
+    endTime?: number;
+    text: string;
+  }
+
+  const parsedLines: ParsedLine[] = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    // Try range format first (MM:SS - MM:SS)
+    TIMESTAMP_RANGE_REGEX.lastIndex = 0;
+    const rangeMatch = TIMESTAMP_RANGE_REGEX.exec(line);
+
+    if (rangeMatch) {
+      const startTime = parseTimestampMatch(rangeMatch, 1);
+      const endTime = parseTimestampMatch(rangeMatch, 5);
+      const textAfterTimestamp = line.substring(rangeMatch.index + rangeMatch[0].length).trim();
+
+      parsedLines.push({
+        lineIndex: i,
+        type: 'range',
+        startTime,
+        endTime,
+        text: textAfterTimestamp,
+      });
+    } else {
+      // Try single timestamp format (MM:SS)
+      const singleResult = extractSingleTimestamp(line);
+      if (singleResult) {
+        parsedLines.push({
+          lineIndex: i,
+          type: 'single',
+          startTime: singleResult.time,
+          text: singleResult.text,
+        });
+      }
+    }
+  }
+
+  // Second pass: create clips, using next timestamp as end time for single timestamps
   let clipIndex = 0;
 
-  for (const line of lines) {
-    TIMESTAMP_REGEX.lastIndex = 0;
-    const match = TIMESTAMP_REGEX.exec(line);
+  for (let i = 0; i < parsedLines.length; i++) {
+    const parsed = parsedLines[i];
 
-    if (match) {
-      const startMinutes = parseInt(match[1], 10);
-      const startSeconds = parseInt(match[2], 10);
-      const startHours = match[3] ? parseInt(match[3], 10) : 0;
-      const startMs = match[4] ? parseFloat(`0.${match[4]}`) : 0;
+    let startTime = parsed.startTime;
+    let endTime: number;
 
-      const endMinutes = parseInt(match[5], 10);
-      const endSeconds = parseInt(match[6], 10);
-      const endHours = match[7] ? parseInt(match[7], 10) : 0;
-      const endMs = match[8] ? parseFloat(`0.${match[8]}`) : 0;
-
-      let startTime: number;
-      let endTime: number;
-
-      if (match[3]) {
-        // HH:MM:SS format
-        startTime = startMinutes * 3600 + startSeconds * 60 + startHours + startMs;
-        endTime = endMinutes * 3600 + endSeconds * 60 + endHours + endMs;
+    if (parsed.type === 'range' && parsed.endTime !== undefined) {
+      // Range format: use specified end time
+      endTime = parsed.endTime;
+    } else {
+      // Single timestamp: use next line's start time or video duration
+      const nextParsed = parsedLines[i + 1];
+      if (nextParsed) {
+        endTime = nextParsed.startTime;
+      } else if (videoDuration && videoDuration > startTime) {
+        endTime = videoDuration;
       } else {
-        // MM:SS format
-        startTime = startMinutes * 60 + startSeconds + startMs;
-        endTime = endMinutes * 60 + endSeconds + endMs;
+        // No next timestamp and no duration: skip this clip or use a default
+        // Use startTime + 60 seconds as fallback
+        endTime = startTime + 60;
       }
+    }
 
-      // Extract text after the timestamp
-      const textAfterTimestamp = line.substring(match.index + match[0].length).trim();
-
+    // Only add clip if end time is after start time
+    if (endTime > startTime) {
       clips.push({
         id: `clip-${clipIndex++}`,
         startTime,
         endTime,
-        text: textAfterTimestamp || `Clip ${clipIndex}`,
+        text: parsed.text || `Clip ${clipIndex}`,
         duration: endTime - startTime,
       });
     }

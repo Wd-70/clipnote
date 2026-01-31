@@ -424,6 +424,7 @@ export default function EditorPage() {
                 onClipClick={handleClipClick}
                 currentClipIndex={currentClipIndex}
                 currentTime={currentTime}
+                videoDuration={duration}
                 onInsertTimestamp={handleInsertTimestamp}
                 className="flex-1 min-h-[400px] lg:min-h-0"
               />
