@@ -390,6 +390,7 @@ export default function EditorPage() {
               clips={clips}
               onDuration={setDuration}
               onProgress={handleProgress}
+              onPlayingChange={setIsPlaying}
               className="shrink-0"
             />
 

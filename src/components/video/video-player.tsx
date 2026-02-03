@@ -71,6 +71,8 @@ interface VideoPlayerProps {
   onProgress?: (state: { played: number; playedSeconds: number }) => void;
   onDuration?: (duration: number) => void;
   onClipChange?: (clipIndex: number) => void;
+  /** Called when play/pause state changes */
+  onPlayingChange?: (playing: boolean) => void;
   className?: string;
   /** If true, blocks direct video clicks - use for share/embed pages */
   disableDirectPlay?: boolean;
@@ -79,7 +81,7 @@ interface VideoPlayerProps {
 }
 
 export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
-  ({ url, clips = [], onProgress, onDuration, className, disableDirectPlay = false, onVideoClick }, ref) => {
+  ({ url, clips = [], onProgress, onDuration, onPlayingChange, className, disableDirectPlay = false, onVideoClick }, ref) => {
     // YouTube refs
     const youtubePlayerRef = useRef<YouTubePlayerType | null>(null);
     
@@ -115,6 +117,11 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
     // Detect platform and extract video ID using shared utilities
     const platform: VideoPlatform = detectPlatform(url);
     const videoId = extractVideoId(url);
+
+    // Notify parent of play state changes
+    useEffect(() => {
+      onPlayingChange?.(playing);
+    }, [playing, onPlayingChange]);
 
     // =========================================================================
     // Chzzk HLS Initialization

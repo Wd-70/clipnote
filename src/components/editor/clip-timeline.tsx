@@ -9,8 +9,10 @@ import {
   Pause,
   SkipBack,
   SkipForward,
-  Rewind,
-  FastForward,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
 } from 'lucide-react';
 import { formatSecondsToTime } from '@/lib/utils/timestamp';
 import { cn } from '@/lib/utils';
@@ -37,6 +39,11 @@ export function ClipTimeline({
   const [isVirtualPlaying, setIsVirtualPlaying] = useState(false);
   const [currentClipIndex, setCurrentClipIndex] = useState(-1);
   const lastSeekTimeRef = useRef<number>(0);
+
+  // Sync internal state with external isPlaying prop
+  useEffect(() => {
+    setIsVirtualPlaying(isPlaying);
+  }, [isPlaying]);
 
   // Calculate total virtual duration (sum of all clip durations)
   const { totalVirtualDuration, clipRanges } = useMemo(() => {
@@ -217,17 +224,9 @@ export function ClipTimeline({
     }
   }, [clips.length, currentClipIndex, clipRanges, playerRef]);
 
-  // Rewind 5 seconds in virtual time
-  const rewind = useCallback(() => {
-    const newVirtualTime = Math.max(0, currentVirtualTime - 5);
-    const { actualTime, clipIndex } = virtualToActual(newVirtualTime);
-    setCurrentClipIndex(clipIndex);
-    playerRef.current?.seekTo(actualTime);
-  }, [currentVirtualTime, virtualToActual, playerRef]);
-
-  // Fast forward 5 seconds in virtual time
-  const fastForward = useCallback(() => {
-    const newVirtualTime = Math.min(totalVirtualDuration, currentVirtualTime + 5);
+  // Seek by specified seconds (positive = forward, negative = backward)
+  const seekBySeconds = useCallback((seconds: number) => {
+    const newVirtualTime = Math.max(0, Math.min(totalVirtualDuration, currentVirtualTime + seconds));
     const { actualTime, clipIndex } = virtualToActual(newVirtualTime);
     setCurrentClipIndex(clipIndex);
     playerRef.current?.seekTo(actualTime);
@@ -303,11 +302,12 @@ export function ClipTimeline({
       </div>
 
       {/* Controls */}
-      <div className="flex items-center justify-center gap-1">
+      <div className="flex items-center justify-center gap-0.5">
+        {/* Previous clip */}
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8"
+          className="h-10 w-8"
           onClick={skipPrevious}
           disabled={currentClipIndex <= 0}
           title="이전 클립"
@@ -315,20 +315,42 @@ export function ClipTimeline({
           <SkipBack className="h-4 w-4" />
         </Button>
 
+        {/* Backward controls: 30s, 5s, 1s */}
         <Button
           variant="ghost"
-          size="icon"
-          className="h-8 w-8"
-          onClick={rewind}
-          title="5초 뒤로"
+          className="h-10 w-8 px-0 flex flex-col items-center justify-center gap-0"
+          onClick={() => seekBySeconds(-30)}
+          title="30초 뒤로"
         >
-          <Rewind className="h-4 w-4" />
+          <ChevronsLeft className="h-4 w-4" />
+          <span className="text-[10px] font-mono leading-none text-muted-foreground">30</span>
         </Button>
 
         <Button
+          variant="ghost"
+          className="h-10 w-8 px-0 flex flex-col items-center justify-center gap-0"
+          onClick={() => seekBySeconds(-5)}
+          title="5초 뒤로"
+        >
+          <ChevronLeft className="h-4 w-4" />
+          <span className="text-[10px] font-mono leading-none text-muted-foreground">5</span>
+        </Button>
+
+        <Button
+          variant="ghost"
+          className="h-10 w-8 px-0 flex flex-col items-center justify-center gap-0"
+          onClick={() => seekBySeconds(-1)}
+          title="1초 뒤로"
+        >
+          <ChevronLeft className="h-4 w-4" />
+          <span className="text-[10px] font-mono leading-none text-muted-foreground">1</span>
+        </Button>
+
+        {/* Play/Pause */}
+        <Button
           variant="default"
           size="icon"
-          className="h-10 w-10"
+          className="h-10 w-10 mx-1"
           onClick={toggleVirtualPlay}
           title={isVirtualPlaying ? '일시정지' : '클립 재생'}
         >
@@ -339,20 +361,42 @@ export function ClipTimeline({
           )}
         </Button>
 
+        {/* Forward controls: 1s, 5s, 30s */}
         <Button
           variant="ghost"
-          size="icon"
-          className="h-8 w-8"
-          onClick={fastForward}
-          title="5초 앞으로"
+          className="h-10 w-8 px-0 flex flex-col items-center justify-center gap-0"
+          onClick={() => seekBySeconds(1)}
+          title="1초 앞으로"
         >
-          <FastForward className="h-4 w-4" />
+          <ChevronRight className="h-4 w-4" />
+          <span className="text-[10px] font-mono leading-none text-muted-foreground">1</span>
         </Button>
 
         <Button
           variant="ghost"
+          className="h-10 w-8 px-0 flex flex-col items-center justify-center gap-0"
+          onClick={() => seekBySeconds(5)}
+          title="5초 앞으로"
+        >
+          <ChevronRight className="h-4 w-4" />
+          <span className="text-[10px] font-mono leading-none text-muted-foreground">5</span>
+        </Button>
+
+        <Button
+          variant="ghost"
+          className="h-10 w-8 px-0 flex flex-col items-center justify-center gap-0"
+          onClick={() => seekBySeconds(30)}
+          title="30초 앞으로"
+        >
+          <ChevronsRight className="h-4 w-4" />
+          <span className="text-[10px] font-mono leading-none text-muted-foreground">30</span>
+        </Button>
+
+        {/* Next clip */}
+        <Button
+          variant="ghost"
           size="icon"
-          className="h-8 w-8"
+          className="h-10 w-8"
           onClick={skipNext}
           disabled={currentClipIndex >= clips.length - 1}
           title="다음 클립"
