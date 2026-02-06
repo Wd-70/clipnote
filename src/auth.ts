@@ -1,5 +1,6 @@
 import NextAuth from 'next-auth';
 import Google from 'next-auth/providers/google';
+import { JsonDB } from '@/lib/db/json-db';
 
 // Check if real OAuth is configured
 const hasGoogleAuth = !!(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET);
@@ -48,8 +49,32 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.name = 'Development User';
       }
 
-      if (user) {
+      // First login - user object is present
+      if (user && user.email) {
         token.id = user.id;
+
+        // Auto-create user in database if not exists (use email as identifier)
+        try {
+          const existingUser = JsonDB.User.findOne({ email: user.email });
+          if (!existingUser) {
+            const newUser = JsonDB.User.create({
+              email: user.email,
+              name: user.name || '',
+              image: user.image || '',
+              points: 1000, // Initial points
+              role: 'FREE',
+              savedChannels: [],
+            });
+            // Use the DB-generated ID as the user ID for consistency
+            token.id = newUser._id;
+            console.log('[auth] New user created:', user.email);
+          } else {
+            // Use existing user's ID
+            token.id = existingUser._id;
+          }
+        } catch (error) {
+          console.error('[auth] Failed to create/find user:', error);
+        }
       }
       if (account) {
         token.accessToken = account.access_token;
