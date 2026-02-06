@@ -39,8 +39,9 @@ function isValidTokenStructure(token: string): boolean {
   // Standard JWT: 3 parts
   if (parts.length !== 5 && parts.length !== 3) return false;
 
-  // Each part should be non-empty
-  return parts.every(part => part.length > 0);
+  // For JWE with "dir" algorithm, the 2nd part (encrypted key) is empty
+  // So we just check that at least the first and last parts are non-empty
+  return parts[0].length > 0 && parts[parts.length - 1].length > 0;
 }
 
 export function middleware(request: NextRequest) {
@@ -101,7 +102,7 @@ export function middleware(request: NextRequest) {
     } else {
       // Token exists but has invalid structure - should be cleared
       shouldClearCookie = true;
-      console.log('[middleware] Invalid session token structure detected, will clear cookie');
+      console.log('[middleware] Invalid session token structure detected, clearing cookie');
     }
   }
 
