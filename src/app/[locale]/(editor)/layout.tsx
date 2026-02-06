@@ -1,4 +1,5 @@
 import { SidebarWithFolders } from '@/components/layout/sidebar-with-folders';
+import { FolderSidebarSync } from '@/components/layout/folder-sidebar-sync';
 import { FolderSidebarProvider } from '@/contexts/folder-sidebar-context';
 import { ProjectDndProvider } from '@/contexts/project-dnd-context';
 import { Button } from '@/components/ui/button';
@@ -13,6 +14,8 @@ export default function EditorLayout({
   return (
     <FolderSidebarProvider>
       <ProjectDndProvider>
+        {/* Sync folder data to sidebar context for navigation */}
+        <FolderSidebarSync />
         <div className="flex min-h-screen lg:h-screen bg-background">
           {/* Desktop Sidebar */}
           <aside className="hidden md:block w-64 border-r fixed inset-y-0 z-30 bg-background/50 backdrop-blur-sm">
