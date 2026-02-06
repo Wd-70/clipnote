@@ -169,7 +169,7 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
     folderSidebar.setOnRenameFolder(() => setEditFolderTarget);
     folderSidebar.setOnDeleteFolder(() => setDeleteFolderTarget);
     folderSidebar.setOnMoveFolder(() => setMoveFolderTarget);
-    
+
     return () => {
       // Cleanup callbacks on unmount
       folderSidebar.setOnFolderSelect(null);
@@ -179,7 +179,7 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
       folderSidebar.setOnDeleteFolder(null);
       folderSidebar.setOnMoveFolder(null);
     };
-  }, [navigation.navigateTo, folderTree.toggleExpanded]);
+  }, [navigation.navigateTo, navigation.currentFolderId, folderTree.toggleExpanded]);
 
   // Dialog states
   const [createFolderOpen, setCreateFolderOpen] = useState(false);

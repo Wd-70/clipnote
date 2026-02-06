@@ -1,13 +1,21 @@
 'use client';
 
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useDroppable } from '@dnd-kit/core';
-import { FolderPlus, Home } from 'lucide-react';
+import { FolderPlus, Home, MoreHorizontal, Pencil, FolderInput, Trash2 } from 'lucide-react';
 import { FolderIcon } from './folder-icon';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import type { FolderTreeNode } from '@/hooks/use-folder-tree';
 import type { IFolder } from '@/types';
 import type { FolderContextAction } from './folder-tree-item';
@@ -45,6 +53,7 @@ function DroppableTreeItem({
   onContextAction: (folder: IFolder, action: FolderContextAction) => void;
 }) {
   const t = useTranslations('folders');
+  const [isHovered, setIsHovered] = useState(false);
   const folderId = node._id?.toString() ?? '';
   const isActive = currentFolderId === folderId;
   const isExpanded = expandedIds.has(folderId);
@@ -77,6 +86,23 @@ function DroppableTreeItem({
     }
   };
 
+  // FolderTreeNode extends IFolder, so we can use it directly
+  // Extract IFolder properties for context action (excluding children and isExpanded)
+  const folderData: IFolder = {
+    _id: node._id,
+    userId: node.userId,
+    name: node.name,
+    parentId: node.parentId,
+    depth: node.depth,
+    color: node.color,
+    icon: node.icon,
+    order: node.order,
+    autoCollectChannelId: node.autoCollectChannelId,
+    autoCollectPlatform: node.autoCollectPlatform,
+    createdAt: node.createdAt,
+    updatedAt: node.updatedAt,
+  };
+
   return (
     <div className="select-none">
       <div
@@ -96,6 +122,8 @@ function DroppableTreeItem({
         style={{ paddingLeft: `${(depth + 1) * 12 + 8}px` }}
         onClick={() => onSelect(folderId)}
         onKeyDown={handleKeyDown}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
       >
         {/* Expand/Collapse Toggle */}
         <button
@@ -145,12 +173,74 @@ function DroppableTreeItem({
           <span
             className={cn(
               'h-5 min-w-[20px] px-1.5 text-[10px] font-medium rounded-full',
-              'bg-muted text-muted-foreground'
+              'bg-muted text-muted-foreground',
+              isHovered && 'opacity-0'
             )}
           >
             {projectCount}
           </span>
         )}
+
+        {/* Context Menu (visible on hover) */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className={cn(
+                'h-6 w-6 opacity-0 transition-opacity shrink-0',
+                isHovered && 'opacity-100',
+                'focus:opacity-100'
+              )}
+              onClick={(e) => e.stopPropagation()}
+              aria-label="Folder actions"
+            >
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem
+              onClick={(e) => {
+                e.stopPropagation();
+                onContextAction(folderData, 'rename');
+              }}
+            >
+              <Pencil className="mr-2 h-4 w-4" />
+              {t('editFolder')}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={(e) => {
+                e.stopPropagation();
+                onContextAction(folderData, 'move');
+              }}
+            >
+              <FolderInput className="mr-2 h-4 w-4" />
+              {t('moveFolder')}
+            </DropdownMenuItem>
+            {canCreateSubfolder && (
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onContextAction(folderData, 'newSubfolder');
+                }}
+              >
+                <FolderPlus className="mr-2 h-4 w-4" />
+                {t('newFolder')}
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={(e) => {
+                e.stopPropagation();
+                onContextAction(folderData, 'delete');
+              }}
+              className="text-destructive focus:text-destructive"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              {t('deleteFolder')}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Render Children */}
