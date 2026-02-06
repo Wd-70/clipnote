@@ -5,10 +5,13 @@ import {
   useContext,
   useState,
   useCallback,
+  useEffect,
   type ReactNode,
 } from 'react';
 import type { FolderTreeNode } from '@/hooks/use-folder-tree';
 import type { IFolder } from '@/types';
+
+const SHOW_FOLDERS_KEY = 'clipnote-show-folders';
 
 interface FolderSidebarState {
   // Toggle state
@@ -52,7 +55,19 @@ interface FolderSidebarState {
 const FolderSidebarContext = createContext<FolderSidebarState | null>(null);
 
 export function FolderSidebarProvider({ children }: { children: ReactNode }) {
-  const [showFolders, setShowFolders] = useState(false);
+  const [showFolders, setShowFoldersState] = useState(false);
+
+  // Read from localStorage on mount (client-side only)
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(SHOW_FOLDERS_KEY);
+      if (stored === 'true') {
+        setShowFoldersState(true);
+      }
+    } catch {
+      // localStorage not available
+    }
+  }, []);
   const [folderTree, setFolderTree] = useState<FolderTreeNode[]>([]);
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
@@ -66,8 +81,26 @@ export function FolderSidebarProvider({ children }: { children: ReactNode }) {
   const [onDeleteFolder, setOnDeleteFolder] = useState<((folder: IFolder) => void) | null>(null);
   const [onMoveFolder, setOnMoveFolder] = useState<((folder: IFolder) => void) | null>(null);
 
+  // Persist showFolders to localStorage
+  const setShowFolders = useCallback((show: boolean) => {
+    setShowFoldersState(show);
+    try {
+      localStorage.setItem(SHOW_FOLDERS_KEY, String(show));
+    } catch {
+      // localStorage not available
+    }
+  }, []);
+
   const toggleFolders = useCallback(() => {
-    setShowFolders((prev) => !prev);
+    setShowFoldersState((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(SHOW_FOLDERS_KEY, String(next));
+      } catch {
+        // localStorage not available
+      }
+      return next;
+    });
   }, []);
 
   return (
