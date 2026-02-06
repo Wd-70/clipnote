@@ -23,6 +23,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
+import { useBackNavigation } from "@/hooks/use-back-navigation";
 
 interface ProjectCardProps {
   project: IProject;
@@ -34,6 +35,7 @@ export function ProjectCard({ project, onDelete }: ProjectCardProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const t = useTranslations('projectCard');
   const tCommon = useTranslations('common');
+  const { storeBackUrl } = useBackNavigation();
 
   // Safe date handling
   const createdDate = new Date(project.createdAt);
@@ -91,7 +93,7 @@ export function ProjectCard({ project, onDelete }: ProjectCardProps) {
         
         {/* Overlay on hover */}
         <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-2 backdrop-blur-sm">
-          <Link href={`/projects/${project._id}`}>
+          <Link href={`/projects/${project._id}`} onClick={storeBackUrl}>
             <Button variant="secondary" size="sm" className="font-medium">
               <Edit2 className="w-4 h-4 mr-2" />
               {t('editProject')}

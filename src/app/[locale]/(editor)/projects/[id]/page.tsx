@@ -9,6 +9,7 @@ import { ClipTimeline } from '@/components/editor/clip-timeline';
 import { ExportDialog } from '@/components/editor/export-dialog';
 import { ShareDialog } from '@/components/editor/share-dialog';
 import { useVideoSync } from '@/hooks/useVideoSync';
+import { useEditorBackUrl } from '@/hooks/use-back-navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -55,6 +56,7 @@ export default function EditorPage() {
   const t = useTranslations('editor');
   const tCommon = useTranslations('common');
   const tPoints = useTranslations('points');
+  const { backUrl } = useEditorBackUrl('/projects');
 
   const playerRef = useRef<VideoPlayerRef>(null);
   const notesEditorRef = useRef<NotesEditorRef>(null);
@@ -282,7 +284,7 @@ export default function EditorPage() {
           {/* Left: Back button + Title */}
           <div className="flex items-center gap-2 min-w-0 flex-1">
             <Button variant="ghost" size="icon" className="shrink-0" asChild>
-              <Link href="/projects">
+              <Link href={backUrl}>
                 <ArrowLeft className="h-4 w-4" />
               </Link>
             </Button>
