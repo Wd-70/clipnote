@@ -33,6 +33,7 @@ import {
   Download,
   Share2,
   Pencil,
+  Settings,
   Trash2,
 } from 'lucide-react';
 import Link from 'next/link';
