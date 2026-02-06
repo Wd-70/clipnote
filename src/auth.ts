@@ -22,6 +22,23 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   pages: {
     signIn: '/login',
   },
+  // Suppress noisy JWT errors in console (invalid tokens are handled gracefully)
+  logger: {
+    error(code, ...message) {
+      // Suppress JWTSessionError - these are expected when AUTH_SECRET changes
+      if (code instanceof Error && code.name === 'JWTSessionError') {
+        console.log('[auth] Invalid session detected, user will be logged out');
+        return;
+      }
+      console.error('[auth][error]', code, ...message);
+    },
+    warn(code, ...message) {
+      console.warn('[auth][warn]', code, ...message);
+    },
+    debug(code, ...message) {
+      // Uncomment for debugging: console.log('[auth][debug]', code, ...message);
+    },
+  },
   callbacks: {
     async jwt({ token, user, account }) {
       // Mock auth: auto-assign dev user when no real auth
