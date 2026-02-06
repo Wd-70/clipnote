@@ -115,7 +115,7 @@ export function FolderTreeItem({
           color={node.color}
           isOpen={node.isExpanded}
           size="sm"
-          className={cn(isActive && 'text-primary')}
+          className={cn('shrink-0', isActive && !node.color && 'text-primary')}
         />
 
         {/* Folder Name */}

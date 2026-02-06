@@ -241,7 +241,7 @@ function TreeItemRecursive({
           color={node.color}
           isOpen={isExpanded}
           size="sm"
-          className={cn('shrink-0', isActive && 'text-primary')}
+          className={cn('shrink-0', isActive && !node.color && 'text-primary')}
         />
 
         {/* Folder Name */}

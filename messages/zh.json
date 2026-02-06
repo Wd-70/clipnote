@@ -249,15 +249,13 @@
     "shareLink": "分享链接",
     "embedCode": "嵌入代码",
     "embedHint": "将此代码粘贴到您的网站或博客中。",
-    "deleteWarning": "删除分享链接后将无法访问。",
-    "startSharing": "开始分享",
-    "startSharingDescription": "创建分享链接后，任何人都可以观看此项目的片段。还可以嵌入到其他网站！",
-    "createLink": "创建分享链接",
+    "publicAccess": "公开设置",
+    "publicAccessOn": "任何拥有链接的人都可以查看您的片段",
+    "publicAccessOff": "只有您可以看到此项目",
     "noClips": "暂无片段。请先在笔记中添加时间戳。",
-    "linkCreated": "分享链接已创建！",
-    "linkDeleted": "分享链接已删除。",
-    "createFailed": "创建分享链接失败。",
-    "deleteFailed": "删除分享链接失败。"
+    "shareEnabled": "已启用分享",
+    "shareDisabled": "已禁用分享",
+    "toggleFailed": "更新分享设置失败。"
   },
   "sharePage": {
     "title": "分享的片段",

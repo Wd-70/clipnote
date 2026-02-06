@@ -11,6 +11,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import {
   Copy,
   Check,
@@ -20,7 +22,8 @@ import {
   Eye,
   Loader2,
   ExternalLink,
-  Trash2,
+  Globe,
+  Lock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -35,9 +38,10 @@ interface ShareDialogProps {
 }
 
 interface ShareData {
-  shareId: string;
-  viewCount: number;
-  createdAt: string;
+  isShared: boolean;
+  shareId?: string;
+  shareViewCount: number;
+  shareUrl?: string | null;
 }
 
 export function ShareDialog({
@@ -50,18 +54,17 @@ export function ShareDialog({
   const t = useTranslations('share');
   const tCommon = useTranslations('common');
   const tError = useTranslations('error');
-  
+
   const [shareData, setShareData] = useState<ShareData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [isCreating, setIsCreating] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [isToggling, setIsToggling] = useState(false);
   const [copiedStates, setCopiedStates] = useState<Record<string, boolean>>({});
 
   // Generate URLs
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-  const shareUrl = shareData ? `${baseUrl}/share/${shareData.shareId}` : '';
-  const embedUrl = shareData ? `${baseUrl}/embed/${shareData.shareId}` : '';
-  const embedCode = shareData
+  const shareUrl = shareData?.shareId ? `${baseUrl}/share/${shareData.shareId}` : '';
+  const embedUrl = shareData?.shareId ? `${baseUrl}/embed/${shareData.shareId}` : '';
+  const embedCode = shareData?.shareId
     ? `<iframe src="${embedUrl}" width="100%" height="500" frameborder="0" allow="autoplay; fullscreen"></iframe>`
     : '';
 
@@ -81,50 +84,29 @@ export function ShareDialog({
     }
   }, [projectId]);
 
-  // Create share link
-  const createShare = async () => {
-    setIsCreating(true);
+  // Toggle share status
+  const toggleShare = async (enabled: boolean) => {
+    setIsToggling(true);
     try {
       const response = await fetch(`/api/projects/${projectId}/share`, {
-        method: 'POST',
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isShared: enabled }),
       });
       const data = await response.json();
 
       if (!response.ok) {
-        toast.error(data.error || t('createFailed'));
+        toast.error(data.error || t('toggleFailed'));
         return;
       }
 
       setShareData(data.data);
-      toast.success(t('linkCreated'));
+      toast.success(enabled ? t('shareEnabled') : t('shareDisabled'));
     } catch (error) {
-      console.error('Failed to create share:', error);
-      toast.error(t('createFailed'));
+      console.error('Failed to toggle share:', error);
+      toast.error(t('toggleFailed'));
     } finally {
-      setIsCreating(false);
-    }
-  };
-
-  // Delete share link
-  const deleteShare = async () => {
-    setIsDeleting(true);
-    try {
-      const response = await fetch(`/api/projects/${projectId}/share`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        toast.error(t('deleteFailed'));
-        return;
-      }
-
-      setShareData(null);
-      toast.success(t('linkDeleted'));
-    } catch (error) {
-      console.error('Failed to delete share:', error);
-      toast.error(t('deleteFailed'));
-    } finally {
-      setIsDeleting(false);
+      setIsToggling(false);
     }
   };
 
@@ -150,6 +132,8 @@ export function ShareDialog({
     }
   }, [open, fetchShareData]);
 
+  const isShared = shareData?.isShared ?? false;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg w-[calc(100vw-2rem)] p-0 gap-0 overflow-hidden">
@@ -174,10 +158,10 @@ export function ShareDialog({
             <Badge variant="secondary" className="gap-1.5">
               {tCommon('clips', { count: clipCount })}
             </Badge>
-            {shareData && (
+            {shareData && isShared && (
               <Badge variant="outline" className="gap-1.5">
                 <Eye className="h-3 w-3" />
-                {t('views', { count: shareData.viewCount })}
+                {t('views', { count: shareData.shareViewCount })}
               </Badge>
             )}
           </div>
@@ -189,144 +173,127 @@ export function ShareDialog({
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
-          ) : shareData ? (
-            <>
-              {/* Share Link */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium flex items-center gap-2">
-                  <Link2 className="h-4 w-4 text-primary" />
-                  {t('shareLink')}
-                </label>
-                {/* URL Display */}
-                <div className="bg-muted rounded-lg px-3 py-2 text-sm font-mono break-all select-all">
-                  {shareUrl}
-                </div>
-                {/* Action Buttons */}
-                <div className="flex gap-2">
-                  <Button
-                    variant={copiedStates['url'] ? 'default' : 'secondary'}
-                    onClick={() => handleCopy('url', shareUrl)}
-                    className={cn(
-                      'flex-1 transition-all',
-                      copiedStates['url'] && 'bg-green-500 hover:bg-green-600'
-                    )}
-                  >
-                    {copiedStates['url'] ? (
-                      <>
-                        <Check className="h-4 w-4 mr-2" />
-                        {tCommon('copied')}
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="h-4 w-4 mr-2" />
-                        {tCommon('copy')}
-                      </>
-                    )}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    asChild
-                  >
-                    <a href={shareUrl} target="_blank" rel="noopener noreferrer">
-                      <ExternalLink className="h-4 w-4 mr-2" />
-                      {tCommon('open')}
-                    </a>
-                  </Button>
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* Embed Code */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium flex items-center gap-2">
-                  <Code2 className="h-4 w-4 text-primary" />
-                  {t('embedCode')}
-                </label>
-                <div className="relative">
-                  <div className="bg-zinc-950 dark:bg-zinc-900 rounded-lg p-3 text-xs font-mono text-zinc-300 overflow-x-auto">
-                    <code className="whitespace-pre-wrap break-all">
-                      {embedCode}
-                    </code>
-                  </div>
-                  <Button
-                    variant={copiedStates['embed'] ? 'default' : 'secondary'}
-                    size="sm"
-                    onClick={() => handleCopy('embed', embedCode)}
-                    className={cn(
-                      'absolute top-2 right-2 transition-all',
-                      copiedStates['embed'] && 'bg-green-500 hover:bg-green-600'
-                    )}
-                  >
-                    {copiedStates['embed'] ? (
-                      <>
-                        <Check className="h-3 w-3 mr-1" />
-                        {tCommon('copied')}
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="h-3 w-3 mr-1" />
-                        {tCommon('copy')}
-                      </>
-                    )}
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {t('embedHint')}
-                </p>
-              </div>
-
-              <Separator />
-
-              {/* Delete Share */}
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-muted-foreground">
-                  {t('deleteWarning')}
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={deleteShare}
-                  disabled={isDeleting}
-                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                >
-                  {isDeleting ? (
-                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                  ) : (
-                    <Trash2 className="h-4 w-4 mr-1" />
-                  )}
-                  {tCommon('delete')}
-                </Button>
-              </div>
-            </>
           ) : (
-            /* Create Share */
-            <div className="text-center py-8">
-              <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-violet-500/20 to-purple-600/20 flex items-center justify-center mb-4">
-                <Share2 className="h-8 w-8 text-primary" />
+            <>
+              {/* Share Toggle */}
+              <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/30">
+                <div className="flex items-center gap-3">
+                  {isShared ? (
+                    <Globe className="h-5 w-5 text-green-500" />
+                  ) : (
+                    <Lock className="h-5 w-5 text-muted-foreground" />
+                  )}
+                  <div>
+                    <Label htmlFor="share-toggle" className="text-sm font-medium">
+                      {t('publicAccess')}
+                    </Label>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {isShared ? t('publicAccessOn') : t('publicAccessOff')}
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  id="share-toggle"
+                  checked={isShared}
+                  onCheckedChange={toggleShare}
+                  disabled={isToggling || clipCount === 0}
+                />
               </div>
-              <h3 className="text-lg font-semibold mb-2">{t('startSharing')}</h3>
-              <p className="text-sm text-muted-foreground mb-6 max-w-sm mx-auto">
-                {t('startSharingDescription')}
-              </p>
-              <Button
-                onClick={createShare}
-                disabled={isCreating || clipCount === 0}
-                className="gap-2 bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700"
-              >
-                {isCreating ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Link2 className="h-4 w-4" />
-                )}
-                {t('createLink')}
-              </Button>
+
               {clipCount === 0 && (
-                <p className="text-xs text-destructive mt-3">
+                <p className="text-xs text-destructive text-center">
                   {t('noClips')}
                 </p>
               )}
-            </div>
+
+              {isShared && shareUrl && (
+                <>
+                  <Separator />
+
+                  {/* Share Link */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium flex items-center gap-2">
+                      <Link2 className="h-4 w-4 text-primary" />
+                      {t('shareLink')}
+                    </label>
+                    {/* URL Display */}
+                    <div className="bg-muted rounded-lg px-3 py-2 text-sm font-mono break-all select-all">
+                      {shareUrl}
+                    </div>
+                    {/* Action Buttons */}
+                    <div className="flex gap-2">
+                      <Button
+                        variant={copiedStates['url'] ? 'default' : 'secondary'}
+                        onClick={() => handleCopy('url', shareUrl)}
+                        className={cn(
+                          'flex-1 transition-all',
+                          copiedStates['url'] && 'bg-green-500 hover:bg-green-600'
+                        )}
+                      >
+                        {copiedStates['url'] ? (
+                          <>
+                            <Check className="h-4 w-4 mr-2" />
+                            {tCommon('copied')}
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-4 w-4 mr-2" />
+                            {tCommon('copy')}
+                          </>
+                        )}
+                      </Button>
+                      <Button variant="outline" asChild>
+                        <a href={shareUrl} target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="h-4 w-4 mr-2" />
+                          {tCommon('open')}
+                        </a>
+                      </Button>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Embed Code */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium flex items-center gap-2">
+                      <Code2 className="h-4 w-4 text-primary" />
+                      {t('embedCode')}
+                    </label>
+                    <div className="relative">
+                      <div className="bg-zinc-950 dark:bg-zinc-900 rounded-lg p-3 text-xs font-mono text-zinc-300 overflow-x-auto">
+                        <code className="whitespace-pre-wrap break-all">
+                          {embedCode}
+                        </code>
+                      </div>
+                      <Button
+                        variant={copiedStates['embed'] ? 'default' : 'secondary'}
+                        size="sm"
+                        onClick={() => handleCopy('embed', embedCode)}
+                        className={cn(
+                          'absolute top-2 right-2 transition-all',
+                          copiedStates['embed'] && 'bg-green-500 hover:bg-green-600'
+                        )}
+                      >
+                        {copiedStates['embed'] ? (
+                          <>
+                            <Check className="h-3 w-3 mr-1" />
+                            {tCommon('copied')}
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3 w-3 mr-1" />
+                            {tCommon('copy')}
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {t('embedHint')}
+                    </p>
+                  </div>
+                </>
+              )}
+            </>
           )}
         </div>
       </DialogContent>

@@ -249,15 +249,13 @@
     "shareLink": "Share Link",
     "embedCode": "Embed Code",
     "embedHint": "Paste this code into your website or blog.",
-    "deleteWarning": "Deleting the share link will make it inaccessible.",
-    "startSharing": "Start Sharing",
-    "startSharingDescription": "Create a share link to let anyone view your clips. You can also embed them on other sites!",
-    "createLink": "Create Share Link",
+    "publicAccess": "Public Access",
+    "publicAccessOn": "Anyone with the link can view your clips",
+    "publicAccessOff": "Only you can see this project",
     "noClips": "No clips available. Add timestamps to your notes first.",
-    "linkCreated": "Share link created!",
-    "linkDeleted": "Share link deleted.",
-    "createFailed": "Failed to create share link.",
-    "deleteFailed": "Failed to delete share link."
+    "shareEnabled": "Sharing enabled",
+    "shareDisabled": "Sharing disabled",
+    "toggleFailed": "Failed to update sharing settings."
   },
   "sharePage": {
     "title": "Shared Clips",

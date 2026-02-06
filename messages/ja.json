@@ -249,15 +249,13 @@
     "shareLink": "共有リンク",
     "embedCode": "埋め込みコード",
     "embedHint": "このコードをウェブサイトやブログに貼り付けてください。",
-    "deleteWarning": "共有リンクを削除すると、アクセスできなくなります。",
-    "startSharing": "共有を始める",
-    "startSharingDescription": "共有リンクを作成すると、誰でもこのプロジェクトのクリップを視聴できます。他のサイトへの埋め込みも可能です！",
-    "createLink": "共有リンクを作成",
+    "publicAccess": "公開設定",
+    "publicAccessOn": "リンクを知っている人は誰でもクリップを視聴できます",
+    "publicAccessOff": "このプロジェクトは自分だけが見られます",
     "noClips": "クリップがありません。まずノートにタイムスタンプを追加してください。",
-    "linkCreated": "共有リンクを作成しました！",
-    "linkDeleted": "共有リンクを削除しました。",
-    "createFailed": "共有リンクの作成に失敗しました。",
-    "deleteFailed": "共有リンクの削除に失敗しました。"
+    "shareEnabled": "共有が有効になりました",
+    "shareDisabled": "共有が無効になりました",
+    "toggleFailed": "共有設定の変更に失敗しました。"
   },
   "sharePage": {
     "title": "共有されたクリップ",

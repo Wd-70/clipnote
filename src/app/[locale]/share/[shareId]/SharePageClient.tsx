@@ -196,16 +196,17 @@ export default function SharePageClient() {
 
     const clips = project.clips;
     const lastClip = clips[clips.length - 1];
-    
+
     // Check if we've reached the end of the last clip
-    if (currentTime >= lastClip.endTime - 0.1) {
+    // Use a slightly larger tolerance and check we're not at the start (avoiding race with restart)
+    if (currentTime >= lastClip.endTime - 0.1 && currentTime > clips[0].startTime + 0.5) {
       // Stop playback and keep position at end
       setIsVirtualPlaying(false);
       setPlaybackFinished(true);
       playerRef.current?.pause();
       return;
     }
-    
+
     // Find which clip we're in or should be in
     let foundClipIndex = -1;
     for (let i = 0; i < clips.length; i++) {
@@ -239,12 +240,6 @@ export default function SharePageClient() {
     }
   }, [currentTime, isVirtualPlaying, project]);
 
-  // Reset playbackFinished when user seeks or starts playing again
-  useEffect(() => {
-    if (isVirtualPlaying && playbackFinished) {
-      setPlaybackFinished(false);
-    }
-  }, [isVirtualPlaying, playbackFinished]);
 
   // Handle video progress
   const handleProgress = useCallback(({ playedSeconds }: { played: number; playedSeconds: number }) => {
@@ -257,34 +252,47 @@ export default function SharePageClient() {
   }, []);
 
   // Seek to specific clip
-  const handleJumpToClip = (startTime: number) => {
+  const handleJumpToClip = useCallback((startTime: number) => {
+    setPlaybackFinished(false);
     lastSeekTimeRef.current = startTime;
     playerRef.current?.seekTo(startTime);
-    // Auto play when jumping to clip
-    setIsVirtualPlaying(true);
-    playerRef.current?.play();
-  };
+    // Auto play when jumping to clip with slight delay to avoid race condition
+    setTimeout(() => {
+      setIsVirtualPlaying(true);
+      playerRef.current?.play();
+    }, 50);
+  }, []);
 
   // Toggle virtual playback (clips only)
-  const handleToggleVirtualPlay = () => {
+  const handleToggleVirtualPlay = useCallback(() => {
     if (isVirtualPlaying) {
       setIsVirtualPlaying(false);
       playerRef.current?.pause();
     } else {
-      // If not in any clip, jump to first clip
       if (project && project.clips.length > 0) {
+        const lastClip = project.clips[project.clips.length - 1];
+        const isAtEnd = currentTime >= lastClip.endTime - 0.5;
         const inClip = project.clips.some(
           (clip) => currentTime >= clip.startTime && currentTime < clip.endTime
         );
-        if (!inClip) {
+
+        // If playback finished or not in any clip, restart from first clip
+        if (playbackFinished || isAtEnd || !inClip) {
+          setPlaybackFinished(false);
           lastSeekTimeRef.current = project.clips[0].startTime;
           playerRef.current?.seekTo(project.clips[0].startTime);
+          // Delay play to avoid race condition with seek
+          setTimeout(() => {
+            setIsVirtualPlaying(true);
+            playerRef.current?.play();
+          }, 50);
+          return;
         }
       }
       setIsVirtualPlaying(true);
       playerRef.current?.play();
     }
-  };
+  }, [isVirtualPlaying, project, currentTime, playbackFinished]);
 
   // Seek on virtual timeline
   const handleVirtualSeek = (value: number[]) => {

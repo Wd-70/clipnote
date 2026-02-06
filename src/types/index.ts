@@ -51,6 +51,10 @@ export interface IProject {
   notes: string | INote[]; // Support both string (raw text) and structured notes
   isAutoCollected: boolean;
   order?: number; // for manual sorting within folder
+  // Share settings - each project has its own share ID
+  shareId?: string; // unique share ID, generated when first shared
+  isShared?: boolean; // whether the project is publicly accessible
+  shareViewCount?: number; // track view count
   createdAt: Date;
   updatedAt: Date;
 }

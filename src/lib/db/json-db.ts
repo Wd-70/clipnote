@@ -102,8 +102,10 @@ class JsonCollection<T extends { _id?: string }> {
       if (mongoUpdate.$inc) {
         Object.entries(mongoUpdate.$inc).forEach(([key, value]) => {
           const currentValue = updatedItem[key as keyof T];
-          if (typeof currentValue === 'number' && typeof value === 'number') {
-            (updatedItem[key as keyof T] as unknown as number) = currentValue + value;
+          if (typeof value === 'number') {
+            // Initialize to 0 if undefined/null, then increment
+            const base = typeof currentValue === 'number' ? currentValue : 0;
+            (updatedItem[key as keyof T] as unknown as number) = base + value;
           }
         });
       }
@@ -148,8 +150,10 @@ class JsonCollection<T extends { _id?: string }> {
     if (update.$inc) {
       Object.entries(update.$inc).forEach(([key, value]) => {
         const currentValue = updatedItem[key as keyof T];
-        if (typeof currentValue === 'number' && typeof value === 'number') {
-          (updatedItem[key as keyof T] as unknown as number) = currentValue + value;
+        if (typeof value === 'number') {
+          // Initialize to 0 if undefined/null, then increment
+          const base = typeof currentValue === 'number' ? currentValue : 0;
+          (updatedItem[key as keyof T] as unknown as number) = base + value;
         }
       });
     }

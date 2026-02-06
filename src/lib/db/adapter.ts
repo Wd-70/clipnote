@@ -41,6 +41,10 @@ export interface DBProject {
   }>;
   isAutoCollected: boolean;
   order?: number;
+  // Share settings
+  shareId?: string;
+  isShared?: boolean;
+  shareViewCount?: number;
   createdAt?: Date | string;
   updatedAt?: Date | string;
 }
