@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Plus, FolderOpen } from 'lucide-react';
 import { toast } from 'sonner';
@@ -58,10 +58,14 @@ interface ProjectsContentProps {
 
 export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const t = useTranslations('projects');
   const tFolders = useTranslations('folders');
   const tBulk = useTranslations('bulk');
   const tDashboard = useTranslations('dashboard');
+
+  // Get folder ID from URL query parameter
+  const folderIdFromUrl = searchParams.get('folder');
 
   // Projects state
   const [projects, setProjects] = useState<IProject[]>(initialProjects);
@@ -75,9 +79,18 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
   // Navigation hook
   const navigation = useFolderNavigation({
     folders: folderTree.folders,
+    initialFolderId: folderIdFromUrl,
     initialSort: 'created-desc',
     initialView: 'grid',
   });
+
+  // Sync URL folder parameter to navigation state
+  useEffect(() => {
+    if (folderIdFromUrl !== navigation.currentFolderId) {
+      navigation.navigateTo(folderIdFromUrl);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [folderIdFromUrl]);
 
   // Project filter
   const projectFilter = useProjectFilter({

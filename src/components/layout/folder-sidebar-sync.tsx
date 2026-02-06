@@ -36,13 +36,13 @@ export function FolderSidebarSync() {
   // Set callbacks for folder actions
   useEffect(() => {
     // When folder is selected in editor mode, navigate to projects page with that folder
+    // Keep folder view open since user is actively using folder navigation
     folderSidebar.setOnFolderSelect(() => (id: string | null) => {
       if (id) {
         router.push(`/projects?folder=${id}`);
       } else {
         router.push('/projects');
       }
-      folderSidebar.setShowFolders(false);
     });
 
     folderSidebar.setOnToggleExpand(() => folderTree.toggleExpanded);

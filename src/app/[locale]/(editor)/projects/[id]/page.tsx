@@ -282,7 +282,7 @@ export default function EditorPage() {
           {/* Left: Back button + Title */}
           <div className="flex items-center gap-2 min-w-0 flex-1">
             <Button variant="ghost" size="icon" className="shrink-0" asChild>
-              <Link href="/dashboard">
+              <Link href="/projects">
                 <ArrowLeft className="h-4 w-4" />
               </Link>
             </Button>
