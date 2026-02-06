@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Plus, FolderOpen } from 'lucide-react';
 import { toast } from 'sonner';
@@ -58,6 +58,7 @@ interface ProjectsContentProps {
 
 export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const t = useTranslations('projects');
   const tFolders = useTranslations('folders');
@@ -84,13 +85,30 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
     initialView: 'grid',
   });
 
-  // Sync URL folder parameter to navigation state
+  // Sync URL folder parameter to navigation state (URL -> state)
   useEffect(() => {
     if (folderIdFromUrl !== navigation.currentFolderId) {
       navigation.navigateTo(folderIdFromUrl);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [folderIdFromUrl]);
+
+  // Sync navigation state to URL (state -> URL)
+  useEffect(() => {
+    const currentUrlFolderId = searchParams.get('folder');
+    if (navigation.currentFolderId !== currentUrlFolderId) {
+      const params = new URLSearchParams(searchParams.toString());
+      if (navigation.currentFolderId) {
+        params.set('folder', navigation.currentFolderId);
+      } else {
+        params.delete('folder');
+      }
+      const queryString = params.toString();
+      const newUrl = queryString ? `${pathname}?${queryString}` : pathname;
+      router.replace(newUrl, { scroll: false });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [navigation.currentFolderId]);
 
   // Project filter
   const projectFilter = useProjectFilter({
