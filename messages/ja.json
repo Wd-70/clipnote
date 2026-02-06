@@ -311,12 +311,16 @@
   },
   "videoControl": {
     "title": "動画コントロール",
+    "backward10m": "10分戻る",
+    "backward3m": "3分戻る",
     "backward30": "30秒戻る",
     "backward5": "5秒戻る",
     "backward1": "1秒戻る",
     "forward1": "1秒進む",
     "forward5": "5秒進む",
     "forward30": "30秒進む",
+    "forward3m": "3分進む",
+    "forward10m": "10分進む",
     "speed": "速度",
     "insertTimestamp": "挿入",
     "insertTimestampHint": "現在のタイムスタンプをノートに挿入"

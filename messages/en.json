@@ -311,12 +311,16 @@
   },
   "videoControl": {
     "title": "Video Controls",
+    "backward10m": "10 minutes backward",
+    "backward3m": "3 minutes backward",
     "backward30": "30 seconds backward",
     "backward5": "5 seconds backward",
     "backward1": "1 second backward",
     "forward1": "1 second forward",
     "forward5": "5 seconds forward",
     "forward30": "30 seconds forward",
+    "forward3m": "3 minutes forward",
+    "forward10m": "10 minutes forward",
     "speed": "Speed",
     "insertTimestamp": "Insert",
     "insertTimestampHint": "Insert current timestamp into notes"

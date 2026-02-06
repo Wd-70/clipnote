@@ -311,12 +311,16 @@
   },
   "videoControl": {
     "title": "영상 제어",
+    "backward10m": "10분 뒤로",
+    "backward3m": "3분 뒤로",
     "backward30": "30초 뒤로",
     "backward5": "5초 뒤로",
     "backward1": "1초 뒤로",
     "forward1": "1초 앞으로",
     "forward5": "5초 앞으로",
     "forward30": "30초 앞으로",
+    "forward3m": "3분 앞으로",
+    "forward10m": "10분 앞으로",
     "speed": "속도",
     "insertTimestamp": "삽입",
     "insertTimestampHint": "현재 타임스탬프를 노트에 삽입"

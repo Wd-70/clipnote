@@ -311,12 +311,16 @@
   },
   "videoControl": {
     "title": "视频控制",
+    "backward10m": "后退10分钟",
+    "backward3m": "后退3分钟",
     "backward30": "后退30秒",
     "backward5": "后退5秒",
     "backward1": "后退1秒",
     "forward1": "前进1秒",
     "forward5": "前进5秒",
     "forward30": "前进30秒",
+    "forward3m": "前进3分钟",
+    "forward10m": "前进10分钟",
     "speed": "速度",
     "insertTimestamp": "插入",
     "insertTimestampHint": "在笔记中插入当前时间戳"

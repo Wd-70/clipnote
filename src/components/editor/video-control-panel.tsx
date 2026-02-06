@@ -26,6 +26,8 @@ import {
   Volume2,
   VolumeX,
   Timer,
+  Rewind,
+  FastForward,
 } from 'lucide-react';
 import { formatSecondsToTime } from '@/lib/utils/timestamp';
 import { cn } from '@/lib/utils';
@@ -43,6 +45,41 @@ interface VideoControlPanelProps {
 }
 
 const PLAYBACK_SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2];
+
+// Seek button component to reduce repetition
+function SeekButton({
+  seconds,
+  direction,
+  icon: Icon,
+  label,
+  tooltip,
+  className,
+  onClick,
+}: {
+  seconds: number;
+  direction: 'backward' | 'forward';
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  tooltip: string;
+  className?: string;
+  onClick: () => void;
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          variant="ghost"
+          className={cn('h-9 w-9 px-0 flex flex-col items-center justify-center gap-0', className)}
+          onClick={onClick}
+        >
+          <Icon className="h-4 w-4" />
+          <span className="text-[10px] font-mono leading-none text-muted-foreground">{label}</span>
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="bottom">{tooltip}</TooltipContent>
+    </Tooltip>
+  );
+}
 
 export function VideoControlPanel({
   playerRef,
@@ -177,50 +214,60 @@ export function VideoControlPanel({
 
       {/* Controls */}
       <div className="flex items-center justify-between gap-2">
-        {/* Left: Seek controls */}
+        {/* Left: Backward seek controls */}
         <div className="flex items-center gap-0.5">
           <TooltipProvider delayDuration={300}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className="h-9 w-9 px-0 flex flex-col items-center justify-center gap-0"
-                  onClick={() => seekBySeconds(-30)}
-                >
-                  <ChevronsLeft className="h-4 w-4" />
-                  <span className="text-[10px] font-mono leading-none text-muted-foreground">30</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">{t('backward30')}</TooltipContent>
-            </Tooltip>
+            {/* 10min - only show on xl screens */}
+            <SeekButton
+              seconds={600}
+              direction="backward"
+              icon={Rewind}
+              label="10m"
+              tooltip={t('backward10m')}
+              className="hidden xl:flex"
+              onClick={() => seekBySeconds(-600)}
+            />
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className="h-9 w-9 px-0 flex flex-col items-center justify-center gap-0"
-                  onClick={() => seekBySeconds(-5)}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                  <span className="text-[10px] font-mono leading-none text-muted-foreground">5</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">{t('backward5')}</TooltipContent>
-            </Tooltip>
+            {/* 3min - only show on lg screens */}
+            <SeekButton
+              seconds={180}
+              direction="backward"
+              icon={ChevronsLeft}
+              label="3m"
+              tooltip={t('backward3m')}
+              className="hidden lg:flex"
+              onClick={() => seekBySeconds(-180)}
+            />
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className="h-9 w-9 px-0 flex flex-col items-center justify-center gap-0"
-                  onClick={() => seekBySeconds(-1)}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                  <span className="text-[10px] font-mono leading-none text-muted-foreground">1</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">{t('backward1')}</TooltipContent>
-            </Tooltip>
+            {/* 30s - always visible */}
+            <SeekButton
+              seconds={30}
+              direction="backward"
+              icon={ChevronsLeft}
+              label="30"
+              tooltip={t('backward30')}
+              onClick={() => seekBySeconds(-30)}
+            />
+
+            {/* 5s - always visible */}
+            <SeekButton
+              seconds={5}
+              direction="backward"
+              icon={ChevronLeft}
+              label="5"
+              tooltip={t('backward5')}
+              onClick={() => seekBySeconds(-5)}
+            />
+
+            {/* 1s - always visible */}
+            <SeekButton
+              seconds={1}
+              direction="backward"
+              icon={ChevronLeft}
+              label="1"
+              tooltip={t('backward1')}
+              onClick={() => seekBySeconds(-1)}
+            />
           </TooltipProvider>
         </div>
 
@@ -228,7 +275,7 @@ export function VideoControlPanel({
         <Button
           variant="default"
           size="icon"
-          className="h-10 w-10"
+          className="h-10 w-10 shrink-0"
           onClick={togglePlay}
         >
           {isPlaying ? (
@@ -238,50 +285,60 @@ export function VideoControlPanel({
           )}
         </Button>
 
-        {/* Right: Forward controls */}
+        {/* Right: Forward seek controls */}
         <div className="flex items-center gap-0.5">
           <TooltipProvider delayDuration={300}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className="h-9 w-9 px-0 flex flex-col items-center justify-center gap-0"
-                  onClick={() => seekBySeconds(1)}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                  <span className="text-[10px] font-mono leading-none text-muted-foreground">1</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">{t('forward1')}</TooltipContent>
-            </Tooltip>
+            {/* 1s - always visible */}
+            <SeekButton
+              seconds={1}
+              direction="forward"
+              icon={ChevronRight}
+              label="1"
+              tooltip={t('forward1')}
+              onClick={() => seekBySeconds(1)}
+            />
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className="h-9 w-9 px-0 flex flex-col items-center justify-center gap-0"
-                  onClick={() => seekBySeconds(5)}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                  <span className="text-[10px] font-mono leading-none text-muted-foreground">5</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">{t('forward5')}</TooltipContent>
-            </Tooltip>
+            {/* 5s - always visible */}
+            <SeekButton
+              seconds={5}
+              direction="forward"
+              icon={ChevronRight}
+              label="5"
+              tooltip={t('forward5')}
+              onClick={() => seekBySeconds(5)}
+            />
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className="h-9 w-9 px-0 flex flex-col items-center justify-center gap-0"
-                  onClick={() => seekBySeconds(30)}
-                >
-                  <ChevronsRight className="h-4 w-4" />
-                  <span className="text-[10px] font-mono leading-none text-muted-foreground">30</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">{t('forward30')}</TooltipContent>
-            </Tooltip>
+            {/* 30s - always visible */}
+            <SeekButton
+              seconds={30}
+              direction="forward"
+              icon={ChevronsRight}
+              label="30"
+              tooltip={t('forward30')}
+              onClick={() => seekBySeconds(30)}
+            />
+
+            {/* 3min - only show on lg screens */}
+            <SeekButton
+              seconds={180}
+              direction="forward"
+              icon={ChevronsRight}
+              label="3m"
+              tooltip={t('forward3m')}
+              className="hidden lg:flex"
+              onClick={() => seekBySeconds(180)}
+            />
+
+            {/* 10min - only show on xl screens */}
+            <SeekButton
+              seconds={600}
+              direction="forward"
+              icon={FastForward}
+              label="10m"
+              tooltip={t('forward10m')}
+              className="hidden xl:flex"
+              onClick={() => seekBySeconds(600)}
+            />
           </TooltipProvider>
         </div>
       </div>
