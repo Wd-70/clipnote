@@ -196,7 +196,7 @@ export function VideoControlPanel({
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
-    <div className={cn('bg-muted/30 rounded-lg p-3 space-y-3', className)}>
+    <div className={cn('bg-muted/30 rounded-lg p-3 space-y-3 @container', className)}>
       {/* Timeline */}
       <div className="space-y-1">
         <Slider
@@ -217,25 +217,25 @@ export function VideoControlPanel({
         {/* Left: Backward seek controls */}
         <div className="flex items-center gap-0.5">
           <TooltipProvider delayDuration={300}>
-            {/* 10min - only show on xl screens */}
+            {/* 10min - only show when container >= 500px */}
             <SeekButton
               seconds={600}
               direction="backward"
               icon={Rewind}
               label="10m"
               tooltip={t('backward10m')}
-              className="hidden xl:flex"
+              className="hidden @[500px]:flex"
               onClick={() => seekBySeconds(-600)}
             />
 
-            {/* 3min - only show on lg screens */}
+            {/* 3min - only show when container >= 420px */}
             <SeekButton
               seconds={180}
               direction="backward"
               icon={ChevronsLeft}
               label="3m"
               tooltip={t('backward3m')}
-              className="hidden lg:flex"
+              className="hidden @[420px]:flex"
               onClick={() => seekBySeconds(-180)}
             />
 
@@ -318,25 +318,25 @@ export function VideoControlPanel({
               onClick={() => seekBySeconds(30)}
             />
 
-            {/* 3min - only show on lg screens */}
+            {/* 3min - only show when container >= 420px */}
             <SeekButton
               seconds={180}
               direction="forward"
               icon={ChevronsRight}
               label="3m"
               tooltip={t('forward3m')}
-              className="hidden lg:flex"
+              className="hidden @[420px]:flex"
               onClick={() => seekBySeconds(180)}
             />
 
-            {/* 10min - only show on xl screens */}
+            {/* 10min - only show when container >= 500px */}
             <SeekButton
               seconds={600}
               direction="forward"
               icon={FastForward}
               label="10m"
               tooltip={t('forward10m')}
-              className="hidden xl:flex"
+              className="hidden @[500px]:flex"
               onClick={() => seekBySeconds(600)}
             />
           </TooltipProvider>
