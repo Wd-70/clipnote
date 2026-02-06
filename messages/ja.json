@@ -168,6 +168,21 @@
     "saved": "プロジェクトタイトルを更新しました",
     "saveFailed": "プロジェクトタイトルの更新に失敗しました"
   },
+  "projectSettings": {
+    "title": "プロジェクト設定",
+    "description": "プロジェクト情報を編集します",
+    "projectTitle": "プロジェクトタイトル",
+    "titlePlaceholder": "プロジェクトタイトルを入力",
+    "titleRequired": "タイトルを入力してください",
+    "videoUrl": "動画URL",
+    "urlPlaceholder": "https://youtube.com/watch?v=...",
+    "urlRequired": "有効なURLを入力してください",
+    "urlHint": "URLを変更すると動画ソースが変更されます",
+    "folder": "フォルダ",
+    "selectFolder": "フォルダを選択",
+    "saved": "プロジェクト設定を更新しました",
+    "saveFailed": "プロジェクト設定の更新に失敗しました"
+  },
   "projectCard": {
     "editProject": "プロジェクトを編集",
     "deleteConfirm": "プロジェクトを削除しますか？",

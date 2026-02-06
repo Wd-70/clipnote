@@ -168,6 +168,21 @@
     "saved": "Project title updated",
     "saveFailed": "Failed to update project title"
   },
+  "projectSettings": {
+    "title": "Project Settings",
+    "description": "Edit project information",
+    "projectTitle": "Project Title",
+    "titlePlaceholder": "Enter project title",
+    "titleRequired": "Please enter a title",
+    "videoUrl": "Video URL",
+    "urlPlaceholder": "https://youtube.com/watch?v=...",
+    "urlRequired": "Please enter a valid URL",
+    "urlHint": "Changing the URL will update the video source",
+    "folder": "Folder",
+    "selectFolder": "Select folder",
+    "saved": "Project settings updated",
+    "saveFailed": "Failed to update project settings"
+  },
   "projectCard": {
     "editProject": "Edit Project",
     "deleteConfirm": "Delete this project?",

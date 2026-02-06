@@ -9,7 +9,7 @@ import { ClipTimeline } from '@/components/editor/clip-timeline';
 import { VideoControlPanel } from '@/components/editor/video-control-panel';
 import { ExportDialog } from '@/components/editor/export-dialog';
 import { ShareDialog } from '@/components/editor/share-dialog';
-import { EditProjectDialog } from '@/components/projects/edit-project-dialog';
+import { ProjectSettingsDialog } from '@/components/projects/project-settings-dialog';
 import { useVideoSync } from '@/hooks/useVideoSync';
 import { useEditorBackUrl } from '@/hooks/use-back-navigation';
 import { Button } from '@/components/ui/button';
@@ -33,7 +33,6 @@ import {
   Sparkles,
   Download,
   Share2,
-  Pencil,
   Settings,
   Trash2,
 } from 'lucide-react';
@@ -49,6 +48,7 @@ interface Project {
   platform: 'YOUTUBE' | 'CHZZK';
   videoId: string;
   notes: string;
+  folderId?: string | null;
   createdAt: string;
 }
 
@@ -75,7 +75,7 @@ export default function EditorPage() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
-  const [isEditTitleOpen, setIsEditTitleOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [headerWidth, setHeaderWidth] = useState(0);
 
   // Fetch project data from API
@@ -293,19 +293,9 @@ export default function EditorPage() {
               </Link>
             </Button>
             <div className="min-w-0">
-              <div className="flex items-center gap-1">
-                <h1 className="font-semibold text-sm sm:text-base truncate">{project.title}</h1>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 shrink-0"
-                  onClick={() => setIsEditTitleOpen(true)}
-                >
-                  <Pencil className="h-3 w-3" />
-                </Button>
-              </div>
-              <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
-                <Badge variant="outline" className="text-xs">
+              <h1 className="font-semibold text-sm sm:text-base line-clamp-2">{project.title}</h1>
+              <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground mt-0.5">
+                <Badge variant="outline" className="text-xs shrink-0">
                   {project.platform}
                 </Badge>
                 {!isCompact && <span>{tCommon('clips', { count: clips.length })}</span>}
@@ -348,16 +338,15 @@ export default function EditorPage() {
               <Share2 className="h-4 w-4" />
             </Button>
 
-            {/* Settings button - hide when narrow */}
-            {!isNarrow && (
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8"
-              >
-                <Settings className="h-4 w-4" />
-              </Button>
-            )}
+            {/* Settings button */}
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setIsSettingsOpen(true)}
+            >
+              <Settings className="h-4 w-4" />
+            </Button>
 
             {/* Delete button - always visible */}
             <AlertDialog>
@@ -530,15 +519,22 @@ export default function EditorPage() {
         />
       )}
 
-      {/* Edit Project Title Dialog */}
+      {/* Project Settings Dialog */}
       {project && (
-        <EditProjectDialog
+        <ProjectSettingsDialog
           projectId={projectId}
           projectTitle={project.title}
-          open={isEditTitleOpen}
-          onOpenChange={setIsEditTitleOpen}
-          onSave={(newTitle) => {
-            setProject((prev) => prev ? { ...prev, title: newTitle } : null);
+          videoUrl={project.videoUrl}
+          folderId={project.folderId}
+          open={isSettingsOpen}
+          onOpenChange={setIsSettingsOpen}
+          onSave={(data) => {
+            setProject((prev) => prev ? {
+              ...prev,
+              title: data.title,
+              videoUrl: data.videoUrl,
+              folderId: data.folderId,
+            } : null);
           }}
         />
       )}
