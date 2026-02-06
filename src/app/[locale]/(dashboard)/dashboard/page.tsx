@@ -9,12 +9,13 @@ import { PointsDisplay } from "@/components/dashboard/points-display";
 import { ProjectCard } from "@/components/dashboard/project-card";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { NewProjectDialog } from "@/components/dashboard/new-project-dialog";
+import { useUser } from "@/contexts/user-context";
 import { IProject } from "@/types";
 
 function DashboardContent() {
   const t = useTranslations('dashboard');
+  const { user } = useUser();
   const [projects, setProjects] = useState<IProject[]>([]);
-  const [points, setPoints] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchProjects = async () => {
@@ -22,7 +23,7 @@ function DashboardContent() {
       const response = await fetch('/api/projects', {
         cache: 'no-store',
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         setProjects(data.data || []);
@@ -36,8 +37,6 @@ function DashboardContent() {
 
   useEffect(() => {
     fetchProjects();
-    // TODO: Fetch real user points from API
-    setPoints(1250);
   }, []);
 
   const handleProjectDeleted = () => {
@@ -60,7 +59,7 @@ function DashboardContent() {
           </p>
         </div>
         <div className="w-full md:w-auto min-w-[300px]">
-          <PointsDisplay points={points} />
+          <PointsDisplay points={user?.points ?? 0} />
         </div>
       </div>
 

@@ -61,7 +61,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               email: user.email,
               name: user.name || '',
               image: user.image || '',
-              points: 1000, // Initial points
+              points: 0, // Initial points
               role: 'FREE',
               savedChannels: [],
             });

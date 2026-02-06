@@ -21,6 +21,7 @@ import { ThemeToggle } from '@/components/layout/theme-toggle';
 import { LanguageSwitcher } from '@/components/layout/language-switcher';
 import { DroppableFolderTree } from '@/components/folders/droppable-folder-tree';
 import { useFolderSidebar } from '@/contexts/folder-sidebar-context';
+import { useUser } from '@/contexts/user-context';
 
 interface SidebarWithFoldersProps {
   className?: string;
@@ -70,12 +71,14 @@ export function SidebarWithFolders({ className }: SidebarWithFoldersProps) {
     return () => window.removeEventListener('resize', handleResize);
   }, [showFolders, setShowFolders]);
 
-  // Mock user data
+  // Get real user data from context
+  const { user: userData, isLoading: isUserLoading } = useUser();
+
   const user = {
-    name: 'ClipUser',
-    email: 'user@clipnote.ai',
-    points: 1250,
-    avatar: '',
+    name: userData?.name || 'User',
+    email: userData?.email || '',
+    points: userData?.points || 0,
+    avatar: userData?.image || '',
   };
 
   const navItems = [

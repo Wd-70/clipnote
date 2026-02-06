@@ -1,17 +1,14 @@
 import { Suspense } from "react";
-import { CreditCard, TrendingUp, History } from "lucide-react";
+import { History } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import Link from "next/link";
 import { getTranslations } from 'next-intl/server';
+import { PointsBalance } from "@/components/points/points-balance";
 
 async function PointsContent() {
   const t = await getTranslations('pointsPage');
-  const tPoints = await getTranslations('points');
-  
-  // TODO: Fetch real user points from API
-  const points = 1250;
+
+  // TODO: Fetch real points history from API
   const pointsHistory = [
     { id: 1, type: 'charge', amount: 1000, date: '2026-01-20', description: 'Points Charged' },
     { id: 2, type: 'usage', amount: -50, date: '2026-01-21', description: 'AI Analysis - Untitled Project' },
@@ -29,34 +26,8 @@ async function PointsContent() {
 
       <Separator className="my-6" />
 
-      {/* Current Balance */}
-      <Card className="border-2">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CreditCard className="w-5 h-5" />
-            {t('currentBalance')}
-          </CardTitle>
-          <CardDescription>{tPoints('estimatedMinutes', { minutes: points })}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-end justify-between">
-            <div>
-              <div className="text-4xl font-bold text-blue-600 dark:text-blue-400">
-                {points.toLocaleString()} P
-              </div>
-              <p className="text-sm text-muted-foreground mt-2">
-                {tPoints('estimatedMinutes', { minutes: points })}
-              </p>
-            </div>
-            <Link href="/points/charge">
-              <Button size="lg">
-                <TrendingUp className="w-4 h-4 mr-2" />
-                {t('chargePoints')}
-              </Button>
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Current Balance - Client Component */}
+      <PointsBalance />
 
       {/* Points Packages */}
       <div>
