@@ -387,38 +387,7 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
   }, [handleProjectDragStart, handleProjectDragOver, handleProjectDragEnd, registerHandlers, unregisterHandlers]);
 
   return (
-    <div className="flex gap-6">
-        {/* Desktop Folder Sidebar (4K+ only - below 3xl, folders are shown in sidebar) */}
-        <aside className="hidden 2xl:block w-64 shrink-0">
-        <div className="sticky top-6 border rounded-lg bg-card">
-          <div className="p-3 border-b">
-            <h2 className="font-semibold text-sm flex items-center gap-2">
-              <FolderOpen className="h-4 w-4" />
-              {tFolders('title')}
-            </h2>
-          </div>
-          <DroppableFolderTree
-            tree={folderTree.tree}
-            currentFolderId={navigation.currentFolderId}
-            expandedIds={folderTree.expandedIds}
-            onFolderSelect={navigation.navigateTo}
-            onToggleExpand={folderTree.toggleExpanded}
-            onCreateFolder={(parentId) => {
-              // If parentId is null (clicking "New Folder"), default to current folder
-              setCreateFolderParentId(parentId ?? navigation.currentFolderId);
-              setCreateFolderOpen(true);
-            }}
-            onRenameFolder={setRenameFolderTarget}
-            onDeleteFolder={setDeleteFolderTarget}
-            onMoveFolder={setMoveFolderTarget}
-            isLoading={folderTree.isLoading}
-            className="h-[calc(100vh-180px)]"
-          />
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <div className="flex-1 min-w-0 space-y-6">
+    <div className="space-y-6">
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
@@ -541,7 +510,6 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
             }
           />
         )}
-      </div>
 
       {/* Bulk Action Bar */}
       <BulkActionBar

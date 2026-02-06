@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -54,22 +53,6 @@ export function SidebarWithFolders({ className }: SidebarWithFoldersProps) {
   const pathWithoutLocale = pathname.replace(/^\/(ko|en|ja|zh)/, '');
   const isOnProjectsPage =
     pathWithoutLocale === '/projects' || pathWithoutLocale.startsWith('/projects/');
-
-  // Auto-switch from folder view to default when screen reaches 2xl (1536px)
-  // At 2xl+, inline folder sidebar appears, so sidebar folder view is redundant
-  useEffect(() => {
-    const handleResize = () => {
-      if (showFolders && window.innerWidth >= 1536) {
-        setShowFolders(false);
-      }
-    };
-
-    // Check on mount
-    handleResize();
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [showFolders, setShowFolders]);
 
   // Get real user data from context
   const { user: userData, isLoading: isUserLoading } = useUser();
@@ -201,7 +184,7 @@ export function SidebarWithFolders({ className }: SidebarWithFoldersProps) {
                     </Button>
                     {/* Folder toggle button - only visible on medium screens (768px-1535px) */}
                     {isActiveRoute(item.href) && (
-                      <div className="hidden md:block 2xl:hidden pl-6">
+                      <div className="hidden md:block pl-6">
                         <Button
                           variant="ghost"
                           size="sm"
