@@ -9,13 +9,10 @@ import {
   Pause,
   SkipBack,
   SkipForward,
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
 } from 'lucide-react';
 import { formatSecondsToTime } from '@/lib/utils/timestamp';
 import { cn } from '@/lib/utils';
+import { useTranslations } from 'next-intl';
 import type { ParsedClip } from '@/types';
 import type { VideoPlayerRef } from '@/components/video/video-player';
 
@@ -36,6 +33,7 @@ export function ClipTimeline({
   onPlayStateChange,
   className,
 }: ClipTimelineProps) {
+  const t = useTranslations('clipTimeline');
   const [isVirtualPlaying, setIsVirtualPlaying] = useState(false);
   const [currentClipIndex, setCurrentClipIndex] = useState(-1);
   const lastSeekTimeRef = useRef<number>(0);
@@ -163,7 +161,7 @@ export function ClipTimeline({
     (value: number[]) => {
       const virtualTime = (value[0] / 100) * totalVirtualDuration;
       const { actualTime, clipIndex } = virtualToActual(virtualTime);
-      
+
       // Prevent duplicate seeks
       if (Math.abs(actualTime - lastSeekTimeRef.current) < 0.1) return;
       lastSeekTimeRef.current = actualTime;
@@ -186,7 +184,7 @@ export function ClipTimeline({
     } else {
       // Play - if not in any clip, start from first clip
       setIsVirtualPlaying(true);
-      
+
       if (currentClipIndex < 0) {
         const firstRange = clipRanges[0];
         if (firstRange) {
@@ -194,7 +192,7 @@ export function ClipTimeline({
           setCurrentClipIndex(0);
         }
       }
-      
+
       playerRef.current?.play();
       onPlayStateChange?.(true);
     }
@@ -203,7 +201,7 @@ export function ClipTimeline({
   // Skip to previous clip
   const skipPrevious = useCallback(() => {
     if (clips.length === 0) return;
-    
+
     const targetIndex = Math.max(0, currentClipIndex - 1);
     const targetRange = clipRanges[targetIndex];
     if (targetRange) {
@@ -215,7 +213,7 @@ export function ClipTimeline({
   // Skip to next clip
   const skipNext = useCallback(() => {
     if (clips.length === 0) return;
-    
+
     const targetIndex = Math.min(clips.length - 1, currentClipIndex + 1);
     const targetRange = clipRanges[targetIndex];
     if (targetRange) {
@@ -224,24 +222,16 @@ export function ClipTimeline({
     }
   }, [clips.length, currentClipIndex, clipRanges, playerRef]);
 
-  // Seek by specified seconds (positive = forward, negative = backward)
-  const seekBySeconds = useCallback((seconds: number) => {
-    const newVirtualTime = Math.max(0, Math.min(totalVirtualDuration, currentVirtualTime + seconds));
-    const { actualTime, clipIndex } = virtualToActual(newVirtualTime);
-    setCurrentClipIndex(clipIndex);
-    playerRef.current?.seekTo(actualTime);
-  }, [currentVirtualTime, totalVirtualDuration, virtualToActual, playerRef]);
-
   // Calculate progress percentage
-  const progressPercent = totalVirtualDuration > 0 
-    ? (currentVirtualTime / totalVirtualDuration) * 100 
+  const progressPercent = totalVirtualDuration > 0
+    ? (currentVirtualTime / totalVirtualDuration) * 100
     : 0;
 
   if (clips.length === 0) {
     return (
       <div className={cn('bg-muted/30 rounded-lg p-4', className)}>
         <p className="text-sm text-muted-foreground text-center">
-          클립이 없습니다. 노트에 타임스탬프를 추가하세요.
+          {t('noClips')}
         </p>
       </div>
     );
@@ -252,9 +242,9 @@ export function ClipTimeline({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">클립 타임라인</span>
+          <span className="text-sm font-medium">{t('title')}</span>
           <Badge variant="secondary" className="text-xs">
-            {clips.length}개 클립
+            {t('clipCount', { count: clips.length })}
           </Badge>
         </div>
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -272,7 +262,7 @@ export function ClipTimeline({
             const leftPercent = (range.virtualStart / totalVirtualDuration) * 100;
             const widthPercent = (range.duration / totalVirtualDuration) * 100;
             const isCurrentClip = index === currentClipIndex;
-            
+
             return (
               <div
                 key={range.clip.id}
@@ -285,7 +275,7 @@ export function ClipTimeline({
                   left: `${leftPercent}%`,
                   width: `${widthPercent}%`,
                 }}
-                title={`클립 ${index + 1}: ${range.clip.text || formatSecondsToTime(range.actualStart)}`}
+                title={`${t('currentClip', { current: index + 1, total: clips.length })}: ${range.clip.text || formatSecondsToTime(range.actualStart)}`}
               />
             );
           })}
@@ -301,58 +291,27 @@ export function ClipTimeline({
         />
       </div>
 
-      {/* Controls */}
-      <div className="flex items-center justify-center gap-0.5">
+      {/* Controls - simplified */}
+      <div className="flex items-center justify-center gap-2">
         {/* Previous clip */}
         <Button
           variant="ghost"
           size="icon"
-          className="h-10 w-8"
+          className="h-9 w-9"
           onClick={skipPrevious}
           disabled={currentClipIndex <= 0}
-          title="이전 클립"
+          title={t('prevClip')}
         >
           <SkipBack className="h-4 w-4" />
-        </Button>
-
-        {/* Backward controls: 30s, 5s, 1s */}
-        <Button
-          variant="ghost"
-          className="h-10 w-8 px-0 flex flex-col items-center justify-center gap-0"
-          onClick={() => seekBySeconds(-30)}
-          title="30초 뒤로"
-        >
-          <ChevronsLeft className="h-4 w-4" />
-          <span className="text-[10px] font-mono leading-none text-muted-foreground">30</span>
-        </Button>
-
-        <Button
-          variant="ghost"
-          className="h-10 w-8 px-0 flex flex-col items-center justify-center gap-0"
-          onClick={() => seekBySeconds(-5)}
-          title="5초 뒤로"
-        >
-          <ChevronLeft className="h-4 w-4" />
-          <span className="text-[10px] font-mono leading-none text-muted-foreground">5</span>
-        </Button>
-
-        <Button
-          variant="ghost"
-          className="h-10 w-8 px-0 flex flex-col items-center justify-center gap-0"
-          onClick={() => seekBySeconds(-1)}
-          title="1초 뒤로"
-        >
-          <ChevronLeft className="h-4 w-4" />
-          <span className="text-[10px] font-mono leading-none text-muted-foreground">1</span>
         </Button>
 
         {/* Play/Pause */}
         <Button
           variant="default"
           size="icon"
-          className="h-10 w-10 mx-1"
+          className="h-10 w-10"
           onClick={toggleVirtualPlay}
-          title={isVirtualPlaying ? '일시정지' : '클립 재생'}
+          title={isVirtualPlaying ? t('pause') : t('playClips')}
         >
           {isVirtualPlaying ? (
             <Pause className="h-5 w-5" />
@@ -361,45 +320,14 @@ export function ClipTimeline({
           )}
         </Button>
 
-        {/* Forward controls: 1s, 5s, 30s */}
-        <Button
-          variant="ghost"
-          className="h-10 w-8 px-0 flex flex-col items-center justify-center gap-0"
-          onClick={() => seekBySeconds(1)}
-          title="1초 앞으로"
-        >
-          <ChevronRight className="h-4 w-4" />
-          <span className="text-[10px] font-mono leading-none text-muted-foreground">1</span>
-        </Button>
-
-        <Button
-          variant="ghost"
-          className="h-10 w-8 px-0 flex flex-col items-center justify-center gap-0"
-          onClick={() => seekBySeconds(5)}
-          title="5초 앞으로"
-        >
-          <ChevronRight className="h-4 w-4" />
-          <span className="text-[10px] font-mono leading-none text-muted-foreground">5</span>
-        </Button>
-
-        <Button
-          variant="ghost"
-          className="h-10 w-8 px-0 flex flex-col items-center justify-center gap-0"
-          onClick={() => seekBySeconds(30)}
-          title="30초 앞으로"
-        >
-          <ChevronsRight className="h-4 w-4" />
-          <span className="text-[10px] font-mono leading-none text-muted-foreground">30</span>
-        </Button>
-
         {/* Next clip */}
         <Button
           variant="ghost"
           size="icon"
-          className="h-10 w-8"
+          className="h-9 w-9"
           onClick={skipNext}
           disabled={currentClipIndex >= clips.length - 1}
-          title="다음 클립"
+          title={t('nextClip')}
         >
           <SkipForward className="h-4 w-4" />
         </Button>
@@ -409,7 +337,7 @@ export function ClipTimeline({
       {currentClipIndex >= 0 && clipRanges[currentClipIndex] && (
         <div className="text-center">
           <p className="text-xs text-muted-foreground">
-            클립 {currentClipIndex + 1}/{clips.length}
+            {t('currentClip', { current: currentClipIndex + 1, total: clips.length })}
             {clipRanges[currentClipIndex].clip.text && (
               <span className="ml-2 text-foreground">
                 {clipRanges[currentClipIndex].clip.text}

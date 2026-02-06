@@ -6,6 +6,7 @@ import { VideoPlayer, VideoPlayerRef } from '@/components/video/video-player';
 import { NotesEditor, NotesEditorRef } from '@/components/editor/notes-editor';
 import { ClipList } from '@/components/editor/clip-list';
 import { ClipTimeline } from '@/components/editor/clip-timeline';
+import { VideoControlPanel } from '@/components/editor/video-control-panel';
 import { ExportDialog } from '@/components/editor/export-dialog';
 import { ShareDialog } from '@/components/editor/share-dialog';
 import { EditProjectDialog } from '@/components/projects/edit-project-dialog';
@@ -406,6 +407,17 @@ export default function EditorPage() {
               onDuration={setDuration}
               onProgress={handleProgress}
               onPlayingChange={setIsPlaying}
+              className="shrink-0"
+            />
+
+            {/* Video Control Panel - for original video navigation */}
+            <VideoControlPanel
+              playerRef={playerRef}
+              currentTime={currentTime}
+              duration={duration}
+              isPlaying={isPlaying}
+              onPlayStateChange={setIsPlaying}
+              onInsertTimestamp={handleInsertTimestamp}
               className="shrink-0"
             />
 

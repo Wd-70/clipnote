@@ -309,6 +309,28 @@
     "projectComment": "プロジェクト",
     "clipsComment": "クリップ数"
   },
+  "videoControl": {
+    "title": "動画コントロール",
+    "backward30": "30秒戻る",
+    "backward5": "5秒戻る",
+    "backward1": "1秒戻る",
+    "forward1": "1秒進む",
+    "forward5": "5秒進む",
+    "forward30": "30秒進む",
+    "speed": "速度",
+    "insertTimestamp": "挿入",
+    "insertTimestampHint": "現在のタイムスタンプをノートに挿入"
+  },
+  "clipTimeline": {
+    "title": "クリップタイムライン",
+    "clipCount": "{count}個のクリップ",
+    "noClips": "クリップがありません。ノートにタイムスタンプを追加してください。",
+    "prevClip": "前のクリップ",
+    "nextClip": "次のクリップ",
+    "playClips": "クリップ再生",
+    "pause": "一時停止",
+    "currentClip": "クリップ {current}/{total}"
+  },
   "notesEditor": {
     "placeholder": "クリップしたい部分のタイムスタンプを入力してください。\n\n例：\n0:30 - 1:45 イントロ\n2:00 - 3:30 ハイライト\n\nヒント：Ctrl+Tで現在の再生位置のタイムスタンプを挿入できます。",
     "insertTimestamp": "タイムスタンプを挿入",

@@ -58,6 +58,8 @@ export interface VideoPlayerRef {
   mute: () => void;
   unmute: () => void;
   isMuted: () => boolean;
+  // Playback speed
+  setPlaybackRate: (rate: number) => void;
   // Fullscreen
   requestFullscreen: () => void;
   exitFullscreen: () => void;
@@ -463,6 +465,14 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
         }
       },
       isMuted: () => muted,
+      setPlaybackRate: (rate: number) => {
+        if (platform === 'YOUTUBE' && youtubePlayerRef.current) {
+          youtubePlayerRef.current.setPlaybackRate(rate);
+        } else if (platform === 'CHZZK' && chzzkVideoRef.current) {
+          chzzkVideoRef.current.playbackRate = rate;
+        }
+        // Twitch doesn't support playback rate changes
+      },
       requestFullscreen: () => {
         if (containerRef.current) {
           containerRef.current.requestFullscreen();

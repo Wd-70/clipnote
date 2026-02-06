@@ -309,6 +309,28 @@
     "projectComment": "Project",
     "clipsComment": "Number of clips"
   },
+  "videoControl": {
+    "title": "Video Controls",
+    "backward30": "30 seconds backward",
+    "backward5": "5 seconds backward",
+    "backward1": "1 second backward",
+    "forward1": "1 second forward",
+    "forward5": "5 seconds forward",
+    "forward30": "30 seconds forward",
+    "speed": "Speed",
+    "insertTimestamp": "Insert",
+    "insertTimestampHint": "Insert current timestamp into notes"
+  },
+  "clipTimeline": {
+    "title": "Clip Timeline",
+    "clipCount": "{count, plural, =1 {# clip} other {# clips}}",
+    "noClips": "No clips yet. Add timestamps in your notes.",
+    "prevClip": "Previous clip",
+    "nextClip": "Next clip",
+    "playClips": "Play clips",
+    "pause": "Pause",
+    "currentClip": "Clip {current}/{total}"
+  },
   "notesEditor": {
     "placeholder": "Enter timestamps for the parts you want to clip.\n\nExample:\n0:30 - 1:45 Intro\n2:00 - 3:30 Highlight\n\nTip: Press Ctrl+T to insert the current playback timestamp.",
     "insertTimestamp": "Insert Timestamp",
