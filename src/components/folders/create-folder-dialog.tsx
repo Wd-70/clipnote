@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { Loader2, FolderPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -60,6 +60,13 @@ export function CreateFolderDialog({
   const isControlled = controlledOpen !== undefined;
   const open = isControlled ? controlledOpen : internalOpen;
   const onOpenChange = isControlled ? controlledOnOpenChange : setInternalOpen;
+
+  // Sync defaultParentId when dialog opens
+  useEffect(() => {
+    if (open) {
+      setParentId(defaultParentId);
+    }
+  }, [open, defaultParentId]);
 
   // Get available parent folders (only depth 0-1 can be parents)
   const availableParents = folders.filter((f) => f.depth < 2);
