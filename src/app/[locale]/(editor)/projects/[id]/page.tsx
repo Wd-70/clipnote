@@ -8,6 +8,7 @@ import { ClipList } from '@/components/editor/clip-list';
 import { ClipTimeline } from '@/components/editor/clip-timeline';
 import { ExportDialog } from '@/components/editor/export-dialog';
 import { ShareDialog } from '@/components/editor/share-dialog';
+import { EditProjectDialog } from '@/components/projects/edit-project-dialog';
 import { useVideoSync } from '@/hooks/useVideoSync';
 import { useEditorBackUrl } from '@/hooks/use-back-navigation';
 import { Button } from '@/components/ui/button';
@@ -31,7 +32,7 @@ import {
   Sparkles,
   Download,
   Share2,
-  Settings,
+  Pencil,
   Trash2,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -72,6 +73,7 @@ export default function EditorPage() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+  const [isEditTitleOpen, setIsEditTitleOpen] = useState(false);
   const [headerWidth, setHeaderWidth] = useState(0);
 
   // Fetch project data from API
@@ -289,7 +291,17 @@ export default function EditorPage() {
               </Link>
             </Button>
             <div className="min-w-0">
-              <h1 className="font-semibold text-sm sm:text-base truncate">{project.title}</h1>
+              <div className="flex items-center gap-1">
+                <h1 className="font-semibold text-sm sm:text-base truncate">{project.title}</h1>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 shrink-0"
+                  onClick={() => setIsEditTitleOpen(true)}
+                >
+                  <Pencil className="h-3 w-3" />
+                </Button>
+              </div>
               <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
                 <Badge variant="outline" className="text-xs">
                   {project.platform}
@@ -502,6 +514,19 @@ export default function EditorPage() {
           projectId={projectId}
           projectTitle={project.title}
           clipCount={clips.length}
+        />
+      )}
+
+      {/* Edit Project Title Dialog */}
+      {project && (
+        <EditProjectDialog
+          projectId={projectId}
+          projectTitle={project.title}
+          open={isEditTitleOpen}
+          onOpenChange={setIsEditTitleOpen}
+          onSave={(newTitle) => {
+            setProject((prev) => prev ? { ...prev, title: newTitle } : null);
+          }}
         />
       )}
     </div>

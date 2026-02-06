@@ -111,6 +111,9 @@
     "icon": "아이콘",
     "rename": "이름 변경",
     "renameFolder": "폴더 이름 변경",
+    "editFolder": "폴더 수정",
+    "updated": "폴더가 수정되었습니다",
+    "updateFailed": "폴더 수정에 실패했습니다",
     "moveFolder": "폴더 이동",
     "deleteFolder": "폴더 삭제",
     "deleteConfirm": "폴더를 삭제하시겠습니까?",
@@ -155,6 +158,15 @@
   "view": {
     "grid": "그리드 보기",
     "list": "목록 보기"
+  },
+  "projectEdit": {
+    "title": "프로젝트 수정",
+    "description": "프로젝트 제목을 변경합니다",
+    "projectTitle": "프로젝트 제목",
+    "titlePlaceholder": "프로젝트 제목을 입력하세요",
+    "titleRequired": "제목을 입력해 주세요",
+    "saved": "프로젝트 제목이 변경되었습니다",
+    "saveFailed": "프로젝트 제목 변경에 실패했습니다"
   },
   "projectCard": {
     "editProject": "프로젝트 편집",

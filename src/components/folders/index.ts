@@ -17,6 +17,7 @@ export { FolderBreadcrumb, FolderBreadcrumbCompact } from './folder-breadcrumb';
 // Dialog components
 export { CreateFolderDialog } from './create-folder-dialog';
 export { RenameFolderDialog } from './rename-folder-dialog';
+export { EditFolderDialog } from './edit-folder-dialog';
 export { DeleteFolderDialog } from './delete-folder-dialog';
 export { MoveFolderDialog, MoveToFolderDialog } from './move-folder-dialog';
 

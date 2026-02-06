@@ -111,6 +111,9 @@
     "icon": "Icon",
     "rename": "Rename",
     "renameFolder": "Rename Folder",
+    "editFolder": "Edit Folder",
+    "updated": "Folder updated",
+    "updateFailed": "Failed to update folder",
     "moveFolder": "Move Folder",
     "deleteFolder": "Delete Folder",
     "deleteConfirm": "Delete this folder?",
@@ -155,6 +158,15 @@
   "view": {
     "grid": "Grid View",
     "list": "List View"
+  },
+  "projectEdit": {
+    "title": "Edit Project",
+    "description": "Change the project title",
+    "projectTitle": "Project Title",
+    "titlePlaceholder": "Enter project title",
+    "titleRequired": "Please enter a title",
+    "saved": "Project title updated",
+    "saveFailed": "Failed to update project title"
   },
   "projectCard": {
     "editProject": "Edit Project",

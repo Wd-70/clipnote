@@ -37,7 +37,7 @@ import {
   FolderTree,
   FolderBreadcrumb,
   CreateFolderDialog,
-  RenameFolderDialog,
+  EditFolderDialog,
   DeleteFolderDialog,
   MoveFolderDialog,
   MoveToFolderDialog,
@@ -166,7 +166,7 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
       setCreateFolderParentId(parentId ?? navigation.currentFolderId);
       setCreateFolderOpen(true);
     });
-    folderSidebar.setOnRenameFolder(() => setRenameFolderTarget);
+    folderSidebar.setOnRenameFolder(() => setEditFolderTarget);
     folderSidebar.setOnDeleteFolder(() => setDeleteFolderTarget);
     folderSidebar.setOnMoveFolder(() => setMoveFolderTarget);
     
@@ -184,7 +184,7 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
   // Dialog states
   const [createFolderOpen, setCreateFolderOpen] = useState(false);
   const [createFolderParentId, setCreateFolderParentId] = useState<string | null>(null);
-  const [renameFolderTarget, setRenameFolderTarget] = useState<IFolder | null>(null);
+  const [editFolderTarget, setEditFolderTarget] = useState<IFolder | null>(null);
   const [deleteFolderTarget, setDeleteFolderTarget] = useState<IFolder | null>(null);
   const [moveFolderTarget, setMoveFolderTarget] = useState<IFolder | null>(null);
   const [moveProjectsOpen, setMoveProjectsOpen] = useState(false);
@@ -233,12 +233,12 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
     [folderTree, tFolders]
   );
 
-  // Handler for renaming folder
-  const handleRenameFolder = useCallback(
-    async (id: string, name: string) => {
-      const success = await folderTree.updateFolder(id, { name });
+  // Handler for editing folder (name and color)
+  const handleEditFolder = useCallback(
+    async (id: string, data: { name: string; color?: string }) => {
+      const success = await folderTree.updateFolder(id, data);
       if (success) {
-        toast.success(tFolders('renamed'));
+        toast.success(tFolders('updated'));
       }
       return success;
     },
@@ -450,7 +450,7 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
                       setMobileFolderOpen(false);
                     }}
                     onRenameFolder={(folder) => {
-                      setRenameFolderTarget(folder);
+                      setEditFolderTarget(folder);
                       setMobileFolderOpen(false);
                     }}
                     onDeleteFolder={(folder) => {
@@ -570,11 +570,11 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
         }}
       />
 
-      <RenameFolderDialog
-        folder={renameFolderTarget}
-        open={!!renameFolderTarget}
-        onOpenChange={(open) => !open && setRenameFolderTarget(null)}
-        onRename={handleRenameFolder}
+      <EditFolderDialog
+        folder={editFolderTarget}
+        open={!!editFolderTarget}
+        onOpenChange={(open) => !open && setEditFolderTarget(null)}
+        onSave={handleEditFolder}
       />
 
       <DeleteFolderDialog
