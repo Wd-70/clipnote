@@ -28,15 +28,18 @@ function clearSessionCookies(response: NextResponse): NextResponse {
 }
 
 /**
- * Check if the session token appears to be a valid JWT structure
- * This is a quick check - actual validation happens server-side
+ * Check if the session token appears to be a valid JWT/JWE structure
+ * Auth.js uses JWE (encrypted JWT) which has 5 parts, not 3
+ * This is a quick structural check - actual validation happens server-side
  */
-function isValidJwtStructure(token: string): boolean {
-  // JWT should have 3 parts separated by dots
+function isValidTokenStructure(token: string): boolean {
   const parts = token.split('.');
-  if (parts.length !== 3) return false;
 
-  // Each part should be base64url encoded (non-empty)
+  // JWE (encrypted JWT used by Auth.js): 5 parts
+  // Standard JWT: 3 parts
+  if (parts.length !== 5 && parts.length !== 3) return false;
+
+  // Each part should be non-empty
   return parts.every(part => part.length > 0);
 }
 
@@ -93,7 +96,7 @@ export function middleware(request: NextRequest) {
   let shouldClearCookie = false;
 
   if (sessionToken) {
-    if (isValidJwtStructure(sessionToken)) {
+    if (isValidTokenStructure(sessionToken)) {
       isLoggedIn = true;
     } else {
       // Token exists but has invalid structure - should be cleared
