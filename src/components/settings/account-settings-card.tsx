@@ -34,7 +34,9 @@ export function AccountSettingsCard() {
       });
 
       if (!res.ok) {
-        throw new Error('Failed to save');
+        const errorData = await res.json().catch(() => ({}));
+        console.error('API error:', res.status, errorData);
+        throw new Error(errorData.error || 'Failed to save');
       }
 
       toast.success(t('saved'));

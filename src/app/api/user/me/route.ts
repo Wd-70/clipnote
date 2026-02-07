@@ -1,13 +1,32 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { auth, getDevSession } from '@/auth';
 import { JsonDB } from '@/lib/db/json-db';
+
+// Check if mock auth is enabled (same logic as auth.ts)
+const hasGoogleAuth = !!(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET);
+const useMockAuth = process.env.NODE_ENV === 'development' && !hasGoogleAuth;
+
+/**
+ * Get session with mock auth fallback
+ */
+async function getSession() {
+  const session = await auth();
+  if (session?.user?.id) return session;
+
+  // In mock auth mode, use dev session
+  if (useMockAuth) {
+    return await getDevSession();
+  }
+
+  return null;
+}
 
 /**
  * GET /api/user/me - Get current user's profile
  */
 export async function GET() {
   try {
-    const session = await auth();
+    const session = await getSession();
 
     if (!session?.user?.id) {
       return NextResponse.json(
@@ -55,7 +74,7 @@ export async function GET() {
  */
 export async function PATCH(request: Request) {
   try {
-    const session = await auth();
+    const session = await getSession();
 
     if (!session?.user?.id) {
       return NextResponse.json(
