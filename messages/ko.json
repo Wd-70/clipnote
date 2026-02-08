@@ -331,6 +331,7 @@
     "allInOne": "전체 명령어 (한 줄로 이어서)",
     "allInOneDesc": "모든 단계를 한 번에 실행",
     "copyAll": "전체 복사",
+    "noStepsSelected": "선택된 단계가 없습니다",
     "requiredTools": "필요 도구",
     "scriptComment": "ClipNote 내보내기 스크립트",
     "projectComment": "프로젝트",

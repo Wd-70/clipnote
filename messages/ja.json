@@ -331,6 +331,7 @@
     "allInOne": "全コマンド（1行）",
     "allInOneDesc": "すべてのステップを一度に実行",
     "copyAll": "すべてコピー",
+    "noStepsSelected": "ステップが選択されていません",
     "requiredTools": "必要なツール",
     "scriptComment": "ClipNoteエクスポートスクリプト",
     "projectComment": "プロジェクト",

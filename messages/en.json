@@ -331,6 +331,7 @@
     "allInOne": "Full Command (Single Line)",
     "allInOneDesc": "Run all steps at once",
     "copyAll": "Copy All",
+    "noStepsSelected": "No steps selected",
     "requiredTools": "Required tools",
     "scriptComment": "ClipNote Export Script",
     "projectComment": "Project",

@@ -331,6 +331,7 @@
     "allInOne": "完整命令（单行）",
     "allInOneDesc": "一次性执行所有步骤",
     "copyAll": "全部复制",
+    "noStepsSelected": "未选择任何步骤",
     "requiredTools": "所需工具",
     "scriptComment": "ClipNote导出脚本",
     "projectComment": "项目",
