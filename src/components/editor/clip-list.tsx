@@ -47,8 +47,8 @@ export function ClipList({
   }
 
   return (
-    <Card className={cn('flex flex-col', className)}>
-      <CardHeader className="pb-2">
+    <Card className={cn('flex flex-col overflow-hidden', className)}>
+      <CardHeader className="pb-2 shrink-0">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">
             <Scissors className="h-4 w-4" />
