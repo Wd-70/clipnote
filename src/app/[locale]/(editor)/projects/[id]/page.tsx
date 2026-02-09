@@ -167,6 +167,7 @@ export default function EditorPage() {
     skipToNextClip,
     seekToVirtualTime,
     togglePlay,
+    exitClipMode,
   } = useVideoSync(playerRef, {
     clips,
     onClipChange: (index) => {
@@ -415,6 +416,7 @@ export default function EditorPage() {
               onDuration={setDuration}
               onProgress={handleProgress}
               onPlayingChange={setIsPlaying}
+              onUserInteraction={exitClipMode}
               className="shrink-0"
             />
 
@@ -427,6 +429,7 @@ export default function EditorPage() {
               onPlayStateChange={setIsPlaying}
               onSetStartTime={handleSetStartTime}
               onSetEndTime={handleSetEndTime}
+              onExitClipMode={exitClipMode}
               className="shrink-0"
             />
 

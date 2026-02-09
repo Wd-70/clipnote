@@ -80,10 +80,12 @@ interface VideoPlayerProps {
   disableDirectPlay?: boolean;
   /** Called when video area is clicked (only works when disableDirectPlay is true) */
   onVideoClick?: () => void;
+  /** Called when user directly interacts with video player (click to play/pause, skip buttons) */
+  onUserInteraction?: () => void;
 }
 
 export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
-  ({ url, clips = [], onProgress, onDuration, onPlayingChange, className, disableDirectPlay = false, onVideoClick }, ref) => {
+  ({ url, clips = [], onProgress, onDuration, onPlayingChange, className, disableDirectPlay = false, onVideoClick, onUserInteraction }, ref) => {
     // YouTube refs
     const youtubePlayerRef = useRef<YouTubePlayerType | null>(null);
     
@@ -571,6 +573,9 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
     }, [platform]);
 
     const togglePlay = useCallback(() => {
+      // Notify parent that user is directly interacting with video
+      onUserInteraction?.();
+
       if (platform === 'YOUTUBE') {
         if (!youtubePlayerRef.current) return;
         if (playing) {
@@ -591,7 +596,7 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
           twitchPlayerRef.current.play();
         }
       }
-    }, [platform, playing]);
+    }, [platform, playing, onUserInteraction]);
 
     const toggleMute = useCallback(() => {
       if (platform === 'YOUTUBE') {
@@ -613,6 +618,9 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
     }, [platform, muted]);
 
     const skipBack = useCallback(() => {
+      // Notify parent that user is directly interacting with video
+      onUserInteraction?.();
+
       const newTime = Math.max(0, currentTime - 10);
       if (platform === 'YOUTUBE' && youtubePlayerRef.current) {
         youtubePlayerRef.current.seekTo(newTime, true);
@@ -622,9 +630,12 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
         twitchPlayerRef.current.seek(newTime);
       }
       setCurrentTime(newTime);
-    }, [platform, currentTime]);
+    }, [platform, currentTime, onUserInteraction]);
 
     const skipForward = useCallback(() => {
+      // Notify parent that user is directly interacting with video
+      onUserInteraction?.();
+
       const newTime = Math.min(duration, currentTime + 10);
       if (platform === 'YOUTUBE' && youtubePlayerRef.current) {
         youtubePlayerRef.current.seekTo(newTime, true);
@@ -634,7 +645,7 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
         twitchPlayerRef.current.seek(newTime);
       }
       setCurrentTime(newTime);
-    }, [platform, currentTime, duration]);
+    }, [platform, currentTime, duration, onUserInteraction]);
 
     const toggleFullscreen = useCallback(() => {
       if (containerRef.current) {

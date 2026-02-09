@@ -42,6 +42,7 @@ interface VideoControlPanelProps {
   onPlayStateChange?: (playing: boolean) => void;
   onSetStartTime?: () => void;
   onSetEndTime?: () => void;
+  onExitClipMode?: () => void;
   className?: string;
 }
 
@@ -90,6 +91,7 @@ export function VideoControlPanel({
   onPlayStateChange,
   onSetStartTime,
   onSetEndTime,
+  onExitClipMode,
   className,
 }: VideoControlPanelProps) {
   const t = useTranslations('videoControl');
@@ -98,8 +100,11 @@ export function VideoControlPanel({
   const [isMuted, setIsMuted] = useState(false);
   const [prevVolume, setPrevVolume] = useState(100);
 
-  // Toggle play/pause
+  // Toggle play/pause (original video mode - exits clip mode)
   const togglePlay = useCallback(() => {
+    // Exit clip mode when using original video controls
+    onExitClipMode?.();
+
     if (isPlaying) {
       playerRef.current?.pause();
       onPlayStateChange?.(false);
@@ -107,19 +112,25 @@ export function VideoControlPanel({
       playerRef.current?.play();
       onPlayStateChange?.(true);
     }
-  }, [isPlaying, playerRef, onPlayStateChange]);
+  }, [isPlaying, playerRef, onPlayStateChange, onExitClipMode]);
 
-  // Seek by specified seconds
+  // Seek by specified seconds (original video mode - exits clip mode)
   const seekBySeconds = useCallback((seconds: number) => {
+    // Exit clip mode when seeking in original video
+    onExitClipMode?.();
+
     const newTime = Math.max(0, Math.min(duration, currentTime + seconds));
     playerRef.current?.seekTo(newTime);
-  }, [currentTime, duration, playerRef]);
+  }, [currentTime, duration, playerRef, onExitClipMode]);
 
-  // Handle timeline seek
+  // Handle timeline seek (original video mode - exits clip mode)
   const handleSeek = useCallback((value: number[]) => {
+    // Exit clip mode when seeking in original video
+    onExitClipMode?.();
+
     const newTime = (value[0] / 100) * duration;
     playerRef.current?.seekTo(newTime);
-  }, [duration, playerRef]);
+  }, [duration, playerRef, onExitClipMode]);
 
   // Handle playback speed change
   const handleSpeedChange = useCallback((speed: string) => {

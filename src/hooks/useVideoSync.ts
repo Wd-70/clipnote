@@ -39,6 +39,7 @@ interface UseVideoSyncReturn {
   skipToNextClip: () => void;
   seekToVirtualTime: (virtualTime: number) => void;
   togglePlay: () => void;
+  exitClipMode: () => void;
 }
 
 /**
@@ -262,6 +263,15 @@ export function useVideoSync(
     setVirtualMode(false);
   }, [playerRef]);
 
+  // Exit clip mode (switch to original video mode)
+  // Call this when user interacts with original video controls
+  const exitClipMode = useCallback(() => {
+    if (isVirtualModeRef.current) {
+      isVirtualModeRef.current = false;
+      setVirtualMode(false);
+    }
+  }, []);
+
   // Skip to previous clip
   const skipToPreviousClip = useCallback(() => {
     const currentClips = clipsRef.current;
@@ -346,5 +356,6 @@ export function useVideoSync(
     skipToNextClip,
     seekToVirtualTime,
     togglePlay,
+    exitClipMode,
   };
 }
