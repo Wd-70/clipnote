@@ -455,7 +455,7 @@ export default function EditorPage() {
               currentClipIndex={currentClipIndex}
               onClipClick={handleClipClick}
               onPlayAll={playAllClips}
-              className="min-h-[280px] max-h-[400px] lg:max-h-none lg:flex-1 lg:min-h-0 lg:overflow-hidden"
+              className="h-[400px] lg:h-auto lg:flex-1 lg:min-h-0 lg:overflow-hidden"
             />
           </div>
 
