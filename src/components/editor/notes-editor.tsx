@@ -273,7 +273,7 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
           </Badge>
         </div>
 
-        {/* Timestamp controls */}
+        {/* Timestamp controls + Save button - wrap together */}
         <div className="flex items-center gap-1">
           {/* Current time display */}
           <span className="font-mono text-sm text-muted-foreground px-2">
@@ -323,20 +323,20 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
               </Tooltip>
             </TooltipProvider>
           )}
-        </div>
 
-        {/* Save button */}
-        {onSave && (
-          <Button
-            onClick={handleSave}
-            disabled={isSaving || !hasChanges}
-            size="sm"
-            className="h-8"
-          >
-            <Save className="h-4 w-4 sm:mr-2" />
-            <span className="hidden sm:inline">{isSaving ? '저장 중...' : '저장'}</span>
-          </Button>
-        )}
+          {/* Save button */}
+          {onSave && (
+            <Button
+              onClick={handleSave}
+              disabled={isSaving || !hasChanges}
+              size="sm"
+              className="h-8"
+            >
+              <Save className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">{isSaving ? '저장 중...' : '저장'}</span>
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Editor */}
