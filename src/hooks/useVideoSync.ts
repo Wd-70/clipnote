@@ -172,6 +172,8 @@ export function useVideoSync(
   const performSeek = useCallback(
     (time: number, clipIndex: number, play: boolean = false) => {
       lastJumpTimeRef.current = Date.now();
+      // Update ref synchronously to prevent stale value in handleProgress
+      currentClipIndexRef.current = clipIndex;
       setCurrentClipIndex(clipIndex);
       onClipChange?.(clipIndex);
       playerRef.current?.seekTo(time);
@@ -229,12 +231,15 @@ export function useVideoSync(
     [autoAdvance, onClipChange, findClipAtTime, playerRef, performSeek]
   );
 
-  // Jump to specific clip
+  // Jump to specific clip (enables virtual mode for auto-advance)
   const jumpToClip = useCallback(
     (clipIndex: number) => {
       const currentClips = clipsRef.current;
       if (clipIndex >= 0 && clipIndex < currentClips.length) {
         const clip = currentClips[clipIndex];
+        // Enable virtual mode so clips auto-advance at the end
+        isVirtualModeRef.current = true;
+        setVirtualMode(true);
         performSeek(clip.startTime, clipIndex, true);
       }
     },
