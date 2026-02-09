@@ -273,8 +273,8 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
           </Badge>
         </div>
 
-        {/* Timestamp controls + Save button - wrap together */}
-        <div className="flex items-center gap-1">
+        {/* Timestamp controls + Save button - wrap together and fill width when wrapped */}
+        <div className="flex items-center gap-1 flex-1 justify-end min-w-fit">
           {/* Current time display */}
           <span className="font-mono text-sm text-muted-foreground px-2">
             {formatSecondsToTime(currentTime)}
