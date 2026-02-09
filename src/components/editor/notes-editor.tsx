@@ -11,7 +11,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { Save, Clock, FileText, Timer } from 'lucide-react';
+import { Save, Clock, FileText, Timer, Undo2 } from 'lucide-react';
 import { useTimestampParser } from '@/hooks/useTimestampParser';
 import { formatSecondsToTime } from '@/lib/utils/timestamp';
 import { cn } from '@/lib/utils';
@@ -23,6 +23,7 @@ export interface NotesEditorRef {
 }
 
 interface NotesEditorProps {
+  projectId: string;
   initialNotes?: string;
   onNotesChange?: (notes: string) => void;
   onClipsChange?: (clips: ParsedClip[]) => void;
@@ -36,7 +37,14 @@ interface NotesEditorProps {
   className?: string;
 }
 
+// Local storage key for draft notes
+const getDraftKey = (projectId: string) => `clipnote_draft_${projectId}`;
+
+// Debounce delay for auto-save (2 seconds)
+const AUTO_SAVE_DELAY = 2000;
+
 export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
+  projectId,
   initialNotes = '',
   onNotesChange,
   onClipsChange,
@@ -52,9 +60,67 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
   const [notes, setNotes] = useState(initialNotes);
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [isRestoredFromDraft, setIsRestoredFromDraft] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const initialNotesRef = useRef(initialNotes);
 
   const { clips, totalDuration, clipCount } = useTimestampParser(notes, videoDuration);
+
+  // Restore from localStorage on mount
+  useEffect(() => {
+    const draftKey = getDraftKey(projectId);
+    try {
+      const savedDraft = localStorage.getItem(draftKey);
+      if (savedDraft) {
+        const draft = JSON.parse(savedDraft);
+        // Only restore if draft is different from initial notes
+        if (draft.notes && draft.notes !== initialNotesRef.current) {
+          setNotes(draft.notes);
+          setHasChanges(true);
+          setIsRestoredFromDraft(true);
+          onNotesChange?.(draft.notes);
+        } else {
+          // Draft is same as saved, remove it
+          localStorage.removeItem(draftKey);
+        }
+      }
+    } catch {
+      // Ignore localStorage errors
+    }
+  }, [projectId, onNotesChange]);
+
+  // Auto-save to localStorage with debounce
+  useEffect(() => {
+    if (!hasChanges) return;
+
+    // Clear existing timeout
+    if (autoSaveTimeoutRef.current) {
+      clearTimeout(autoSaveTimeoutRef.current);
+    }
+
+    // Set new timeout for auto-save
+    autoSaveTimeoutRef.current = setTimeout(() => {
+      const draftKey = getDraftKey(projectId);
+      try {
+        // Only save if different from initial
+        if (notes !== initialNotesRef.current) {
+          localStorage.setItem(draftKey, JSON.stringify({
+            notes,
+            savedAt: Date.now(),
+          }));
+        }
+      } catch {
+        // Ignore localStorage errors (quota exceeded, etc.)
+      }
+    }, AUTO_SAVE_DELAY);
+
+    return () => {
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
+    };
+  }, [notes, hasChanges, projectId]);
 
   useEffect(() => {
     onClipsChange?.(clips);
@@ -65,10 +131,21 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
       const newNotes = e.target.value;
       setNotes(newNotes);
       setHasChanges(true);
+      setIsRestoredFromDraft(false);
       onNotesChange?.(newNotes);
     },
     [onNotesChange]
   );
+
+  // Clear draft from localStorage
+  const clearDraft = useCallback(() => {
+    const draftKey = getDraftKey(projectId);
+    try {
+      localStorage.removeItem(draftKey);
+    } catch {
+      // Ignore errors
+    }
+  }, [projectId]);
 
   const handleSave = useCallback(async () => {
     if (!onSave) return;
@@ -77,10 +154,24 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
     try {
       await onSave(notes);
       setHasChanges(false);
+      setIsRestoredFromDraft(false);
+      // Clear draft after successful save
+      clearDraft();
+      // Update initial notes reference
+      initialNotesRef.current = notes;
     } finally {
       setIsSaving(false);
     }
-  }, [notes, onSave]);
+  }, [notes, onSave, clearDraft]);
+
+  // Discard draft and restore to initial notes
+  const handleDiscardDraft = useCallback(() => {
+    setNotes(initialNotesRef.current);
+    setHasChanges(false);
+    setIsRestoredFromDraft(false);
+    clearDraft();
+    onNotesChange?.(initialNotesRef.current);
+  }, [clearDraft, onNotesChange]);
 
   // Get the current line info based on cursor position
   const getCurrentLineInfo = useCallback(() => {
@@ -271,6 +362,12 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
             <Clock className="h-3 w-3 mr-1" />
             {formatSecondsToTime(totalDuration)}
           </Badge>
+          {/* Draft restored indicator */}
+          {isRestoredFromDraft && (
+            <Badge variant="outline" className="text-xs text-orange-600 border-orange-300">
+              임시저장됨
+            </Badge>
+          )}
         </div>
 
         {/* Timestamp controls + Save button - wrap together and fill width when wrapped */}
@@ -319,6 +416,27 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>현재 시간을 종료 시간으로 설정 (Ctrl+])</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+
+          {/* Discard draft button - only show when restored from draft */}
+          {isRestoredFromDraft && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={handleDiscardDraft}
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 px-2 text-muted-foreground hover:text-destructive"
+                  >
+                    <Undo2 className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>임시저장 취소 (원래 내용으로 되돌리기)</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>

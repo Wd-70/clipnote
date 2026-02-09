@@ -470,6 +470,7 @@ export default function EditorPage() {
               <TabsContent value="notes" className="mt-4 data-[state=active]:flex data-[state=active]:flex-col lg:flex-1 lg:min-h-0 lg:overflow-hidden">
                 <NotesEditor
                   ref={notesEditorRef}
+                  projectId={projectId}
                   initialNotes={notes}
                   onNotesChange={setNotes}
                   onClipsChange={setClips}
