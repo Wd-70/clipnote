@@ -350,8 +350,10 @@
     "forward3m": "前进3分钟",
     "forward10m": "前进10分钟",
     "speed": "速度",
-    "insertTimestamp": "插入",
-    "insertTimestampHint": "在笔记中插入当前时间戳"
+    "setStartTime": "开始",
+    "setStartTimeHint": "设置当前时间为开始时间 (Ctrl+[)",
+    "setEndTime": "结束",
+    "setEndTimeHint": "设置当前时间为结束时间 (Ctrl+])"
   },
   "clipTimeline": {
     "title": "片段时间线",

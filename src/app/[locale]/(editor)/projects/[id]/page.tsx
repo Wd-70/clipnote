@@ -196,10 +196,16 @@ export default function EditorPage() {
     [jumpToClip]
   );
 
-  // Insert timestamp at cursor position in notes editor
-  const handleInsertTimestamp = useCallback(() => {
+  // Set start time for current line in notes editor
+  const handleSetStartTime = useCallback(() => {
     const time = playerRef.current?.getCurrentTime() ?? currentTime;
-    notesEditorRef.current?.insertTimestampAtCursor(time);
+    notesEditorRef.current?.setStartTime(time);
+  }, [currentTime]);
+
+  // Set end time for current line in notes editor
+  const handleSetEndTime = useCallback(() => {
+    const time = playerRef.current?.getCurrentTime() ?? currentTime;
+    notesEditorRef.current?.setEndTime(time);
   }, [currentTime]);
 
   // Handle save
@@ -419,7 +425,8 @@ export default function EditorPage() {
               duration={duration}
               isPlaying={isPlaying}
               onPlayStateChange={setIsPlaying}
-              onInsertTimestamp={handleInsertTimestamp}
+              onSetStartTime={handleSetStartTime}
+              onSetEndTime={handleSetEndTime}
               className="shrink-0"
             />
 
@@ -468,7 +475,8 @@ export default function EditorPage() {
                   currentClipIndex={currentClipIndex}
                   currentTime={currentTime}
                   videoDuration={duration}
-                  onInsertTimestamp={handleInsertTimestamp}
+                  onSetStartTime={handleSetStartTime}
+                  onSetEndTime={handleSetEndTime}
                   className="min-h-[450px] lg:min-h-0 lg:h-full lg:overflow-hidden"
                 />
               </TabsContent>

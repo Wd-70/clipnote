@@ -40,7 +40,8 @@ interface VideoControlPanelProps {
   duration: number;
   isPlaying: boolean;
   onPlayStateChange?: (playing: boolean) => void;
-  onInsertTimestamp?: () => void;
+  onSetStartTime?: () => void;
+  onSetEndTime?: () => void;
   className?: string;
 }
 
@@ -87,7 +88,8 @@ export function VideoControlPanel({
   duration,
   isPlaying,
   onPlayStateChange,
-  onInsertTimestamp,
+  onSetStartTime,
+  onSetEndTime,
   className,
 }: VideoControlPanelProps) {
   const t = useTranslations('videoControl');
@@ -151,13 +153,8 @@ export function VideoControlPanel({
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore if typing in an input
+      // Ignore if typing in an input/textarea (these have their own handlers)
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
-        // Allow Ctrl+T in textarea
-        if (e.ctrlKey && e.key === 't') {
-          e.preventDefault();
-          onInsertTimestamp?.();
-        }
         return;
       }
 
@@ -186,12 +183,24 @@ export function VideoControlPanel({
           e.preventDefault();
           toggleMute();
           break;
+        case '[':
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            onSetStartTime?.();
+          }
+          break;
+        case ']':
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            onSetEndTime?.();
+          }
+          break;
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [togglePlay, seekBySeconds, handleVolumeChange, toggleMute, volume, onInsertTimestamp]);
+  }, [togglePlay, seekBySeconds, handleVolumeChange, toggleMute, volume, onSetStartTime, onSetEndTime]);
 
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
 
@@ -362,26 +371,47 @@ export function VideoControlPanel({
           </Select>
         </div>
 
-        {/* Insert timestamp button */}
-        <TooltipProvider delayDuration={300}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-7 gap-1.5"
-                onClick={onInsertTimestamp}
-              >
-                <Timer className="h-3.5 w-3.5" />
-                <span className="text-xs">{t('insertTimestamp')}</span>
-                <kbd className="ml-1 pointer-events-none inline-flex h-4 select-none items-center gap-0.5 rounded border bg-muted px-1 font-mono text-[10px] font-medium text-muted-foreground">
-                  Ctrl+T
-                </kbd>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">{t('insertTimestampHint')}</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        {/* Timestamp buttons */}
+        <div className="flex items-center gap-1">
+          <TooltipProvider delayDuration={300}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 gap-1"
+                  onClick={onSetStartTime}
+                >
+                  <Timer className="h-3.5 w-3.5" />
+                  <span className="text-xs">{t('setStartTime')}</span>
+                  <kbd className="ml-0.5 pointer-events-none inline-flex h-4 select-none items-center gap-0.5 rounded border bg-muted px-1 font-mono text-[10px] font-medium text-muted-foreground">
+                    [
+                  </kbd>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">{t('setStartTimeHint')}</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <TooltipProvider delayDuration={300}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 gap-1"
+                  onClick={onSetEndTime}
+                >
+                  <Timer className="h-3.5 w-3.5" />
+                  <span className="text-xs">{t('setEndTime')}</span>
+                  <kbd className="ml-0.5 pointer-events-none inline-flex h-4 select-none items-center gap-0.5 rounded border bg-muted px-1 font-mono text-[10px] font-medium text-muted-foreground">
+                    ]
+                  </kbd>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">{t('setEndTimeHint')}</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
 
         {/* Volume control */}
         <div className="flex items-center gap-2">

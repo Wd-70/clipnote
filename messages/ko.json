@@ -350,8 +350,10 @@
     "forward3m": "3분 앞으로",
     "forward10m": "10분 앞으로",
     "speed": "속도",
-    "insertTimestamp": "삽입",
-    "insertTimestampHint": "현재 타임스탬프를 노트에 삽입"
+    "setStartTime": "시작",
+    "setStartTimeHint": "현재 시간을 시작 시간으로 설정 (Ctrl+[)",
+    "setEndTime": "종료",
+    "setEndTimeHint": "현재 시간을 종료 시간으로 설정 (Ctrl+])"
   },
   "clipTimeline": {
     "title": "클립 타임라인",

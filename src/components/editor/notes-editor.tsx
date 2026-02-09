@@ -18,7 +18,8 @@ import { cn } from '@/lib/utils';
 import type { ParsedClip } from '@/types';
 
 export interface NotesEditorRef {
-  insertTimestampAtCursor: (currentTime: number) => void;
+  setStartTime: (time: number) => void;
+  setEndTime: (time: number) => void;
 }
 
 interface NotesEditorProps {
@@ -30,7 +31,8 @@ interface NotesEditorProps {
   currentClipIndex?: number;
   currentTime?: number;
   videoDuration?: number;
-  onInsertTimestamp?: () => void;
+  onSetStartTime?: () => void;
+  onSetEndTime?: () => void;
   className?: string;
 }
 
@@ -43,7 +45,8 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
   currentClipIndex = -1,
   currentTime = 0,
   videoDuration,
-  onInsertTimestamp,
+  onSetStartTime,
+  onSetEndTime,
   className,
 }, ref) => {
   const [notes, setNotes] = useState(initialNotes);
@@ -79,69 +82,176 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
     }
   }, [notes, onSave]);
 
-  // Insert timestamp at cursor position
-  const insertTimestampAtCursor = useCallback(
+  // Get the current line info based on cursor position
+  const getCurrentLineInfo = useCallback(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return null;
+
+    const cursorPos = textarea.selectionStart;
+    const lines = notes.split('\n');
+
+    // Find which line the cursor is on
+    let charCount = 0;
+    let lineIndex = 0;
+    for (let i = 0; i < lines.length; i++) {
+      const lineLength = lines[i].length + 1; // +1 for newline
+      if (charCount + lineLength > cursorPos) {
+        lineIndex = i;
+        break;
+      }
+      charCount += lineLength;
+    }
+
+    const currentLine = lines[lineIndex];
+    const lineStartPos = charCount;
+    const lineEndPos = lineStartPos + currentLine.length;
+
+    return { lineIndex, currentLine, lineStartPos, lineEndPos, lines };
+  }, [notes]);
+
+  // Timestamp pattern: supports MM:SS, M:SS, HH:MM:SS, and optional decimal seconds
+  const TIMESTAMP_PATTERN = /^((?:\d{1,2}:)?\d{1,2}:\d{2}(?:\.\d+)?)?(\s*-\s*)?((?:\d{1,2}:)?\d{1,2}:\d{2}(?:\.\d+)?)?(\s+)?(.*)$/;
+
+  // Set start time for the current line
+  const setStartTime = useCallback(
     (time: number) => {
       const textarea = textareaRef.current;
       if (!textarea) return;
 
-      const timestamp = formatSecondsToTime(time);
-      const cursorPos = textarea.selectionStart;
-      const textBefore = notes.substring(0, cursorPos);
-      const textAfter = notes.substring(cursorPos);
+      const lineInfo = getCurrentLineInfo();
+      if (!lineInfo) return;
 
-      // Determine what to insert based on context
-      // If we're at the start of a line or after existing timestamp, just insert the time
-      // Otherwise, check if we need to add a newline
-      const lastNewlinePos = textBefore.lastIndexOf('\n');
-      const currentLine = textBefore.substring(lastNewlinePos + 1);
-      
-      let insertion = '';
-      
-      // Check if current line already has a timestamp pattern (start time)
-      // Supports both MM:SS and HH:MM:SS formats
-      const hasStartTime = /^(?:\d{1,2}:)?\d{1,2}:\d{2}(?:\.\d+)?(?:\s*-\s*)?$/.test(currentLine.trim());
-      
-      if (hasStartTime) {
-        // Just add the end time
-        insertion = `${timestamp} `;
-      } else if (currentLine.trim() === '') {
-        // Empty line - add full timestamp range
-        insertion = `${timestamp} - `;
+      const { lineIndex, currentLine, lines } = lineInfo;
+      const timestamp = formatSecondsToTime(time);
+
+      // Parse the current line
+      const match = currentLine.match(TIMESTAMP_PATTERN);
+
+      let newLine: string;
+      if (match) {
+        // Line has some structure - extract parts
+        const [, , separator, endTime, space, description] = match;
+
+        if (endTime) {
+          // Has end time - replace start, keep end and description
+          newLine = `${timestamp} - ${endTime}${space || ' '}${description || ''}`;
+        } else if (separator) {
+          // Has separator but no end time
+          newLine = `${timestamp} - ${description || ''}`;
+        } else if (description && description.trim()) {
+          // Just has text, make it the description
+          newLine = `${timestamp} - ${currentLine.trim()}`;
+        } else {
+          // Empty or just whitespace
+          newLine = `${timestamp} - `;
+        }
       } else {
-        // In the middle of text - add newline and full timestamp
-        insertion = `\n${timestamp} - `;
+        // No match - treat entire line as description
+        const trimmedLine = currentLine.trim();
+        newLine = trimmedLine ? `${timestamp} - ${trimmedLine}` : `${timestamp} - `;
       }
 
-      const newNotes = textBefore + insertion + textAfter;
+      // Replace the line
+      lines[lineIndex] = newLine;
+      const newNotes = lines.join('\n');
+
       setNotes(newNotes);
       onNotesChange?.(newNotes);
       setHasChanges(true);
 
-      // Move cursor to end of inserted timestamp
+      // Position cursor after the start timestamp
       setTimeout(() => {
-        const newCursorPos = cursorPos + insertion.length;
-        textarea.setSelectionRange(newCursorPos, newCursorPos);
+        const newLineStartPos = lines.slice(0, lineIndex).join('\n').length + (lineIndex > 0 ? 1 : 0);
+        const cursorPos = newLineStartPos + timestamp.length;
+        textarea.setSelectionRange(cursorPos, cursorPos);
         textarea.focus();
       }, 0);
     },
-    [notes, onNotesChange]
+    [notes, onNotesChange, getCurrentLineInfo]
   );
 
-  // Expose insertTimestampAtCursor via ref
-  useImperativeHandle(ref, () => ({
-    insertTimestampAtCursor,
-  }), [insertTimestampAtCursor]);
+  // Set end time for the current line
+  const setEndTime = useCallback(
+    (time: number) => {
+      const textarea = textareaRef.current;
+      if (!textarea) return;
 
-  // Handle keyboard shortcut (Ctrl+M or Cmd+M)
+      const lineInfo = getCurrentLineInfo();
+      if (!lineInfo) return;
+
+      const { lineIndex, currentLine, lines } = lineInfo;
+      const timestamp = formatSecondsToTime(time);
+
+      // Parse the current line
+      const match = currentLine.match(TIMESTAMP_PATTERN);
+
+      let newLine: string;
+      if (match) {
+        const [, startTime, , , , description] = match;
+
+        if (startTime) {
+          // Has start time - keep it, set end time
+          newLine = `${startTime} - ${timestamp}${description ? ' ' + description : ' '}`;
+        } else if (description && description.trim()) {
+          // No start time but has text - need start time first
+          // Use a placeholder for start time
+          newLine = `00:00 - ${timestamp} ${description.trim()}`;
+        } else {
+          // Empty line - need start time first
+          newLine = `00:00 - ${timestamp} `;
+        }
+      } else {
+        // No match - need start time
+        const trimmedLine = currentLine.trim();
+        newLine = trimmedLine
+          ? `00:00 - ${timestamp} ${trimmedLine}`
+          : `00:00 - ${timestamp} `;
+      }
+
+      // Replace the line
+      lines[lineIndex] = newLine;
+      const newNotes = lines.join('\n');
+
+      setNotes(newNotes);
+      onNotesChange?.(newNotes);
+      setHasChanges(true);
+
+      // Position cursor after the end timestamp
+      setTimeout(() => {
+        const newLineStartPos = lines.slice(0, lineIndex).join('\n').length + (lineIndex > 0 ? 1 : 0);
+        // Find position after end timestamp
+        const dashPos = newLine.indexOf(' - ');
+        const endTimestampEnd = dashPos + 3 + timestamp.length;
+        const cursorPos = newLineStartPos + endTimestampEnd;
+        textarea.setSelectionRange(cursorPos, cursorPos);
+        textarea.focus();
+      }, 0);
+    },
+    [notes, onNotesChange, getCurrentLineInfo]
+  );
+
+  // Expose setStartTime and setEndTime via ref
+  useImperativeHandle(ref, () => ({
+    setStartTime,
+    setEndTime,
+  }), [setStartTime, setEndTime]);
+
+  // Handle keyboard shortcuts
+  // Ctrl+[ or Cmd+[ for start time
+  // Ctrl+] or Cmd+] for end time
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'm') {
-        e.preventDefault();
-        onInsertTimestamp?.();
+      if (e.ctrlKey || e.metaKey) {
+        if (e.key === '[') {
+          e.preventDefault();
+          onSetStartTime?.();
+        } else if (e.key === ']') {
+          e.preventDefault();
+          onSetEndTime?.();
+        }
       }
     },
-    [onInsertTimestamp]
+    [onSetStartTime, onSetEndTime]
   );
 
   return (
@@ -165,27 +275,55 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
         </div>
 
         <div className="flex items-center gap-2">
-          {onInsertTimestamp && (
+          {/* Current time display */}
+          <span className="font-mono text-sm text-muted-foreground">
+            {formatSecondsToTime(currentTime)}
+          </span>
+
+          {/* Start time button */}
+          {onSetStartTime && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
-                    onClick={onInsertTimestamp}
+                    onClick={onSetStartTime}
                     variant="outline"
                     size="sm"
-                    className="gap-2"
+                    className="gap-1.5"
                   >
                     <Timer className="h-4 w-4" />
-                    <span className="font-mono text-xs">{formatSecondsToTime(currentTime)}</span>
+                    시작
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>현재 시간 타임스탬프 삽입 (Ctrl+M)</p>
+                  <p>현재 시간을 시작 시간으로 설정 (Ctrl+[)</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
           )}
-          
+
+          {/* End time button */}
+          {onSetEndTime && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={onSetEndTime}
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5"
+                  >
+                    <Timer className="h-4 w-4" />
+                    종료
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>현재 시간을 종료 시간으로 설정 (Ctrl+])</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+
           {onSave && (
             <Button
               onClick={handleSave}
@@ -218,7 +356,7 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
 2:45 본론 시작
 
 Tip: 각 줄에 타임스탬프를 작성하면 자동으로 클립이 생성됩니다.
-단축키: Ctrl+M으로 현재 재생 시간을 삽입할 수 있습니다.`}
+단축키: Ctrl+[ 시작 시간 설정, Ctrl+] 종료 시간 설정`}
             className="flex-1 min-h-0 resize-none font-mono text-sm overflow-auto"
           />
         </CardContent>

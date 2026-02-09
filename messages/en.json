@@ -350,8 +350,10 @@
     "forward3m": "3 minutes forward",
     "forward10m": "10 minutes forward",
     "speed": "Speed",
-    "insertTimestamp": "Insert",
-    "insertTimestampHint": "Insert current timestamp into notes"
+    "setStartTime": "Start",
+    "setStartTimeHint": "Set current time as start time (Ctrl+[)",
+    "setEndTime": "End",
+    "setEndTimeHint": "Set current time as end time (Ctrl+])"
   },
   "clipTimeline": {
     "title": "Clip Timeline",
