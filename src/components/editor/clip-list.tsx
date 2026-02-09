@@ -66,12 +66,12 @@ export function ClipList({
         </div>
       </CardHeader>
 
-      <CardContent className="pt-0 flex-1 flex flex-col overflow-hidden min-h-0">
+      <CardContent className="pt-0 flex-1 overflow-hidden min-h-0">
         {/* Play All Button */}
         {onPlayAll && (
           <Button
             onClick={onPlayAll}
-            className="w-full mb-3 shrink-0"
+            className="w-full mb-3"
             variant="default"
             size="sm"
           >
@@ -80,8 +80,8 @@ export function ClipList({
           </Button>
         )}
 
-        {/* Clip list with scroll */}
-        <ScrollArea className="flex-1 min-h-0">
+        {/* Clip list with scroll - use calc to account for button height */}
+        <ScrollArea className={cn("w-full", onPlayAll ? "h-[calc(100%-52px)]" : "h-full")}>
           <div className="space-y-2 pr-4">
             {clips.map((clip, index) => (
               <div
