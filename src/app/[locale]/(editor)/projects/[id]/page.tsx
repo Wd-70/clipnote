@@ -151,14 +151,22 @@ export default function EditorPage() {
     };
   }, [isLoading, project]);
 
-  // Video sync hook for virtual editing
+  // Video sync hook for virtual editing - single source of truth for clip logic
   const {
     currentClipIndex,
     isVirtualMode,
     setVirtualMode,
+    clipRanges,
+    totalVirtualDuration,
+    currentVirtualTime,
     handleProgress: handleSyncProgress,
     jumpToClip,
     playAllClips,
+    stopPlayback,
+    skipToPreviousClip,
+    skipToNextClip,
+    seekToVirtualTime,
+    togglePlay,
   } = useVideoSync(playerRef, {
     clips,
     onClipChange: (index) => {
@@ -166,7 +174,7 @@ export default function EditorPage() {
     },
   });
 
-  // Handle video progress - track current time
+  // Handle video progress - delegate to useVideoSync
   const handleProgress = useCallback(
     (state: { played: number; playedSeconds: number }) => {
       setCurrentTime(state.playedSeconds);
@@ -174,6 +182,11 @@ export default function EditorPage() {
     },
     [handleSyncProgress]
   );
+
+  // Handle pause
+  const handlePause = useCallback(() => {
+    playerRef.current?.pause();
+  }, []);
 
   // Handle clip click - jump to that position
   const handleClipClick = useCallback(
@@ -413,10 +426,16 @@ export default function EditorPage() {
             {/* Clip Timeline - Virtual playback controls */}
             <ClipTimeline
               clips={clips}
-              playerRef={playerRef}
-              currentTime={currentTime}
+              clipRanges={clipRanges}
+              currentClipIndex={currentClipIndex}
+              currentVirtualTime={currentVirtualTime}
+              totalVirtualDuration={totalVirtualDuration}
               isPlaying={isPlaying}
-              onPlayStateChange={setIsPlaying}
+              onSeek={seekToVirtualTime}
+              onSkipPrevious={skipToPreviousClip}
+              onSkipNext={skipToNextClip}
+              onTogglePlay={togglePlay}
+              onPause={handlePause}
               className="shrink-0"
             />
 
