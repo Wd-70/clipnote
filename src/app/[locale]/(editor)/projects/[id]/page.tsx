@@ -487,18 +487,20 @@ export default function EditorPage() {
                     <CardTitle className="text-base flex items-center gap-2">
                       <Sparkles className="h-4 w-4" />
                       {t('aiAnalysis')}
+                      <Badge variant="secondary" className="text-xs">
+                        {t('comingSoon')}
+                      </Badge>
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="text-center py-8">
-                      <Sparkles className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
-                      <p className="text-muted-foreground mb-4">
+                      <Sparkles className="h-12 w-12 mx-auto text-muted-foreground/30 mb-4" />
+                      <p className="text-muted-foreground mb-2">
                         {t('aiDescription')}
                       </p>
-                      <Button>
-                        <Sparkles className="h-4 w-4 mr-2" />
-                        {t('startAnalysis', { points: 10 })}
-                      </Button>
+                      <p className="text-sm text-muted-foreground/70">
+                        {t('aiComingSoonDescription')}
+                      </p>
                     </div>
                   </CardContent>
                 </Card>
