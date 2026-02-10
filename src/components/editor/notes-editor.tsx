@@ -64,8 +64,43 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const initialNotesRef = useRef(initialNotes);
+  const notesRef = useRef(notes);
+  const hasChangesRef = useRef(hasChanges);
+
+  // Keep refs in sync for use in event handlers
+  useEffect(() => {
+    notesRef.current = notes;
+  }, [notes]);
+
+  useEffect(() => {
+    hasChangesRef.current = hasChanges;
+  }, [hasChanges]);
 
   const { clips, totalDuration, clipCount } = useTimestampParser(notes, videoDuration);
+
+  // Save draft to localStorage immediately
+  const saveDraftNow = useCallback(() => {
+    const draftKey = getDraftKey(projectId);
+    const currentNotes = notesRef.current;
+    const currentHasChanges = hasChangesRef.current;
+
+    if (!currentHasChanges) return;
+
+    try {
+      if (currentNotes !== initialNotesRef.current) {
+        // Save if different from initial
+        localStorage.setItem(draftKey, JSON.stringify({
+          notes: currentNotes,
+          savedAt: Date.now(),
+        }));
+      } else {
+        // Clear if same as initial
+        localStorage.removeItem(draftKey);
+      }
+    } catch {
+      // Ignore localStorage errors
+    }
+  }, [projectId]);
 
   // Restore from localStorage on mount
   useEffect(() => {
@@ -90,6 +125,21 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
     }
   }, [projectId, onNotesChange]);
 
+  // Save on page unload (beforeunload) and component unmount
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      saveDraftNow();
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      // Save on unmount as well
+      saveDraftNow();
+    };
+  }, [saveDraftNow]);
+
   // Auto-save to localStorage with debounce
   useEffect(() => {
     if (!hasChanges) return;
@@ -99,20 +149,21 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
       clearTimeout(autoSaveTimeoutRef.current);
     }
 
-    // Set new timeout for auto-save
-    autoSaveTimeoutRef.current = setTimeout(() => {
+    // Check if notes are same as initial - if so, clear draft
+    if (notes === initialNotesRef.current) {
       const draftKey = getDraftKey(projectId);
       try {
-        // Only save if different from initial
-        if (notes !== initialNotesRef.current) {
-          localStorage.setItem(draftKey, JSON.stringify({
-            notes,
-            savedAt: Date.now(),
-          }));
-        }
+        localStorage.removeItem(draftKey);
       } catch {
-        // Ignore localStorage errors (quota exceeded, etc.)
+        // Ignore errors
       }
+      setHasChanges(false);
+      return;
+    }
+
+    // Set new timeout for auto-save
+    autoSaveTimeoutRef.current = setTimeout(() => {
+      saveDraftNow();
     }, AUTO_SAVE_DELAY);
 
     return () => {
@@ -120,7 +171,7 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
         clearTimeout(autoSaveTimeoutRef.current);
       }
     };
-  }, [notes, hasChanges, projectId]);
+  }, [notes, hasChanges, projectId, saveDraftNow]);
 
   useEffect(() => {
     onClipsChange?.(clips);
