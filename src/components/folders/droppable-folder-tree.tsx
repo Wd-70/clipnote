@@ -30,6 +30,7 @@ interface DroppableFolderTreeProps {
   onRenameFolder?: (folder: IFolder) => void;
   onDeleteFolder?: (folder: IFolder) => void;
   onMoveFolder?: (folder: IFolder) => void;
+  rootProjectCount?: number;
   isLoading?: boolean;
   className?: string;
 }
@@ -168,36 +169,36 @@ function DroppableTreeItem({
         {/* Folder Name */}
         <span className="flex-1 truncate text-sm">{node.name}</span>
 
-        {/* Project Count Badge */}
-        {projectCount > 0 && (
-          <span
-            className={cn(
-              'h-5 min-w-[20px] px-1.5 text-[10px] font-medium rounded-full',
-              'bg-muted text-muted-foreground',
-              isHovered && 'opacity-0'
-            )}
-          >
-            {projectCount}
-          </span>
-        )}
-
-        {/* Context Menu (visible on hover) */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
+        {/* Project Count Badge / Context Menu - mutually exclusive */}
+        <div className="relative shrink-0 w-6 h-6 flex items-center justify-center">
+          {projectCount > 0 && (
+            <span
               className={cn(
-                'h-6 w-6 opacity-0 transition-opacity shrink-0',
-                isHovered && 'opacity-100',
-                'focus:opacity-100'
+                'h-5 min-w-[20px] px-1.5 text-[10px] font-medium rounded-full',
+                'bg-muted text-muted-foreground flex items-center justify-center',
+                'transition-opacity',
+                isHovered && 'opacity-0 pointer-events-none'
               )}
-              onClick={(e) => e.stopPropagation()}
-              aria-label="Folder actions"
             >
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
+              {projectCount}
+            </span>
+          )}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={cn(
+                  'h-6 w-6 absolute inset-0 opacity-0 transition-opacity',
+                  isHovered && 'opacity-100',
+                  'focus:opacity-100'
+                )}
+                onClick={(e) => e.stopPropagation()}
+                aria-label="Folder actions"
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuItem
               onClick={(e) => {
@@ -240,7 +241,8 @@ function DroppableTreeItem({
               {t('deleteFolder')}
             </DropdownMenuItem>
           </DropdownMenuContent>
-        </DropdownMenu>
+          </DropdownMenu>
+        </div>
       </div>
 
       {/* Render Children */}
@@ -274,6 +276,7 @@ export function DroppableFolderTree({
   onRenameFolder,
   onDeleteFolder,
   onMoveFolder,
+  rootProjectCount,
   isLoading,
   className,
 }: DroppableFolderTreeProps) {
@@ -349,6 +352,13 @@ export function DroppableFolderTree({
             <span className="flex-1 text-left truncate">
               {tProjects('allProjects')}
             </span>
+            {rootProjectCount != null && rootProjectCount > 0 && (
+              <span
+                className="h-5 min-w-[20px] px-1.5 text-[10px] font-medium rounded-full bg-muted text-muted-foreground flex items-center justify-center"
+              >
+                {rootProjectCount}
+              </span>
+            )}
           </button>
 
           {/* Droppable Folder Tree */}

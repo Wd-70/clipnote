@@ -47,6 +47,7 @@ export function SidebarWithFolders({ className }: SidebarWithFoldersProps) {
     onRenameFolder,
     onDeleteFolder,
     onMoveFolder,
+    rootProjectCount,
   } = useFolderSidebar();
 
   // Check if on projects page
@@ -124,6 +125,7 @@ export function SidebarWithFolders({ className }: SidebarWithFoldersProps) {
             tree={folderTree}
             currentFolderId={currentFolderId ?? null}
             expandedIds={expandedIds}
+            rootProjectCount={rootProjectCount}
             onFolderSelect={(id: string | null) => {
               onFolderSelect?.(id);
             }}

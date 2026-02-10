@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Plus, FolderOpen } from 'lucide-react';
@@ -72,15 +72,29 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
   const [projects, setProjects] = useState<IProject[]>(initialProjects);
   const [isLoadingProjects, setIsLoadingProjects] = useState(initialProjects.length === 0);
 
-  // Project count per folder
-  const projectCountMap = useMemo(() => {
-    const map = new Map<string | null, number>();
-    for (const p of projects) {
-      const key = p.folderId ?? null;
-      map.set(key, (map.get(key) ?? 0) + 1);
+  // Project count per folder (fetched independently from displayed projects)
+  const [projectCountMap, setProjectCountMap] = useState<Map<string | null, number>>(new Map());
+
+  const fetchProjectCounts = useCallback(async () => {
+    try {
+      const response = await fetch('/api/projects?fields=folderId');
+      if (response.ok) {
+        const data = await response.json();
+        const map = new Map<string | null, number>();
+        for (const p of (data.data || [])) {
+          const key = p.folderId ?? null;
+          map.set(key, (map.get(key) ?? 0) + 1);
+        }
+        setProjectCountMap(map);
+      }
+    } catch {
+      // Ignore errors
     }
-    return map;
-  }, [projects]);
+  }, []);
+
+  useEffect(() => {
+    fetchProjectCounts();
+  }, [fetchProjectCounts]);
 
   // Folder tree hook
   const folderTree = useFolderTree({
@@ -143,7 +157,7 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
         toast.success(tBulk('deleted', { count }));
       }
       bulkSelection.deselectAll();
-      fetchProjects();
+      refreshProjects();
     },
     onError: (error) => toast.error(error),
   });
@@ -163,6 +177,10 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
   useEffect(() => {
     folderSidebar.setExpandedIds(folderTree.expandedIds);
   }, [folderTree.expandedIds]);
+
+  useEffect(() => {
+    folderSidebar.setRootProjectCount(projectCountMap.get(null) ?? 0);
+  }, [projectCountMap]);
 
   useEffect(() => {
     folderSidebar.setIsFolderLoading(folderTree.isLoading);
@@ -205,7 +223,7 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
   const [activeProject, setActiveProject] = useState<IProject | null>(null);
   const { registerHandlers, unregisterHandlers } = useProjectDnd();
 
-  // Fetch projects
+  // Fetch projects for current folder view
   const fetchProjects = useCallback(async () => {
     setIsLoadingProjects(true);
     try {
@@ -226,6 +244,12 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
       setIsLoadingProjects(false);
     }
   }, [navigation.currentFolderId, navigation.sortOption]);
+
+  // Refetch both projects and counts (for project creation/deletion/move)
+  const refreshProjects = useCallback(async () => {
+    fetchProjects();
+    fetchProjectCounts();
+  }, [fetchProjects, fetchProjectCounts]);
 
   // Refetch when folder or sort changes
   useEffect(() => {
@@ -266,10 +290,11 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
         if (navigation.currentFolderId === id) {
           navigation.navigateToRoot();
         }
+        refreshProjects();
       }
       return success;
     },
-    [folderTree, tFolders, navigation]
+    [folderTree, tFolders, navigation, refreshProjects]
   );
 
   // Handler for moving folder
@@ -356,7 +381,7 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
 
           if (response.ok) {
             toast.success(tBulk('moved', { count: 1 }));
-            fetchProjects();
+            refreshProjects();
           } else {
             toast.error('Failed to move project');
           }
@@ -449,6 +474,7 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
                     tree={folderTree.tree}
                     currentFolderId={navigation.currentFolderId}
                     expandedIds={folderTree.expandedIds}
+                    rootProjectCount={projectCountMap.get(null) ?? 0}
                     onFolderSelect={(id) => {
                       navigation.navigateTo(id);
                       setMobileFolderOpen(false);
@@ -497,7 +523,7 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
             </p>
           </div>
 
-          <NewProjectDialog onProjectCreated={fetchProjects} folderId={navigation.currentFolderId} />
+          <NewProjectDialog onProjectCreated={refreshProjects} folderId={navigation.currentFolderId} />
         </div>
 
         <Separator />
@@ -532,7 +558,7 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
                 <SortableProjectCard
                   key={project._id?.toString()}
                   project={project}
-                  onDelete={fetchProjects}
+                  onDelete={refreshProjects}
                   isSelectionMode={bulkSelection.isSelectionMode}
                   isSelected={bulkSelection.isSelected(project._id?.toString() ?? '')}
                   onToggleSelect={() => bulkSelection.toggle(project._id?.toString() ?? '')}
@@ -543,7 +569,7 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
         ) : (
           <EmptyState
             action={
-              <NewProjectDialog onProjectCreated={fetchProjects} folderId={navigation.currentFolderId}>
+              <NewProjectDialog onProjectCreated={refreshProjects} folderId={navigation.currentFolderId}>
                 <Button className="mt-4">
                   <Plus className="w-4 h-4 mr-2" />
                   {tDashboard('createFirst')}

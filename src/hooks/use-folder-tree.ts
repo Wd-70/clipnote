@@ -71,14 +71,11 @@ function buildTree(
     .sort((a, b) => a.order - b.order)
     .map((folder) => {
       const folderId = folder._id?.toString() ?? '';
-      const children = buildTree(folders, expandedIds, projectCountMap, folderId);
-      const directCount = projectCountMap?.get(folderId) ?? 0;
-      const childrenCount = children.reduce((sum, c) => sum + (c.projectCount ?? 0), 0);
       return {
         ...folder,
-        children,
+        children: buildTree(folders, expandedIds, projectCountMap, folderId),
         isExpanded: expandedIds.has(folderId),
-        projectCount: directCount + childrenCount,
+        projectCount: projectCountMap?.get(folderId) ?? 0,
       };
     });
 }

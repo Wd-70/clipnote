@@ -32,6 +32,9 @@ interface FolderSidebarState {
   isFolderLoading: boolean;
   setIsFolderLoading: (loading: boolean) => void;
 
+  rootProjectCount: number;
+  setRootProjectCount: (count: number) => void;
+
   // Callbacks (set by projects page)
   onFolderSelect: ((id: string | null) => void) | null;
   setOnFolderSelect: (fn: ((id: string | null) => void) | null) => void;
@@ -72,6 +75,7 @@ export function FolderSidebarProvider({ children }: { children: ReactNode }) {
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [isFolderLoading, setIsFolderLoading] = useState(false);
+  const [rootProjectCount, setRootProjectCount] = useState(0);
 
   // Callbacks
   const [onFolderSelect, setOnFolderSelect] = useState<((id: string | null) => void) | null>(null);
@@ -117,6 +121,8 @@ export function FolderSidebarProvider({ children }: { children: ReactNode }) {
         setExpandedIds,
         isFolderLoading,
         setIsFolderLoading,
+        rootProjectCount,
+        setRootProjectCount,
         onFolderSelect,
         setOnFolderSelect,
         onToggleExpand,
