@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Plus, FolderOpen } from 'lucide-react';
@@ -72,8 +72,19 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
   const [projects, setProjects] = useState<IProject[]>(initialProjects);
   const [isLoadingProjects, setIsLoadingProjects] = useState(initialProjects.length === 0);
 
+  // Project count per folder
+  const projectCountMap = useMemo(() => {
+    const map = new Map<string | null, number>();
+    for (const p of projects) {
+      const key = p.folderId ?? null;
+      map.set(key, (map.get(key) ?? 0) + 1);
+    }
+    return map;
+  }, [projects]);
+
   // Folder tree hook
   const folderTree = useFolderTree({
+    projectCountMap,
     onError: (error) => toast.error(error),
   });
 

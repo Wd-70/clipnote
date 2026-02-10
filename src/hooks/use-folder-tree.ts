@@ -11,6 +11,7 @@ export interface FolderTreeNode extends IFolder {
 
 interface UseFolderTreeOptions {
   initialFolders?: IFolder[];
+  projectCountMap?: Map<string | null, number>;
   onError?: (error: string) => void;
 }
 
@@ -62,16 +63,24 @@ interface UseFolderTreeReturn {
 function buildTree(
   folders: IFolder[],
   expandedIds: Set<string>,
+  projectCountMap?: Map<string | null, number>,
   parentId: string | null = null
 ): FolderTreeNode[] {
   return folders
     .filter((f) => (f.parentId ?? null) === parentId)
     .sort((a, b) => a.order - b.order)
-    .map((folder) => ({
-      ...folder,
-      children: buildTree(folders, expandedIds, folder._id?.toString()),
-      isExpanded: expandedIds.has(folder._id?.toString() ?? ''),
-    }));
+    .map((folder) => {
+      const folderId = folder._id?.toString() ?? '';
+      const children = buildTree(folders, expandedIds, projectCountMap, folderId);
+      const directCount = projectCountMap?.get(folderId) ?? 0;
+      const childrenCount = children.reduce((sum, c) => sum + (c.projectCount ?? 0), 0);
+      return {
+        ...folder,
+        children,
+        isExpanded: expandedIds.has(folderId),
+        projectCount: directCount + childrenCount,
+      };
+    });
 }
 
 /**
@@ -80,17 +89,17 @@ function buildTree(
 export function useFolderTree(
   options: UseFolderTreeOptions = {}
 ): UseFolderTreeReturn {
-  const { initialFolders = [], onError } = options;
+  const { initialFolders = [], projectCountMap, onError } = options;
 
   const [folders, setFolders] = useState<IFolder[]>(initialFolders);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
-  // Build tree whenever folders or expanded state changes
+  // Build tree whenever folders, expanded state, or project counts change
   const tree = useMemo(
-    () => buildTree(folders, expandedIds),
-    [folders, expandedIds]
+    () => buildTree(folders, expandedIds, projectCountMap),
+    [folders, expandedIds, projectCountMap]
   );
 
   // Fetch all folders from API
