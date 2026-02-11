@@ -78,7 +78,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const title = `${project.title} - ClipNote`;
     const description = `${clips.length}개의 하이라이트 클립이 포함된 영상입니다. ClipNote로 만들어졌습니다.`;
     const thumbnailUrl = project.thumbnailUrl || '/og-default.png';
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || '';
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 'https://clipnote.link';
     const shareUrl = `${baseUrl}/share/${shareId}`;
 
     return {

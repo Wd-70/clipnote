@@ -83,7 +83,8 @@ export async function GET(req: NextRequest) {
     }
 
     const clips = parseClipsFromNotes(project.notes);
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || '';
+    const reqUrl = new URL(req.url);
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || `${reqUrl.protocol}//${reqUrl.host}`;
 
     // Constrain dimensions while maintaining 16:9 aspect ratio
     let width = Math.min(maxwidth, 640);
