@@ -55,8 +55,8 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const url = searchParams.get('url');
     const format = searchParams.get('format') || 'json';
-    const maxwidth = parseInt(searchParams.get('maxwidth') || '640', 10);
-    const maxheight = parseInt(searchParams.get('maxheight') || '360', 10);
+    const maxwidth = searchParams.has('maxwidth') ? parseInt(searchParams.get('maxwidth')!, 10) : null;
+    const maxheight = searchParams.has('maxheight') ? parseInt(searchParams.get('maxheight')!, 10) : null;
 
     // Only JSON format supported
     if (format !== 'json') {
@@ -86,11 +86,11 @@ export async function GET(req: NextRequest) {
     const reqUrl = new URL(req.url);
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || `${reqUrl.protocol}//${reqUrl.host}`;
 
-    // Constrain dimensions: 16:9 video + ~120px control bar
+    // Default: 640x480 (16:9 video + ~120px control bar)
     const controlBarHeight = 120;
-    let width = Math.min(maxwidth, 640);
+    let width = maxwidth ? Math.min(maxwidth, 640) : 640;
     let height = Math.round(width * 9 / 16) + controlBarHeight;
-    if (height > maxheight) {
+    if (maxheight && height > maxheight) {
       height = maxheight;
       width = Math.round((height - controlBarHeight) * 16 / 9);
     }
