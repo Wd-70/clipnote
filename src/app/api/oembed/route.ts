@@ -86,12 +86,13 @@ export async function GET(req: NextRequest) {
     const reqUrl = new URL(req.url);
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || `${reqUrl.protocol}//${reqUrl.host}`;
 
-    // Constrain dimensions while maintaining 16:9 aspect ratio
+    // Constrain dimensions: 16:9 video + ~120px control bar
+    const controlBarHeight = 120;
     let width = Math.min(maxwidth, 640);
-    let height = Math.round(width * 9 / 16);
+    let height = Math.round(width * 9 / 16) + controlBarHeight;
     if (height > maxheight) {
       height = maxheight;
-      width = Math.round(height * 16 / 9);
+      width = Math.round((height - controlBarHeight) * 16 / 9);
     }
 
     const embedUrl = `${baseUrl}/embed/${shareId}`;
