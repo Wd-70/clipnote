@@ -52,7 +52,7 @@ const AnalysisCacheSchema = new Schema<AnalysisCacheDocument>(
     },
     platform: {
       type: String,
-      enum: ['YOUTUBE', 'CHZZK'],
+      enum: ['YOUTUBE', 'CHZZK', 'TWITCH'],
       required: true,
     },
     duration: {

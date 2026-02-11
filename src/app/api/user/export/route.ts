@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
 import { auth, getDevSession } from '@/auth';
-import { JsonDB } from '@/lib/db/json-db';
+import { getDB } from '@/lib/db/adapter';
+import { exportLimiter, rateLimitResponse } from '@/lib/rate-limit';
 
 // Check if mock auth is enabled (same logic as auth.ts)
 const hasGoogleAuth = !!(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET);
@@ -34,41 +33,33 @@ async function getSession(): Promise<{ user: SessionUser } | null> {
 /**
  * Find or create user based on session
  */
-function findOrCreateUser(sessionUser: SessionUser) {
-  // Try to find by ID first
-  let user = JsonDB.User.findById(sessionUser.id);
+async function findOrCreateUser(sessionUser: SessionUser) {
+  const db = await getDB();
+
+  // Try to find by ID first (may fail with CastError if ID is not a valid ObjectId)
+  let user = null;
+  try {
+    user = await db.User.findById(sessionUser.id);
+  } catch {
+    // ID format not compatible with MongoDB ObjectId — skip to email lookup
+  }
 
   // Fallback: find by email
   if (!user && sessionUser.email) {
-    user = JsonDB.User.findOne({ email: sessionUser.email });
+    user = await db.User.findOne({ email: sessionUser.email });
   }
 
   // Auto-create user if not found (they are authenticated via OAuth)
   if (!user && sessionUser.email) {
     console.log('[API /user/export] Creating new user:', sessionUser.email);
-
-    // Create user with specific ID to match session
-    const usersFile = path.join(process.cwd(), '.dev-db', 'users.json');
-    const items = fs.existsSync(usersFile)
-      ? JSON.parse(fs.readFileSync(usersFile, 'utf-8'))
-      : [];
-
-    const newUser = {
-      _id: sessionUser.id,
+    user = await db.User.create({
       email: sessionUser.email,
       name: sessionUser.name || '',
       image: sessionUser.image || '',
       points: 0,
-      role: 'FREE' as const,
+      role: 'FREE',
       savedChannels: [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    items.push(newUser);
-    fs.writeFileSync(usersFile, JSON.stringify(items, null, 2));
-
-    return newUser;
+    });
   }
 
   return user;
@@ -88,7 +79,10 @@ export async function GET() {
       );
     }
 
-    const user = findOrCreateUser(session.user);
+    const limited = rateLimitResponse(exportLimiter, session.user.id);
+    if (limited) return limited;
+
+    const user = await findOrCreateUser(session.user);
 
     if (!user) {
       return NextResponse.json(
@@ -97,11 +91,13 @@ export async function GET() {
       );
     }
 
+    const db = await getDB();
+
     // Get all user's projects
-    const projects = JsonDB.Project.find({ userId: user._id! });
+    const projects = await db.Project.find({ userId: user._id! });
 
     // Get all user's folders
-    const folders = JsonDB.Folder.find({ userId: user._id! });
+    const folders = await db.Folder.find({ userId: user._id! });
 
     // Export data
     const exportData = {
@@ -114,7 +110,7 @@ export async function GET() {
         role: user.role,
         createdAt: user.createdAt,
       },
-      folders: folders.map((folder) => ({
+      folders: folders.map((folder: any) => ({
         id: folder._id,
         name: folder.name,
         parentId: folder.parentId,
@@ -123,7 +119,7 @@ export async function GET() {
         order: folder.order,
         createdAt: folder.createdAt,
       })),
-      projects: projects.map((project) => ({
+      projects: projects.map((project: any) => ({
         id: project._id,
         title: project.title,
         platform: project.platform,

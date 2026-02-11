@@ -147,6 +147,9 @@
     "deleteFailed": "削除に失敗しました",
     "cancel": "選択をキャンセル"
   },
+  "search": {
+    "placeholder": "プロジェクトを検索..."
+  },
   "sort": {
     "label": "並び替え",
     "nameAsc": "名前（昇順）",
@@ -309,7 +312,10 @@
     "fullscreen": "全画面",
     "sharedBy": "共有者",
     "clipNotFound": "クリップが見つかりません",
-    "clipNotFoundDesc": "リクエストされた共有リンクは存在しないか、削除された可能性があります。"
+    "clipNotFoundDesc": "リクエストされた共有リンクは存在しないか、削除された可能性があります。",
+    "createOwnClip": "自分もクリップを作る",
+    "createOwnClipHint": "ClipNoteで無料で動画からクリップを作りましょう",
+    "poweredBy": "Powered by ClipNote"
   },
   "export": {
     "title": "クリップをエクスポート",

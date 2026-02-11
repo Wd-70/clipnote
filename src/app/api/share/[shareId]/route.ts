@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDB, DBProject } from '@/lib/db/adapter';
+import { shareViewLimiter, rateLimitResponse, getClientIp } from '@/lib/rate-limit';
 
 interface RouteParams {
   params: Promise<{ shareId: string }>;
@@ -69,10 +70,13 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
   try {
     const { shareId } = await params;
 
+    const limited = rateLimitResponse(shareViewLimiter, getClientIp(req));
+    if (limited) return limited;
+
     const db = await getDB();
 
     // Find project by shareId
-    const project = db.Project.findOne({ shareId }) as DBProject | null;
+    const project = await db.Project.findOne({ shareId }) as DBProject | null;
 
     if (!project) {
       return NextResponse.json({ error: 'Share not found' }, { status: 404 });
@@ -84,7 +88,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     }
 
     // Increment view count
-    db.Project.findOneAndUpdate(
+    await db.Project.findOneAndUpdate(
       { shareId },
       { $inc: { shareViewCount: 1 } }
     );

@@ -30,6 +30,12 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
+# local dev database
+.dev-db/
+
+# claude code
+.claude/
+
 # env files (can opt-in for committing if needed)
 .env*
 

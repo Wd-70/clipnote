@@ -31,9 +31,22 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const folderId = searchParams.get('folderId');
     const sort = searchParams.get('sort') || 'created-desc';
+    const search = searchParams.get('search')?.trim().toLowerCase();
 
     const db = await getDB();
-    let projects = db.Project.find({ userId: session.user.id }) as any[];
+    let projects = await db.Project.find({ userId: session.user.id }) as any[];
+
+    // Filter by search query (case-insensitive, matches title/videoUrl/notes)
+    if (search) {
+      projects = projects.filter((p: any) => {
+        const title = (p.title || '').toLowerCase();
+        const videoUrl = (p.videoUrl || '').toLowerCase();
+        const notes = Array.isArray(p.notes)
+          ? p.notes.map((n: any) => (typeof n === 'string' ? n : n.text || '')).join(' ').toLowerCase()
+          : typeof p.notes === 'string' ? p.notes.toLowerCase() : '';
+        return title.includes(search) || videoUrl.includes(search) || notes.includes(search);
+      });
+    }
 
     // Filter by folderId if specified
     if (folderId === 'root' || folderId === 'null' || folderId === '') {
@@ -172,7 +185,7 @@ export async function POST(req: NextRequest) {
       projectTitle = 'Untitled Project';
     }
     
-    const project = db.Project.create({
+    const project = await db.Project.create({
       userId: session.user.id,
       videoUrl,
       platform: videoInfo.platform,

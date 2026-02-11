@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { getDB } from '@/lib/db/adapter';
 import { analyzeVideoContent, calculatePointsRequired } from '@/lib/ai/gemini';
+import { analyzeLimiter, rateLimitResponse } from '@/lib/rate-limit';
 import type { VideoPlatform } from '@/types';
 
 // POST /api/analyze - Analyze video with AI
@@ -12,6 +13,9 @@ export async function POST(req: NextRequest) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const limited = rateLimitResponse(analyzeLimiter, session.user.id);
+    if (limited) return limited;
 
     const body = await req.json();
     const { videoId, platform, videoUrl, duration } = body as {
@@ -31,9 +35,9 @@ export async function POST(req: NextRequest) {
     const db = await getDB();
 
     // Step 1: Check cache first (100% profit margin)
-    const cachedAnalysis = db.AnalysisCache.findOne({
+    const cachedAnalysis = await db.AnalysisCache.findOne({
       videoId,
-      platform: platform as 'YOUTUBE' | 'CHZZK',
+      platform: platform as 'YOUTUBE' | 'CHZZK' | 'TWITCH',
     }) as { analysisResult: { summary: string; highlights: Array<{ start: number; end: number; reason: string; score: number }> } } | null;
 
     if (cachedAnalysis) {
@@ -48,7 +52,7 @@ export async function POST(req: NextRequest) {
     const pointsRequired = calculatePointsRequired(duration);
 
     // Step 3: Check user has sufficient points
-    const user = db.User.findById(session.user.id) as { points: number; _id?: string } | null;
+    const user = await db.User.findById(session.user.id) as { points: number; _id?: string } | null;
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -66,7 +70,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Step 4: Deduct points BEFORE AI call (prevent abuse)
-    db.User.updateOne(
+    await db.User.updateOne(
       { _id: session.user.id },
       { $inc: { points: -pointsRequired } }
     );
@@ -79,9 +83,9 @@ export async function POST(req: NextRequest) {
       );
 
       // Step 6: Cache the result for future requests
-      db.AnalysisCache.create({
+      await db.AnalysisCache.create({
         videoId,
-        platform: platform as 'YOUTUBE' | 'CHZZK',
+        platform: platform as 'YOUTUBE' | 'CHZZK' | 'TWITCH',
         duration,
         analysisResult,
       });
@@ -94,7 +98,7 @@ export async function POST(req: NextRequest) {
       });
     } catch (aiError) {
       // Refund points if AI fails
-      db.User.updateOne(
+      await db.User.updateOne(
         { _id: session.user.id },
         { $inc: { points: pointsRequired } }
       );

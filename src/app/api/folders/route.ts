@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
     const parentId = searchParams.get('parentId'); // null = root level
 
     const db = await getDB();
-    let folders = db.Folder.find({ userId: session.user.id }) as unknown as DBFolder[];
+    let folders = await db.Folder.find({ userId: session.user.id }) as unknown as DBFolder[];
 
     // Filter by parentId if specified
     if (parentId === 'root' || parentId === 'null' || parentId === '') {
@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
     // Calculate depth based on parent
     let depth = 0;
     if (parentId) {
-      const parentFolder = db.Folder.findById(parentId) as unknown as DBFolder | null;
+      const parentFolder = await db.Folder.findById(parentId) as unknown as DBFolder | null;
       if (!parentFolder) {
         return NextResponse.json(
           { error: 'Parent folder not found' },
@@ -121,7 +121,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Get the highest order number for siblings
-    let siblings = db.Folder.find({ userId: session.user.id }) as unknown as DBFolder[];
+    let siblings = await db.Folder.find({ userId: session.user.id }) as unknown as DBFolder[];
     if (parentId) {
       siblings = siblings.filter((f) => f.parentId === parentId);
     } else {
@@ -131,7 +131,7 @@ export async function POST(req: NextRequest) {
       ? Math.max(...siblings.map((f) => f.order || 0)) 
       : -1;
 
-    const folder = db.Folder.create({
+    const folder = await db.Folder.create({
       userId: session.user.id,
       name: name.trim(),
       parentId: parentId || null,

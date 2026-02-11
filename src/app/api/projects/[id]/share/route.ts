@@ -32,7 +32,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     const db = await getDB();
 
     // Get the project
-    const project = db.Project.findOne({
+    const project = await db.Project.findOne({
       _id: id,
       userId,
     }) as DBProject | null;
@@ -84,7 +84,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
     const db = await getDB();
 
     // Get the project
-    const project = db.Project.findOne({
+    const project = await db.Project.findOne({
       _id: id,
       userId,
     }) as DBProject | null;
@@ -99,14 +99,14 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
       shareId = generateShareId();
       // Ensure uniqueness
       let attempts = 0;
-      while (db.Project.findOne({ shareId }) && attempts < 10) {
+      while (await db.Project.findOne({ shareId }) && attempts < 10) {
         shareId = generateShareId();
         attempts++;
       }
     }
 
     // Update the project
-    const updatedProject = db.Project.findOneAndUpdate(
+    const updatedProject = await db.Project.findOneAndUpdate(
       { _id: id, userId },
       {
         isShared,
@@ -155,7 +155,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     const db = await getDB();
 
     // Get the project
-    const project = db.Project.findOne({
+    const project = await db.Project.findOne({
       _id: id,
       userId,
     }) as DBProject | null;
@@ -182,14 +182,14 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     if (!shareId) {
       shareId = generateShareId();
       let attempts = 0;
-      while (db.Project.findOne({ shareId }) && attempts < 10) {
+      while (await db.Project.findOne({ shareId }) && attempts < 10) {
         shareId = generateShareId();
         attempts++;
       }
     }
 
     // Enable share
-    const updatedProject = db.Project.findOneAndUpdate(
+    const updatedProject = await db.Project.findOneAndUpdate(
       { _id: id, userId },
       {
         isShared: true,
@@ -236,7 +236,7 @@ export async function DELETE(req: NextRequest, { params }: RouteParams) {
     const db = await getDB();
 
     // Disable share (keep shareId for potential re-enable)
-    const updatedProject = db.Project.findOneAndUpdate(
+    const updatedProject = await db.Project.findOneAndUpdate(
       { _id: id, userId },
       {
         isShared: false,

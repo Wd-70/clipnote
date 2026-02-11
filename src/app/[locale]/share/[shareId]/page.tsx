@@ -68,7 +68,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   try {
     const db = await getDB();
-    const project = db.Project.findOne({ shareId }) as DBProject | null;
+    const project = await db.Project.findOne({ shareId }) as DBProject | null;
 
     if (!project || !project.isShared) {
       return defaultMetadata;

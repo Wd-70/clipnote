@@ -8,8 +8,8 @@ export interface ISharedClip {
 
 export interface ISharedProject {
   shareId: string;
-  projectId: mongoose.Types.ObjectId;
-  userId: mongoose.Types.ObjectId;
+  projectId: string | mongoose.Types.ObjectId;
+  userId: string | mongoose.Types.ObjectId;
   title: string;
   videoUrl: string;
   platform: 'YOUTUBE' | 'CHZZK';
@@ -52,13 +52,11 @@ const SharedProjectSchema = new Schema<SharedProjectDocument>(
       index: true,
     },
     projectId: {
-      type: Schema.Types.ObjectId,
-      ref: 'Project',
+      type: String,
       required: true,
     },
     userId: {
-      type: Schema.Types.ObjectId,
-      ref: 'User',
+      type: String,
       required: true,
     },
     title: {
@@ -71,7 +69,7 @@ const SharedProjectSchema = new Schema<SharedProjectDocument>(
     },
     platform: {
       type: String,
-      enum: ['YOUTUBE', 'CHZZK'],
+      enum: ['YOUTUBE', 'CHZZK', 'TWITCH'],
       required: true,
     },
     videoId: {

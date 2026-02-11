@@ -10,9 +10,9 @@ interface RouteParams {
 export async function GET(req: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params;
-    
+
     let session = await auth();
-    
+
     if (process.env.NODE_ENV === 'development' && !session?.user?.id) {
       session = {
         user: {
@@ -29,18 +29,18 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     }
 
     const db = await getDB();
-    const folder = db.Folder.findById(id) as unknown as DBFolder | null;
+    const folder = await db.Folder.findById(id) as unknown as DBFolder | null;
 
     if (!folder || folder.userId !== session.user.id) {
       return NextResponse.json({ error: 'Folder not found' }, { status: 404 });
     }
 
     // Get children folders count
-    const allFolders = db.Folder.find({ userId: session.user.id }) as unknown as DBFolder[];
+    const allFolders = await db.Folder.find({ userId: session.user.id }) as unknown as DBFolder[];
     const childrenCount = allFolders.filter((f) => f.parentId === id).length;
 
     // Get projects count in this folder
-    const allProjects = db.Project.find({ userId: session.user.id }) as unknown as DBProject[];
+    const allProjects = await db.Project.find({ userId: session.user.id }) as unknown as DBProject[];
     const projectsCount = allProjects.filter((p) => p.folderId === id).length;
 
     return NextResponse.json({
@@ -63,9 +63,9 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
 export async function PATCH(req: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params;
-    
+
     let session = await auth();
-    
+
     if (process.env.NODE_ENV === 'development' && !session?.user?.id) {
       session = {
         user: {
@@ -82,7 +82,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
     }
 
     const db = await getDB();
-    const folder = db.Folder.findById(id) as unknown as DBFolder | null;
+    const folder = await db.Folder.findById(id) as unknown as DBFolder | null;
 
     if (!folder || folder.userId !== session.user.id) {
       return NextResponse.json({ error: 'Folder not found' }, { status: 404 });
@@ -127,7 +127,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
 
       // Validate new parent exists and belongs to user
       if (parentId) {
-        const newParent = db.Folder.findById(parentId) as unknown as DBFolder | null;
+        const newParent = await db.Folder.findById(parentId) as unknown as DBFolder | null;
         if (!newParent || newParent.userId !== session.user.id) {
           return NextResponse.json(
             { error: 'Parent folder not found' },
@@ -146,7 +146,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
 
         // Calculate new depth
         const newDepth = (newParent.depth || 0) + 1;
-        
+
         // Check max depth including children
         const maxChildDepth = await getMaxChildDepth(db, id, session.user.id);
         if (newDepth + maxChildDepth > 2) {
@@ -171,7 +171,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
       }
     }
 
-    const updatedFolder = db.Folder.findByIdAndUpdate(id, updateData);
+    const updatedFolder = await db.Folder.findByIdAndUpdate(id, updateData);
 
     return NextResponse.json({ data: updatedFolder });
   } catch (error) {
@@ -187,9 +187,9 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
 export async function DELETE(req: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params;
-    
+
     let session = await auth();
-    
+
     if (process.env.NODE_ENV === 'development' && !session?.user?.id) {
       session = {
         user: {
@@ -206,7 +206,7 @@ export async function DELETE(req: NextRequest, { params }: RouteParams) {
     }
 
     const db = await getDB();
-    const folder = db.Folder.findById(id) as unknown as DBFolder | null;
+    const folder = await db.Folder.findById(id) as unknown as DBFolder | null;
 
     if (!folder || folder.userId !== session.user.id) {
       return NextResponse.json({ error: 'Folder not found' }, { status: 404 });
@@ -218,28 +218,28 @@ export async function DELETE(req: NextRequest, { params }: RouteParams) {
 
     // Delete all projects in these folders
     for (const folderId of allFolderIds) {
-      const projects = db.Project.find({ userId: session.user.id }) as unknown as DBProject[];
+      const projects = await db.Project.find({ userId: session.user.id }) as unknown as DBProject[];
       const projectsInFolder = projects.filter((p) => p.folderId === folderId);
       for (const project of projectsInFolder) {
         if (project._id) {
-          db.Project.findByIdAndDelete(project._id);
+          await db.Project.findByIdAndDelete(project._id);
         }
       }
     }
 
     // Delete all descendant folders (children first, then parents)
     for (const folderId of descendantIds.reverse()) {
-      db.Folder.findByIdAndDelete(folderId);
+      await db.Folder.findByIdAndDelete(folderId);
     }
 
     // Delete the folder itself
-    db.Folder.findByIdAndDelete(id);
+    await db.Folder.findByIdAndDelete(id);
 
-    return NextResponse.json({ 
-      data: { 
+    return NextResponse.json({
+      data: {
         deleted: true,
         foldersDeleted: allFolderIds.length,
-      } 
+      }
     });
   } catch (error) {
     console.error('[API /api/folders/[id] DELETE]', error);
@@ -257,15 +257,15 @@ async function checkIsDescendant(
   targetId: string,
   userId: string
 ): Promise<boolean> {
-  const allFolders = db.Folder.find({ userId }) as unknown as DBFolder[];
-  
+  const allFolders = await db.Folder.find({ userId }) as unknown as DBFolder[];
+
   let currentId: string | null | undefined = targetId;
   while (currentId) {
     if (currentId === folderId) return true;
     const folder = allFolders.find((f) => f._id === currentId);
     currentId = folder?.parentId;
   }
-  
+
   return false;
 }
 
@@ -275,17 +275,17 @@ async function getMaxChildDepth(
   folderId: string,
   userId: string
 ): Promise<number> {
-  const allFolders = db.Folder.find({ userId }) as unknown as DBFolder[];
+  const allFolders = await db.Folder.find({ userId }) as unknown as DBFolder[];
   const folderDepth = allFolders.find((f) => f._id === folderId)?.depth || 0;
-  
+
   let maxDepth = 0;
   const descendants = getAllDescendantsSync(allFolders, folderId);
-  
+
   for (const desc of descendants) {
     const relativeDepth = (desc.depth || 0) - folderDepth;
     if (relativeDepth > maxDepth) maxDepth = relativeDepth;
   }
-  
+
   return maxDepth;
 }
 
@@ -293,13 +293,13 @@ async function getMaxChildDepth(
 function getAllDescendantsSync(allFolders: DBFolder[], folderId: string): DBFolder[] {
   const children = allFolders.filter((f) => f.parentId === folderId);
   const descendants: DBFolder[] = [...children];
-  
+
   for (const child of children) {
     if (child._id) {
       descendants.push(...getAllDescendantsSync(allFolders, child._id));
     }
   }
-  
+
   return descendants;
 }
 
@@ -309,7 +309,7 @@ async function getAllDescendantIds(
   folderId: string,
   userId: string
 ): Promise<string[]> {
-  const allFolders = db.Folder.find({ userId }) as unknown as DBFolder[];
+  const allFolders = await db.Folder.find({ userId }) as unknown as DBFolder[];
   const descendants = getAllDescendantsSync(allFolders, folderId);
   return descendants.map((d) => d._id).filter((id): id is string => !!id);
 }
@@ -321,7 +321,7 @@ async function updateDescendantDepths(
   newParentDepth: number,
   userId: string
 ): Promise<void> {
-  const allFolders = db.Folder.find({ userId }) as unknown as DBFolder[];
+  const allFolders = await db.Folder.find({ userId }) as unknown as DBFolder[];
   const folder = allFolders.find((f) => f._id === folderId);
   if (!folder) return;
 
@@ -329,10 +329,10 @@ async function updateDescendantDepths(
   const depthDiff = (newParentDepth + 1) - oldDepth;
 
   const descendants = getAllDescendantsSync(allFolders, folderId);
-  
+
   for (const desc of descendants) {
     if (desc._id) {
-      db.Folder.findByIdAndUpdate(desc._id, {
+      await db.Folder.findByIdAndUpdate(desc._id, {
         depth: (desc.depth || 0) + depthDiff,
       });
     }

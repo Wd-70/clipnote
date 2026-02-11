@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { getDB } from '@/lib/db/adapter';
+import { chargePointsLimiter, rateLimitResponse } from '@/lib/rate-limit';
 
 // Points pricing structure
 const POINTS_PACKAGES = {
@@ -20,6 +21,9 @@ export async function POST(req: NextRequest) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const limited = rateLimitResponse(chargePointsLimiter, session.user.id);
+    if (limited) return limited;
 
     const body = await req.json();
     const { paymentId, packageType, impUid } = body as {
@@ -50,7 +54,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Update user points
-    const updatedUser = db.User.findByIdAndUpdate(
+    const updatedUser = await db.User.findByIdAndUpdate(
       session.user.id,
       { $inc: { points: totalPoints } }
     ) as { points: number; _id?: string } | null;

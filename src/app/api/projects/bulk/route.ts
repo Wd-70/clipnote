@@ -7,7 +7,7 @@ import { getDB, DBProject, DBFolder } from '@/lib/db/adapter';
 export async function POST(req: NextRequest) {
   try {
     let session = await auth();
-    
+
     if (process.env.NODE_ENV === 'development' && !session?.user?.id) {
       session = {
         user: {
@@ -36,9 +36,9 @@ export async function POST(req: NextRequest) {
     const db = await getDB();
 
     // Validate all project IDs belong to user
-    const allProjects = db.Project.find({ userId: session.user.id }) as unknown as DBProject[];
+    const allProjects = await db.Project.find({ userId: session.user.id }) as unknown as DBProject[];
     const userProjectIds = new Set(allProjects.map((p) => p._id));
-    
+
     for (const id of projectIds) {
       if (!userProjectIds.has(id)) {
         return NextResponse.json(
@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
       case 'delete': {
         let deletedCount = 0;
         for (const id of projectIds) {
-          const result = db.Project.findByIdAndDelete(id);
+          const result = await db.Project.findByIdAndDelete(id);
           if (result) deletedCount++;
         }
         return NextResponse.json({
@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
       case 'move': {
         // Validate target folder (or null for root)
         if (folderId !== null && folderId !== undefined) {
-          const folder = db.Folder.findById(folderId) as unknown as DBFolder | null;
+          const folder = await db.Folder.findById(folderId) as unknown as DBFolder | null;
           if (!folder || folder.userId !== session.user.id) {
             return NextResponse.json(
               { error: 'Target folder not found' },
@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
         }
 
         // Get max order in target folder
-        const projectsInTarget = allProjects.filter((p) => 
+        const projectsInTarget = allProjects.filter((p) =>
           folderId ? p.folderId === folderId : !p.folderId
         );
         let maxOrder = projectsInTarget.length > 0
@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
         let movedCount = 0;
         for (const id of projectIds) {
           maxOrder++;
-          const result = db.Project.findByIdAndUpdate(id, {
+          const result = await db.Project.findByIdAndUpdate(id, {
             folderId: folderId || null,
             order: maxOrder,
           });

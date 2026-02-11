@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
     const db = await getDB();
 
     // Validate all folder IDs belong to user and have same parent
-    const allFolders = db.Folder.find({ userId: session.user.id }) as unknown as DBFolder[];
+    const allFolders = await db.Folder.find({ userId: session.user.id }) as unknown as DBFolder[];
     const userFolderIds = new Set(allFolders.map((f) => f._id));
     
     for (const id of folderIds) {
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
     // Update order for each folder
     let order = 0;
     for (const id of folderIds) {
-      db.Folder.findByIdAndUpdate(id, { order });
+      await db.Folder.findByIdAndUpdate(id, { order });
       order++;
     }
 

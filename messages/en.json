@@ -147,6 +147,9 @@
     "deleteFailed": "Failed to delete items",
     "cancel": "Cancel Selection"
   },
+  "search": {
+    "placeholder": "Search projects..."
+  },
   "sort": {
     "label": "Sort",
     "nameAsc": "Name (A-Z)",
@@ -309,7 +312,10 @@
     "fullscreen": "Fullscreen",
     "sharedBy": "Shared by",
     "clipNotFound": "Clip not found",
-    "clipNotFoundDesc": "The shared link you requested does not exist or has been deleted."
+    "clipNotFoundDesc": "The shared link you requested does not exist or has been deleted.",
+    "createOwnClip": "Create your own clips",
+    "createOwnClipHint": "Make clips from any video for free with ClipNote",
+    "poweredBy": "Powered by ClipNote"
   },
   "export": {
     "title": "Export Clips",

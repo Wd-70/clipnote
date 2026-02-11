@@ -147,6 +147,9 @@
     "deleteFailed": "删除失败",
     "cancel": "取消选择"
   },
+  "search": {
+    "placeholder": "搜索项目..."
+  },
   "sort": {
     "label": "排序",
     "nameAsc": "名称（升序）",
@@ -309,7 +312,10 @@
     "fullscreen": "全屏",
     "sharedBy": "分享者",
     "clipNotFound": "未找到片段",
-    "clipNotFoundDesc": "您请求的分享链接不存在或已被删除。"
+    "clipNotFoundDesc": "您请求的分享链接不存在或已被删除。",
+    "createOwnClip": "我也要创建片段",
+    "createOwnClipHint": "使用ClipNote免费从任意视频创建片段",
+    "poweredBy": "Powered by ClipNote"
   },
   "export": {
     "title": "导出片段",

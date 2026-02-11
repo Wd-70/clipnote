@@ -40,7 +40,7 @@ export interface IFolder {
 // Project types
 export interface IProject {
   _id?: string | Types.ObjectId;
-  userId: Types.ObjectId;
+  userId: string | Types.ObjectId;
   folderId?: string | null; // null = uncategorized (root level)
   videoUrl: string;
   platform: 'YOUTUBE' | 'CHZZK' | 'TWITCH';

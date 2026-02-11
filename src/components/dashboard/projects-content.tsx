@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Plus, FolderOpen } from 'lucide-react';
@@ -71,6 +71,24 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
   // Projects state
   const [projects, setProjects] = useState<IProject[]>(initialProjects);
   const [isLoadingProjects, setIsLoadingProjects] = useState(initialProjects.length === 0);
+
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const handleSearchChange = useCallback((query: string) => {
+    setSearchQuery(query);
+    clearTimeout(searchTimerRef.current);
+    searchTimerRef.current = setTimeout(() => {
+      setDebouncedSearch(query);
+    }, 300);
+  }, []);
+
+  // Cleanup debounce timer
+  useEffect(() => {
+    return () => clearTimeout(searchTimerRef.current);
+  }, []);
 
   // Project count per folder (fetched independently from displayed projects)
   const [projectCountMap, setProjectCountMap] = useState<Map<string | null, number>>(new Map());
@@ -232,6 +250,9 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
         params.set('folderId', navigation.currentFolderId);
       }
       params.set('sort', navigation.sortOption);
+      if (debouncedSearch) {
+        params.set('search', debouncedSearch);
+      }
 
       const response = await fetch(`/api/projects?${params.toString()}`);
       if (response.ok) {
@@ -243,7 +264,7 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
     } finally {
       setIsLoadingProjects(false);
     }
-  }, [navigation.currentFolderId, navigation.sortOption]);
+  }, [navigation.currentFolderId, navigation.sortOption, debouncedSearch]);
 
   // Refetch both projects and counts (for project creation/deletion/move)
   const refreshProjects = useCallback(async () => {
@@ -536,6 +557,8 @@ export function ProjectsContent({ initialProjects = [] }: ProjectsContentProps) 
           onViewModeChange={navigation.setViewMode}
           isSelectionMode={bulkSelection.isSelectionMode}
           onToggleSelectionMode={bulkSelection.toggleSelectionMode}
+          searchQuery={searchQuery}
+          onSearchChange={handleSearchChange}
         />
 
         {/* Projects Grid/List with DnD */}

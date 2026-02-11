@@ -20,7 +20,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     }
 
     const db = await getDB();
-    const project = db.Project.findOne({
+    const project = await db.Project.findOne({
       _id: id,
       userId,
     });
@@ -60,7 +60,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
     if (notes !== undefined) updateData.notes = notes;
     if (title !== undefined) updateData.title = title;
 
-    const project = db.Project.findOneAndUpdate(
+    const project = await db.Project.findOneAndUpdate(
       { _id: id, userId },
       updateData
     );
@@ -93,7 +93,7 @@ export async function DELETE(req: NextRequest, { params }: RouteParams) {
     }
 
     const db = await getDB();
-    const project = db.Project.findOneAndDelete({
+    const project = await db.Project.findOneAndDelete({
       _id: id,
       userId,
     });

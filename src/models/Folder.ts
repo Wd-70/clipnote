@@ -8,8 +8,7 @@ export interface FolderDocument extends IFolder, Document {
 const FolderSchema = new Schema<FolderDocument>(
   {
     userId: {
-      type: Schema.Types.ObjectId,
-      ref: 'User',
+      type: String,
       required: true,
       index: true,
     },
@@ -19,8 +18,7 @@ const FolderSchema = new Schema<FolderDocument>(
       maxlength: 100,
     },
     parentId: {
-      type: Schema.Types.ObjectId,
-      ref: 'Folder',
+      type: String,
       default: null,
       index: true,
     },

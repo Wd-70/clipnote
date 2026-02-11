@@ -692,6 +692,26 @@ export default function SharePageClient() {
             </div>
           </motion.div>
 
+          {/* Inline CTA Banner */}
+          <motion.div variants={item}>
+            <div className="flex items-center justify-between gap-4 rounded-xl border border-primary/20 bg-primary/5 px-5 py-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="bg-primary text-primary-foreground p-1.5 rounded-md shrink-0">
+                  <Scissors size={16} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate">{t('createOwnClip')}</p>
+                  <p className="text-xs text-muted-foreground truncate">{t('createOwnClipHint')}</p>
+                </div>
+              </div>
+              <Button size="sm" className="rounded-full shrink-0" asChild>
+                <Link href="/">
+                  {tLanding('getStartedFree')} <ChevronRight className="w-4 h-4 ml-1" />
+                </Link>
+              </Button>
+            </div>
+          </motion.div>
+
           {/* Clips Grid */}
           <motion.div variants={item}>
             <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
@@ -758,8 +778,14 @@ export default function SharePageClient() {
         </motion.div>
       </main>
 
-      {/* Minimal Footer */}
+      {/* Footer */}
       <footer className="border-t border-border/40 py-8 text-center text-sm text-muted-foreground">
+        <Link href="/" className="inline-flex items-center gap-1.5 font-medium text-foreground/60 hover:text-foreground transition-colors mb-2">
+          <div className="bg-primary text-primary-foreground p-1 rounded">
+            <Scissors size={12} />
+          </div>
+          {t('poweredBy')}
+        </Link>
         <p>{tLanding('copyright')}</p>
       </footer>
     </div>

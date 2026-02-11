@@ -236,6 +236,9 @@ interface JsonProject {
   }>;
   isAutoCollected: boolean;
   order?: number; // for manual sorting within folder
+  shareId?: string;
+  isShared?: boolean;
+  shareViewCount?: number;
   createdAt?: string;
   updatedAt?: string;
 }

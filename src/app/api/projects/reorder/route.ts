@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
     const db = await getDB();
 
     // Validate all project IDs belong to user
-    const allProjects = db.Project.find({ userId: session.user.id }) as unknown as DBProject[];
+    const allProjects = await db.Project.find({ userId: session.user.id }) as unknown as DBProject[];
     const userProjectIds = new Set(allProjects.map((p) => p._id));
     
     for (const id of projectIds) {
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
     // Update order for each project
     let order = 0;
     for (const id of projectIds) {
-      db.Project.findByIdAndUpdate(id, { order });
+      await db.Project.findByIdAndUpdate(id, { order });
       order++;
     }
 

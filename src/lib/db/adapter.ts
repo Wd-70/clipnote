@@ -1,16 +1,17 @@
 /**
- * Database Adapter - Switches between MongoDB and JSON-DB based on environment
- * 
- * In development: Uses JSON files (.dev-db/)
- * In production: Uses MongoDB
+ * Database Adapter - Switches between MongoDB and JSON-DB
+ *
+ * MONGODB_URI present → MongoDB (Mongoose)
+ * MONGODB_URI absent  → JSON-DB (local files)
+ *
+ * NODE_ENV is irrelevant for switching.
  */
 
 import { JsonDB } from './json-db';
 
-// Check if MongoDB is available
-const USE_MONGODB = process.env.MONGODB_URI && process.env.NODE_ENV === 'production';
+const USE_MONGODB = !!process.env.MONGODB_URI;
 
-// Common interface for database operations
+// Common interface types for DB records
 export interface DBUser {
   _id?: string;
   email: string;
@@ -101,41 +102,67 @@ export interface DBSharedProject {
   expiresAt?: Date | string;
 }
 
-// Export appropriate database based on environment
-export const db = USE_MONGODB 
-  ? (async () => {
+// The shape returned by getDB()
+export interface DB {
+  User: any;
+  Project: any;
+  Folder: any;
+  AnalysisCache: any;
+  SharedProject: any;
+}
+
+// Cached promise so Mongoose models are only loaded once
+let _dbPromise: Promise<DB> | null = null;
+
+function getDBPromise(): Promise<DB> {
+  if (_dbPromise) return _dbPromise;
+
+  if (USE_MONGODB) {
+    _dbPromise = (async () => {
       const connectMongo = (await import('./mongodb')).default;
-      await connectMongo();
+      const conn = await connectMongo();
+      console.log(`[DB Adapter] MongoDB connected: ${conn.host}/${conn.name}`);
       const { User } = await import('@/models/User');
       const { Project } = await import('@/models/Project');
       const { Folder } = await import('@/models/Folder');
       const { AnalysisCache } = await import('@/models/AnalysisCache');
       const { SharedProject } = await import('@/models/SharedProject');
       return { User, Project, Folder, AnalysisCache, SharedProject };
-    })()
-  : Promise.resolve({
+    })();
+  } else {
+    _dbPromise = Promise.resolve({
       User: JsonDB.User,
       Project: JsonDB.Project,
       Folder: JsonDB.Folder,
       AnalysisCache: JsonDB.AnalysisCache,
       SharedProject: JsonDB.SharedProject,
     });
+  }
 
-// Helper function to get database instance
-export async function getDB() {
-  return db;
+  return _dbPromise;
 }
 
-// Connection helper (no-op for JSON-DB)
+/**
+ * Get database instance.
+ * Always returns a Promise so callers use `const db = await getDB()`.
+ * Both Mongoose models and JsonDB collections expose the same method names
+ * (find, findOne, findById, create, findByIdAndUpdate, findOneAndUpdate, etc.)
+ */
+export async function getDB(): Promise<DB> {
+  return getDBPromise();
+}
+
+/**
+ * Ensure DB connection is established (no-op for JSON-DB).
+ */
 export async function connectDB() {
   if (USE_MONGODB) {
     const connectMongo = (await import('./mongodb')).default;
     await connectMongo();
   }
-  // JSON-DB doesn't need connection
 }
 
-// Log which database is being used
-if (process.env.NODE_ENV === 'development') {
+// Log which database is being used (once at startup)
+if (typeof process !== 'undefined') {
   console.log(`[DB Adapter] Using ${USE_MONGODB ? 'MongoDB' : 'JSON-DB (local files)'}`);
 }

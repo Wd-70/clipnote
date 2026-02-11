@@ -1,9 +1,11 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { LayoutGrid, List, SortAsc, Plus, CheckSquare } from 'lucide-react';
+import { useState } from 'react';
+import { LayoutGrid, List, SortAsc, Plus, CheckSquare, Search, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -33,6 +35,10 @@ interface ProjectsToolbarProps {
   // Create button
   onCreateProject?: () => void;
 
+  // Search
+  searchQuery?: string;
+  onSearchChange?: (query: string) => void;
+
   // Styling
   className?: string;
 }
@@ -45,12 +51,16 @@ export function ProjectsToolbar({
   isSelectionMode = false,
   onToggleSelectionMode,
   onCreateProject,
+  searchQuery = '',
+  onSearchChange,
   className,
 }: ProjectsToolbarProps) {
   const t = useTranslations('sort');
   const tCommon = useTranslations('common');
   const tView = useTranslations('view');
   const tProjects = useTranslations('projects');
+  const tSearch = useTranslations('search');
+  const [searchOpen, setSearchOpen] = useState(searchQuery.length > 0);
 
   const sortOptions: { value: SortOption; label: string }[] = [
     { value: 'created-desc', label: t('createdDesc') },
@@ -84,8 +94,44 @@ export function ProjectsToolbar({
         </Select>
       </div>
 
-      {/* Right side: View toggle, Selection, Create */}
+      {/* Right side: Search, View toggle, Selection, Create */}
       <div className="flex items-center gap-2">
+        {/* Search */}
+        {onSearchChange && (
+          searchOpen ? (
+            <div className="relative flex items-center">
+              <Search className="absolute left-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => onSearchChange(e.target.value)}
+                placeholder={tSearch('placeholder')}
+                className="h-9 w-[180px] pl-8 pr-8 text-sm"
+                autoFocus
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute right-0 h-9 w-9"
+                onClick={() => {
+                  onSearchChange('');
+                  setSearchOpen(false);
+                }}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ) : (
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-9 w-9"
+              onClick={() => setSearchOpen(true)}
+            >
+              <Search className="h-4 w-4" />
+            </Button>
+          )
+        )}
+
         {/* View Mode Toggle */}
         <ToggleGroup
           type="single"

@@ -30,14 +30,12 @@ const NoteSchema = new Schema<INote>(
 const ProjectSchema = new Schema<ProjectDocument>(
   {
     userId: {
-      type: Schema.Types.ObjectId,
-      ref: 'User',
+      type: String,
       required: true,
       index: true,
     },
     folderId: {
-      type: Schema.Types.ObjectId,
-      ref: 'Folder',
+      type: String,
       default: null,
       index: true,
     },
@@ -62,14 +60,26 @@ const ProjectSchema = new Schema<ProjectDocument>(
     thumbnailUrl: String,
     duration: Number,
     notes: {
-      type: [NoteSchema],
-      default: [],
+      type: Schema.Types.Mixed,
+      default: '',
     },
     isAutoCollected: {
       type: Boolean,
       default: false,
     },
     order: {
+      type: Number,
+      default: 0,
+    },
+    shareId: {
+      type: String,
+      default: null,
+    },
+    isShared: {
+      type: Boolean,
+      default: false,
+    },
+    shareViewCount: {
       type: Number,
       default: 0,
     },
@@ -83,6 +93,7 @@ const ProjectSchema = new Schema<ProjectDocument>(
 ProjectSchema.index({ userId: 1, createdAt: -1 });
 ProjectSchema.index({ userId: 1, folderId: 1, order: 1 });
 ProjectSchema.index({ videoId: 1, platform: 1 });
+ProjectSchema.index({ shareId: 1 }, { unique: true, sparse: true });
 
 export const Project: Model<ProjectDocument> =
   mongoose.models.Project || mongoose.model<ProjectDocument>('Project', ProjectSchema);

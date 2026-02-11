@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
 import { auth, getDevSession } from '@/auth';
-import { JsonDB } from '@/lib/db/json-db';
+import { getDB } from '@/lib/db/adapter';
 
 // Check if mock auth is enabled (same logic as auth.ts)
 const hasGoogleAuth = !!(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET);
@@ -34,41 +32,33 @@ async function getSession(): Promise<{ user: SessionUser } | null> {
 /**
  * Find or create user based on session
  */
-function findOrCreateUser(sessionUser: SessionUser) {
-  // Try to find by ID first
-  let user = JsonDB.User.findById(sessionUser.id);
+async function findOrCreateUser(sessionUser: SessionUser) {
+  const db = await getDB();
+
+  // Try to find by ID first (may fail with CastError if ID is not a valid ObjectId)
+  let user = null;
+  try {
+    user = await db.User.findById(sessionUser.id);
+  } catch {
+    // ID format not compatible with MongoDB ObjectId — skip to email lookup
+  }
 
   // Fallback: find by email
   if (!user && sessionUser.email) {
-    user = JsonDB.User.findOne({ email: sessionUser.email });
+    user = await db.User.findOne({ email: sessionUser.email });
   }
 
   // Auto-create user if not found (they are authenticated via OAuth)
   if (!user && sessionUser.email) {
     console.log('[API /user/me] Creating new user:', sessionUser.email);
-
-    // Create user with specific ID to match session
-    const usersFile = path.join(process.cwd(), '.dev-db', 'users.json');
-    const items = fs.existsSync(usersFile)
-      ? JSON.parse(fs.readFileSync(usersFile, 'utf-8'))
-      : [];
-
-    const newUser = {
-      _id: sessionUser.id,
+    user = await db.User.create({
       email: sessionUser.email,
       name: sessionUser.name || '',
       image: sessionUser.image || '',
       points: 0,
-      role: 'FREE' as const,
+      role: 'FREE',
       savedChannels: [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    items.push(newUser);
-    fs.writeFileSync(usersFile, JSON.stringify(items, null, 2));
-
-    return newUser;
+    });
   }
 
   return user;
@@ -88,7 +78,7 @@ export async function GET() {
       );
     }
 
-    const user = findOrCreateUser(session.user);
+    const user = await findOrCreateUser(session.user);
 
     if (!user) {
       return NextResponse.json(
@@ -133,7 +123,7 @@ export async function PATCH(request: Request) {
     const body = await request.json();
     const { name, image } = body;
 
-    const user = findOrCreateUser(session.user);
+    const user = await findOrCreateUser(session.user);
 
     if (!user) {
       return NextResponse.json(
@@ -142,8 +132,10 @@ export async function PATCH(request: Request) {
       );
     }
 
+    const db = await getDB();
+
     // Update user
-    const updatedUser = JsonDB.User.findByIdAndUpdate(user._id!, {
+    const updatedUser = await db.User.findByIdAndUpdate(user._id!, {
       ...(name !== undefined && { name }),
       ...(image !== undefined && { image }),
     });
