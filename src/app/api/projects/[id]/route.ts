@@ -62,7 +62,8 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
 
     const project = await db.Project.findOneAndUpdate(
       { _id: id, userId },
-      updateData
+      updateData,
+      { new: true }
     );
 
     if (!project) {

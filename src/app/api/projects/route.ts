@@ -185,6 +185,22 @@ export async function POST(req: NextRequest) {
       projectTitle = 'Untitled Project';
     }
     
+    // Generate a share ID for the new project (public by default)
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let shareId = '';
+    for (let i = 0; i < 10; i++) {
+      shareId += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    // Ensure uniqueness
+    let attempts = 0;
+    while (await db.Project.findOne({ shareId }) && attempts < 10) {
+      shareId = '';
+      for (let i = 0; i < 10; i++) {
+        shareId += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      attempts++;
+    }
+
     const project = await db.Project.create({
       userId: session.user.id,
       videoUrl,
@@ -196,6 +212,8 @@ export async function POST(req: NextRequest) {
       notes: [],
       isAutoCollected: false,
       folderId: folderId || undefined,
+      isShared: true,
+      shareId,
     });
 
     console.log('[API POST /api/projects] Project created successfully');

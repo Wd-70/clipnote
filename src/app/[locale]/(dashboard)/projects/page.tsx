@@ -4,6 +4,8 @@ import { ProjectsContent } from "@/components/dashboard/projects-content";
 import { Skeleton } from "@/components/ui/skeleton";
 import { IProject } from "@/types";
 
+export const dynamic = 'force-dynamic';
+
 async function getInitialProjects(): Promise<IProject[]> {
   try {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 

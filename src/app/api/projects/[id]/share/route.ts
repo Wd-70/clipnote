@@ -112,7 +112,8 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
         isShared,
         shareId,
         updatedAt: new Date().toISOString(),
-      }
+      },
+      { new: true }
     ) as DBProject | null;
 
     if (!updatedProject) {
@@ -195,7 +196,8 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
         isShared: true,
         shareId,
         updatedAt: new Date().toISOString(),
-      }
+      },
+      { new: true }
     ) as DBProject | null;
 
     if (!updatedProject) {
@@ -241,7 +243,8 @@ export async function DELETE(req: NextRequest, { params }: RouteParams) {
       {
         isShared: false,
         updatedAt: new Date().toISOString(),
-      }
+      },
+      { new: true }
     ) as DBProject | null;
 
     if (!updatedProject) {

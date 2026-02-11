@@ -56,7 +56,8 @@ export async function POST(req: NextRequest) {
     // Update user points
     const updatedUser = await db.User.findByIdAndUpdate(
       session.user.id,
-      { $inc: { points: totalPoints } }
+      { $inc: { points: totalPoints } },
+      { new: true }
     ) as { points: number; _id?: string } | null;
 
     if (!updatedUser) {
