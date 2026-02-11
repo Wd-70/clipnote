@@ -65,7 +65,7 @@ export function ShareDialog({
   const shareUrl = shareData?.shareId ? `${baseUrl}/share/${shareData.shareId}` : '';
   const embedUrl = shareData?.shareId ? `${baseUrl}/embed/${shareData.shareId}` : '';
   const embedCode = shareData?.shareId
-    ? `<iframe src="${embedUrl}" width="100%" height="500" frameborder="0" allow="autoplay; fullscreen"></iframe>`
+    ? `<iframe src="${embedUrl}" width="640" height="480" frameborder="0" allow="autoplay; fullscreen" allowfullscreen style="max-width:100%;aspect-ratio:640/480"></iframe>`
     : '';
 
   // Fetch existing share data
