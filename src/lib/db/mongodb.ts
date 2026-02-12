@@ -1,4 +1,5 @@
-import mongoose, { Connection } from 'mongoose';
+import mongoose from 'mongoose';
+import { Connection } from 'mongoose';
 
 interface MongooseCache {
   conn: Connection | null;
