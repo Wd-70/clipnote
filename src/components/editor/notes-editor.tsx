@@ -185,12 +185,26 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
     };
   }, [notes, activeLineIndex]);
 
-  // Determine selected timestamp based on cursor position within the line
-  const selectedTimestamp = useMemo((): 'start' | 'end' | null => {
-    if (!activeLineClip) return null;
-    if (!activeLineClip.endTimeStr) return 'start';
-    // If cursor is before the end timestamp start, select 'start'; otherwise 'end'
-    return cursorInLine < activeLineClip.endCharStart ? 'start' : 'end';
+  // Selected timestamp — only updates when cursor is actually within a timestamp range
+  const [selectedTimestamp, setSelectedTimestamp] = useState<'start' | 'end'>('start');
+
+  useEffect(() => {
+    if (!activeLineClip) return;
+    // Cursor within start timestamp
+    if (cursorInLine >= activeLineClip.startCharStart && cursorInLine <= activeLineClip.startCharEnd) {
+      setSelectedTimestamp('start');
+      return;
+    }
+    // Cursor within end timestamp
+    if (activeLineClip.endTimeStr && cursorInLine >= activeLineClip.endCharStart && cursorInLine <= activeLineClip.endCharEnd) {
+      setSelectedTimestamp('end');
+      return;
+    }
+    // No end timestamp → always start
+    if (!activeLineClip.endTimeStr) {
+      setSelectedTimestamp('start');
+    }
+    // Otherwise: keep previous selection (cursor in separator/description)
   }, [activeLineClip, cursorInLine]);
 
   // Save draft to localStorage immediately
@@ -533,7 +547,8 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
 
   // Compute overlay positions (px) for the selected timestamp
   const overlayPositions = useMemo(() => {
-    if (!activeLineClip || !selectedTimestamp) return null;
+    if (!activeLineClip) return null;
+    if (selectedTimestamp === 'end' && !activeLineClip.endTimeStr) return null;
 
     const cw = charWidthRef.current;
     const pl = paddingLeftRef.current;
@@ -681,7 +696,12 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
             {/* Selected timestamp highlight — positioned at actual text */}
             {overlayPositions && (
               <div
-                className="absolute pointer-events-none z-[2] rounded-sm bg-primary/15 transition-all duration-100"
+                className={cn(
+                  "absolute pointer-events-none z-[2] rounded-sm transition-all duration-100",
+                  modifierKeys.ctrl
+                    ? "bg-primary/25 ring-1 ring-primary/40"
+                    : "bg-primary/10"
+                )}
                 style={{
                   top: overlayPositions.topY,
                   left: overlayPositions.selLeft,
@@ -691,40 +711,44 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
               />
             )}
 
-            {/* Ctrl-held nudge chevrons — positioned at selected timestamp edges */}
-            {overlayPositions && modifierKeys.ctrl && selectedTimestamp && (
+            {/* Ctrl-held nudge UI — chevrons with backgrounds + floating step badge */}
+            {overlayPositions && modifierKeys.ctrl && (
               <>
                 <div
-                  className="absolute pointer-events-none z-[2] flex items-center transition-all duration-100"
+                  className="absolute pointer-events-none z-[3] flex items-center transition-all duration-150"
                   style={{
                     top: overlayPositions.topY,
-                    left: overlayPositions.chevronLeftX,
+                    left: overlayPositions.chevronLeftX - 1,
                     height: overlayPositions.lineHeight,
                   }}
                 >
-                  <ChevronLeft className="h-3.5 w-3.5 text-primary/70 animate-pulse" />
+                  <div className="flex items-center justify-center w-4 h-4 rounded-full bg-primary/20 backdrop-blur-sm shadow-sm">
+                    <ChevronLeft className="h-3 w-3 text-primary" />
+                  </div>
                 </div>
                 <div
-                  className="absolute pointer-events-none z-[2] flex items-center transition-all duration-100"
+                  className="absolute pointer-events-none z-[3] flex items-center transition-all duration-150"
                   style={{
                     top: overlayPositions.topY,
                     left: overlayPositions.chevronRightX,
                     height: overlayPositions.lineHeight,
                   }}
                 >
-                  <ChevronRight className="h-3.5 w-3.5 text-primary/70 animate-pulse" />
+                  <div className="flex items-center justify-center w-4 h-4 rounded-full bg-primary/20 backdrop-blur-sm shadow-sm">
+                    <ChevronRight className="h-3 w-3 text-primary" />
+                  </div>
                 </div>
-                {/* Step size hint — above the selected timestamp */}
+                {/* Step size badge — floats above the selected timestamp */}
                 <div
-                  className="absolute pointer-events-none z-[2] flex items-end justify-center transition-all duration-100"
+                  className="absolute pointer-events-none z-[3] flex items-end justify-center transition-all duration-150"
                   style={{
-                    top: overlayPositions.topY - 14,
+                    top: overlayPositions.topY - 20,
                     left: overlayPositions.selLeft,
                     width: overlayPositions.selWidth,
-                    height: 14,
+                    height: 20,
                   }}
                 >
-                  <span className="text-primary/60 text-[9px] font-semibold leading-none select-none">
+                  <span className="bg-primary text-primary-foreground text-[10px] font-semibold leading-none px-1.5 py-[3px] rounded-full shadow-sm select-none">
                     {modifierKeys.shift ? '±0.1s' : '±1s'}
                   </span>
                 </div>
