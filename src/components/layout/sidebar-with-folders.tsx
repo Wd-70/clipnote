@@ -11,6 +11,7 @@ import {
   User as UserIcon,
   ArrowLeft,
   ChevronRight,
+  Scissors,
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -149,10 +150,10 @@ export function SidebarWithFolders({ className }: SidebarWithFoldersProps) {
         {/* Top Section: Logo and Navigation */}
         <div className="px-3 py-2">
           <Link href="/" className="flex items-center pl-2 mb-10 gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center text-white font-bold text-lg shadow-md">
-              C
+            <div className="bg-primary text-primary-foreground p-1.5 rounded-md">
+              <Scissors size={18} />
             </div>
-            <h2 className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">
+            <h2 className="text-xl font-bold tracking-tight">
               ClipNote
             </h2>
           </Link>

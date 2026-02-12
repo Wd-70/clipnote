@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Github, Twitter, Youtube } from 'lucide-react';
+import { Github, Twitter, Youtube, Scissors } from 'lucide-react';
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
@@ -11,8 +11,8 @@ export function Footer() {
           {/* Brand Column */}
           <div className="md:col-span-1 flex flex-col gap-4">
             <Link href="/" className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-md bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center text-white font-bold text-xs">
-                C
+              <div className="bg-primary text-primary-foreground p-1 rounded-md">
+                <Scissors size={14} />
               </div>
               <span className="font-bold text-lg">ClipNote</span>
             </Link>
