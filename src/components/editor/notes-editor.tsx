@@ -33,6 +33,7 @@ interface NotesEditorProps {
   onSave?: (notes: string) => Promise<void>;
   onClipClick?: (clip: ParsedClip, index: number) => void;
   onPlayClip?: (startTime: number, endTime?: number) => void;
+  onTogglePlay?: () => void;
   currentClipIndex?: number;
   currentTime?: number;
   videoDuration?: number;
@@ -55,6 +56,7 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
   onSave,
   onClipClick,
   onPlayClip,
+  onTogglePlay,
   currentClipIndex = -1,
   currentTime = 0,
   videoDuration,
@@ -70,6 +72,7 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
   const [cursorInLine, setCursorInLine] = useState(0);
   const [textareaScrollTop, setTextareaScrollTop] = useState(0);
   const [modifierKeys, setModifierKeys] = useState({ ctrl: false, shift: false });
+  const [textareaFocused, setTextareaFocused] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const lineHeightRef = useRef(20);
   const charWidthRef = useRef(7.8);
@@ -526,6 +529,9 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
         } else if (e.key === 'Enter') {
           e.preventDefault();
           playCurrentClip();
+        } else if (e.key === ' ') {
+          e.preventDefault();
+          onTogglePlay?.();
         } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
           const target = selectedTimestamp;
           if (target && activeLineClip) {
@@ -542,7 +548,7 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
         }
       }
     },
-    [onSetStartTime, onSetEndTime, playCurrentClip, selectedTimestamp, activeLineClip, nudgeTimestamp]
+    [onSetStartTime, onSetEndTime, playCurrentClip, onTogglePlay, selectedTimestamp, activeLineClip, nudgeTimestamp]
   );
 
   // Compute overlay positions (px) for the selected timestamp
@@ -704,7 +710,7 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
               <div
                 className={cn(
                   "absolute pointer-events-none z-[2] rounded-sm transition-all duration-100",
-                  modifierKeys.ctrl
+                  textareaFocused && modifierKeys.ctrl
                     ? "bg-primary/25 ring-1 ring-primary/40"
                     : "bg-primary/10"
                 )}
@@ -717,8 +723,8 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
               />
             )}
 
-            {/* Ctrl-held nudge UI — chevrons with backgrounds + floating step badge */}
-            {overlayPositions && modifierKeys.ctrl && (
+            {/* Ctrl-held nudge UI — only when textarea focused */}
+            {overlayPositions && textareaFocused && modifierKeys.ctrl && (
               <>
                 <div
                   className="absolute pointer-events-none z-[3] flex items-center transition-all duration-150"
@@ -772,7 +778,12 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
                 }}
               >
                 <button
-                  className="pointer-events-auto p-0.5 rounded text-muted-foreground/30 hover:text-primary hover:bg-primary/10 transition-colors"
+                  className={cn(
+                    "pointer-events-auto p-0.5 rounded transition-colors flex items-center gap-0.5",
+                    textareaFocused && modifierKeys.ctrl
+                      ? "text-primary bg-primary/10"
+                      : "text-muted-foreground/30 hover:text-primary hover:bg-primary/10"
+                  )}
                   onClick={(e) => {
                     e.stopPropagation();
                     playCurrentClip();
@@ -781,6 +792,9 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
                   title="클립 재생 (Ctrl+Enter)"
                 >
                   <Play className="h-3 w-3 fill-current" />
+                  {textareaFocused && modifierKeys.ctrl && (
+                    <kbd className="text-[9px] font-mono leading-none opacity-70">⏎</kbd>
+                  )}
                 </button>
               </div>
             )}
@@ -790,6 +804,8 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
               value={notes}
               onChange={handleNotesChange}
               onKeyDown={handleKeyDown}
+              onFocus={() => setTextareaFocused(true)}
+              onBlur={() => setTextareaFocused(false)}
               onSelect={updateCursorPosition}
               onClick={updateCursorPosition}
               onScroll={(e) => setTextareaScrollTop(e.currentTarget.scrollTop)}
@@ -805,6 +821,7 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
 
 Tip: 각 줄에 타임스탬프를 작성하면 자동으로 클립이 생성됩니다.
 단축키: Ctrl+[ 시작, Ctrl+] 종료, Ctrl+Enter 재생
+        Ctrl+Space 재생/일시정지
         Ctrl+←/→ ±1초, Ctrl+Shift+←/→ ±0.1초`}
               className="flex-1 min-h-0 resize-none font-mono text-sm overflow-auto bg-transparent relative z-[1]"
             />

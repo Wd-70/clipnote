@@ -215,6 +215,15 @@ export default function EditorPage() {
     playerRef.current?.play();
   }, []);
 
+  // Toggle play/pause from notes editor (Ctrl+Space)
+  const handleTogglePlay = useCallback(() => {
+    if (isPlaying) {
+      playerRef.current?.pause();
+    } else {
+      playerRef.current?.play();
+    }
+  }, [isPlaying]);
+
   // Handle save
   const handleSave = useCallback(async (notesText: string) => {
     setIsSaving(true);
@@ -483,6 +492,7 @@ export default function EditorPage() {
                   onSave={handleSave}
                   onClipClick={handleClipClick}
                   onPlayClip={handlePlayClip}
+                  onTogglePlay={handleTogglePlay}
                   currentClipIndex={currentClipIndex}
                   currentTime={currentTime}
                   videoDuration={duration}
