@@ -147,7 +147,7 @@ export default function LandingPage() {
               </motion.p>
 
               <motion.div variants={item} className="flex flex-col sm:flex-row gap-4 mt-8 w-full sm:w-auto">
-                <Button size="lg" className="h-14 px-14 has-[>svg]:px-14 text-lg rounded-full shadow-lg shadow-primary/20 group" asChild>
+                <Button size="lg" className="h-14 px-10 has-[>svg]:px-10 text-lg rounded-full shadow-lg shadow-primary/20 group" asChild>
                   <Link href="/dashboard">
                     {t('getStartedFree')} 
                     <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
