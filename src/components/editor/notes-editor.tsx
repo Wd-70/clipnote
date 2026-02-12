@@ -770,16 +770,19 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
             {/* Play button — right side of active line, only when line has a clip */}
             {activeLineClip && onPlayClip && (
               <div
-                className="absolute z-[2] flex items-center pr-3 transition-[top] duration-75"
+                className="absolute z-[2] flex items-center gap-1 pr-3 transition-[top] duration-75"
                 style={{
                   top: 8 + activeLineIndex * lineHeightRef.current - textareaScrollTop,
                   right: 0,
                   height: lineHeightRef.current,
                 }}
               >
+                {textareaFocused && modifierKeys.ctrl && (
+                  <kbd className="pointer-events-none text-[9px] font-mono leading-none text-primary/60 select-none">⏎</kbd>
+                )}
                 <button
                   className={cn(
-                    "pointer-events-auto p-0.5 rounded transition-colors flex items-center gap-0.5",
+                    "pointer-events-auto p-0.5 rounded transition-colors",
                     textareaFocused && modifierKeys.ctrl
                       ? "text-primary bg-primary/10"
                       : "text-muted-foreground/30 hover:text-primary hover:bg-primary/10"
@@ -792,9 +795,6 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
                   title="클립 재생 (Ctrl+Enter)"
                 >
                   <Play className="h-3 w-3 fill-current" />
-                  {textareaFocused && modifierKeys.ctrl && (
-                    <kbd className="text-[9px] font-mono leading-none opacity-70">⏎</kbd>
-                  )}
                 </button>
               </div>
             )}
