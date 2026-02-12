@@ -390,12 +390,12 @@ export function VideoControlPanel({
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-7 gap-1"
+                  className="h-7 gap-1 px-1.5 @[450px]:px-3"
                   onClick={onSetStartTime}
                 >
-                  <Timer className="h-3.5 w-3.5" />
-                  <span className="text-xs hidden @[400px]:inline">{t('setStartTime')}</span>
-                  <kbd className="ml-0.5 pointer-events-none hidden @[340px]:inline-flex h-4 select-none items-center gap-0.5 rounded border bg-muted px-1 font-mono text-[10px] font-medium text-muted-foreground">
+                  <Timer className="h-3.5 w-3.5 hidden @[350px]:block" />
+                  <span className="text-xs hidden @[450px]:inline">{t('setStartTime')}</span>
+                  <kbd className="pointer-events-none inline-flex h-4 select-none items-center rounded border bg-muted px-1 font-mono text-[10px] font-medium text-muted-foreground">
                     [
                   </kbd>
                 </Button>
@@ -409,12 +409,12 @@ export function VideoControlPanel({
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-7 gap-1"
+                  className="h-7 gap-1 px-1.5 @[450px]:px-3"
                   onClick={onSetEndTime}
                 >
-                  <Timer className="h-3.5 w-3.5" />
-                  <span className="text-xs hidden @[400px]:inline">{t('setEndTime')}</span>
-                  <kbd className="ml-0.5 pointer-events-none hidden @[340px]:inline-flex h-4 select-none items-center gap-0.5 rounded border bg-muted px-1 font-mono text-[10px] font-medium text-muted-foreground">
+                  <Timer className="h-3.5 w-3.5 hidden @[350px]:block" />
+                  <span className="text-xs hidden @[450px]:inline">{t('setEndTime')}</span>
+                  <kbd className="pointer-events-none inline-flex h-4 select-none items-center rounded border bg-muted px-1 font-mono text-[10px] font-medium text-muted-foreground">
                     ]
                   </kbd>
                 </Button>

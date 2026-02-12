@@ -612,10 +612,13 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
                     onClick={onSetStartTime}
                     variant="outline"
                     size="sm"
-                    className="h-8 px-2 @[480px]:px-3"
+                    className="h-8 px-1.5 @[450px]:px-3"
                   >
-                    <Timer className="h-4 w-4 @[480px]:mr-1.5" />
-                    <span className="hidden @[480px]:inline">시작</span>
+                    <Timer className="h-4 w-4 hidden @[350px]:block @[450px]:mr-1.5" />
+                    <span className="hidden @[450px]:inline">시작</span>
+                    <kbd className="pointer-events-none inline-flex h-4 select-none items-center rounded border bg-muted/50 px-1 font-mono text-[10px] font-medium text-muted-foreground">
+                      [
+                    </kbd>
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -633,10 +636,13 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
                     onClick={onSetEndTime}
                     variant="outline"
                     size="sm"
-                    className="h-8 px-2 @[480px]:px-3"
+                    className="h-8 px-1.5 @[450px]:px-3"
                   >
-                    <Timer className="h-4 w-4 @[480px]:mr-1.5" />
-                    <span className="hidden @[480px]:inline">종료</span>
+                    <Timer className="h-4 w-4 hidden @[350px]:block @[450px]:mr-1.5" />
+                    <span className="hidden @[450px]:inline">종료</span>
+                    <kbd className="pointer-events-none inline-flex h-4 select-none items-center rounded border bg-muted/50 px-1 font-mono text-[10px] font-medium text-muted-foreground">
+                      ]
+                    </kbd>
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
