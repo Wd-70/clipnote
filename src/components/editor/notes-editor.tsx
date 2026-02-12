@@ -532,6 +532,9 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
         } else if (e.key === ' ') {
           e.preventDefault();
           onTogglePlay?.();
+        } else if (e.key === 's') {
+          e.preventDefault();
+          handleSave();
         } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
           const target = selectedTimestamp;
           if (target && activeLineClip) {
@@ -548,7 +551,7 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
         }
       }
     },
-    [onSetStartTime, onSetEndTime, playCurrentClip, onTogglePlay, selectedTimestamp, activeLineClip, nudgeTimestamp]
+    [onSetStartTime, onSetEndTime, playCurrentClip, onTogglePlay, handleSave, selectedTimestamp, activeLineClip, nudgeTimestamp]
   );
 
   // Compute overlay positions (px) for the selected timestamp
