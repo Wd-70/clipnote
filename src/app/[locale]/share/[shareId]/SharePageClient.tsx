@@ -450,7 +450,7 @@ export default function SharePageClient() {
           </Link>
           <div className="flex items-center gap-3">
             <ThemeToggle />
-            <Button size="sm" className="hidden sm:flex rounded-full" asChild>
+            <Button size="sm" className="hidden sm:flex rounded-full px-4 has-[>svg]:px-4" asChild>
               <Link href="/">
                 {tLanding('getStartedFree')} <ChevronRight className="w-4 h-4 ml-1" />
               </Link>
@@ -704,7 +704,7 @@ export default function SharePageClient() {
                   <p className="text-xs text-muted-foreground truncate">{t('createOwnClipHint')}</p>
                 </div>
               </div>
-              <Button size="sm" className="rounded-full shrink-0" asChild>
+              <Button size="sm" className="rounded-full shrink-0 px-4 has-[>svg]:px-4" asChild>
                 <Link href="/">
                   {tLanding('getStartedFree')} <ChevronRight className="w-4 h-4 ml-1" />
                 </Link>

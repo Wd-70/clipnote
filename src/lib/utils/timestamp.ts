@@ -68,6 +68,31 @@ function parseTimestampMatch(match: RegExpExecArray, startIdx: number = 1): numb
 }
 
 /**
+ * Find the start index of a comment marker (// or #) in a line.
+ * Returns -1 if no comment marker is found.
+ * Ignores :// (e.g. inside URLs like https://).
+ */
+function findCommentStart(line: string): number {
+  // Check // first — but skip :// (URL scheme)
+  const doubleSlashIdx = line.indexOf('//');
+  if (doubleSlashIdx !== -1) {
+    // Only treat as comment if NOT preceded by ':'
+    if (doubleSlashIdx === 0 || line[doubleSlashIdx - 1] !== ':') {
+      return doubleSlashIdx;
+    }
+  }
+
+  const hashIdx = line.indexOf('#');
+  if (hashIdx !== -1) {
+    // If both exist (doubleSlash was :// so skipped), use #
+    return hashIdx;
+  }
+
+  // doubleSlash was :// and no # found
+  return -1;
+}
+
+/**
  * Extract single timestamp from a line (if no range found)
  */
 function extractSingleTimestamp(line: string): { time: number; text: string } | null {
@@ -111,7 +136,14 @@ export function parseNotesToClips(notesText: string, videoDuration?: number): Pa
   const parsedLines: ParsedLine[] = [];
 
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
+    let line = lines[i];
+
+    // Strip comment: find first // or # and truncate
+    const commentIdx = findCommentStart(line);
+    if (commentIdx !== -1) {
+      line = line.substring(0, commentIdx);
+    }
+    if (!line.trim()) continue;
 
     // Try range format first (MM:SS - MM:SS)
     TIMESTAMP_RANGE_REGEX.lastIndex = 0;

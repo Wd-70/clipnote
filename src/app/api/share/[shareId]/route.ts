@@ -30,7 +30,18 @@ function parseClipsFromNotes(notes: string | NoteItem[]): Array<{ startTime: num
   // Regex for timestamp format: MM:SS.d - MM:SS.d or HH:MM:SS - HH:MM:SS
   const timestampRegex = /(\d{1,2}):(\d{2})(?:\.(\d+))?(?::(\d{2})(?:\.(\d+))?)?\s*[-–]\s*(\d{1,2}):(\d{2})(?:\.(\d+))?(?::(\d{2})(?:\.(\d+))?)?/;
 
-  for (const line of lines) {
+  for (const rawLine of lines) {
+    // Strip comments (// or #, but not :// in URLs)
+    let line = rawLine;
+    const dblSlash = line.indexOf('//');
+    if (dblSlash !== -1 && (dblSlash === 0 || line[dblSlash - 1] !== ':')) {
+      line = line.substring(0, dblSlash);
+    } else {
+      const hash = line.indexOf('#');
+      if (hash !== -1) line = line.substring(0, hash);
+    }
+    if (!line.trim()) continue;
+
     const match = line.match(timestampRegex);
     if (match) {
       const parseTime = (h: string, m: string, s?: string, ms?: string): number => {

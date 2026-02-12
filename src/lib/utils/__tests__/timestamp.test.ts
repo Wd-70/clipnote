@@ -113,4 +113,48 @@ describe('parseNotesToClips', () => {
     const clips = parseNotesToClips('0:30 - 1:30 One minute clip');
     expect(clips[0].duration).toBe(60);
   });
+
+  describe('comment support', () => {
+    it('skips lines starting with #', () => {
+      const clips = parseNotesToClips('# 0:30 - 1:00 Intro');
+      expect(clips).toHaveLength(0);
+    });
+
+    it('skips lines starting with //', () => {
+      const clips = parseNotesToClips('// 0:30 - 1:00 Intro');
+      expect(clips).toHaveLength(0);
+    });
+
+    it('skips indented comment lines', () => {
+      const clips = parseNotesToClips('  # 0:30 - 1:00 Intro\n  // another comment');
+      expect(clips).toHaveLength(0);
+    });
+
+    it('parses up to mid-line # comment', () => {
+      const clips = parseNotesToClips('0:30 - 1:00 Intro # this is a memo');
+      expect(clips).toHaveLength(1);
+      expect(clips[0]).toMatchObject({ startTime: 30, endTime: 60, text: 'Intro' });
+    });
+
+    it('parses up to mid-line // comment', () => {
+      const clips = parseNotesToClips('2:00 - 3:00 Highlight // memo');
+      expect(clips).toHaveLength(1);
+      expect(clips[0]).toMatchObject({ startTime: 120, endTime: 180, text: 'Highlight' });
+    });
+
+    it('truncates at # after single timestamp', () => {
+      // "0:30 # - 1:00 Intro" → only 0:30 is parsed as single timestamp
+      const clips = parseNotesToClips('0:30 # - 1:00 Intro', 120);
+      expect(clips).toHaveLength(1);
+      expect(clips[0].startTime).toBe(30);
+    });
+
+    it('mixes comment and non-comment lines', () => {
+      const notes = '0:30 - 1:00 Intro\n# comment line\n2:00 - 3:00 Highlight';
+      const clips = parseNotesToClips(notes);
+      expect(clips).toHaveLength(2);
+      expect(clips[0]).toMatchObject({ startTime: 30, endTime: 60 });
+      expect(clips[1]).toMatchObject({ startTime: 120, endTime: 180 });
+    });
+  });
 });

@@ -150,6 +150,10 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
     const line = lines[activeLineIndex];
     if (!line) return null;
 
+    // Skip comment lines — no overlay for lines starting with # or //
+    const trimmed = line.trimStart();
+    if (trimmed.startsWith('#') || trimmed.startsWith('//')) return null;
+
     // Find start timestamp and its character range
     const startMatch = line.match(/^((?:\d{1,2}:)?\d{1,2}:\d{2}(?:\.\d+)?)/);
     if (!startMatch) return null;
