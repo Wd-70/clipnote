@@ -105,7 +105,7 @@ export default function LandingPage() {
           </nav>
           <div className="flex items-center gap-4">
             <ThemeToggle />
-            <Button variant="default" size="sm" className="hidden sm:flex" asChild>
+            <Button variant="default" size="sm" className="hidden sm:flex px-4" asChild>
               <Link href="/dashboard">{t('getStartedFree')}</Link>
             </Button>
           </div>
