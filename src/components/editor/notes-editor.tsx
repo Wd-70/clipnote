@@ -67,11 +67,13 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
   const [hasChanges, setHasChanges] = useState(false);
   const [isRestoredFromDraft, setIsRestoredFromDraft] = useState(false);
   const [activeLineIndex, setActiveLineIndex] = useState(0);
+  const [cursorInLine, setCursorInLine] = useState(0);
   const [textareaScrollTop, setTextareaScrollTop] = useState(0);
-  const [lastEditedTimestamp, setLastEditedTimestamp] = useState<'start' | 'end' | null>(null);
   const [modifierKeys, setModifierKeys] = useState({ ctrl: false, shift: false });
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const lineHeightRef = useRef(20);
+  const charWidthRef = useRef(7.8);
+  const paddingLeftRef = useRef(12);
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const initialNotesRef = useRef(initialNotes);
   const notesRef = useRef(notes);
@@ -88,21 +90,36 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
 
   const { clips, totalDuration, clipCount } = useTimestampParser(notes, videoDuration);
 
-  // Measure line height from the textarea element
+  // Measure line height, character width, and padding from the textarea
   useEffect(() => {
     const textarea = textareaRef.current;
     if (!textarea) return;
     const computed = getComputedStyle(textarea);
     const lh = parseFloat(computed.lineHeight);
     if (!isNaN(lh)) lineHeightRef.current = lh;
+
+    // Measure monospace character width
+    const span = document.createElement('span');
+    span.style.font = computed.font;
+    span.style.visibility = 'hidden';
+    span.style.position = 'absolute';
+    span.style.whiteSpace = 'pre';
+    span.textContent = '0000000000'; // 10 chars
+    document.body.appendChild(span);
+    charWidthRef.current = span.getBoundingClientRect().width / 10;
+    document.body.removeChild(span);
+
+    paddingLeftRef.current = parseFloat(computed.paddingLeft) || 12;
   }, []);
 
-  // Track which line the cursor is on
-  const updateActiveLine = useCallback(() => {
+  // Track cursor position: line index and position within line
+  const updateCursorPosition = useCallback(() => {
     const textarea = textareaRef.current;
     if (!textarea) return;
     const textBefore = textarea.value.substring(0, textarea.selectionStart);
-    setActiveLineIndex(textBefore.split('\n').length - 1);
+    const lines = textBefore.split('\n');
+    setActiveLineIndex(lines.length - 1);
+    setCursorInLine(lines[lines.length - 1].length);
   }, []);
 
   // Window-level modifier key tracking (for visual hints)
@@ -123,25 +140,58 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
     };
   }, []);
 
-  // Parse current active line's timestamps for overlay display
+  // Parse current active line's timestamps with character positions
   const activeLineClip = useMemo(() => {
     const lines = notes.split('\n');
     const line = lines[activeLineIndex];
     if (!line) return null;
 
-    const match = line.match(TIMESTAMP_PATTERN);
-    if (!match) return null;
+    // Find start timestamp and its character range
+    const startMatch = line.match(/^((?:\d{1,2}:)?\d{1,2}:\d{2}(?:\.\d+)?)/);
+    if (!startMatch) return null;
 
-    const [, startTimeStr, , endTimeStr] = match;
-    if (!startTimeStr && !endTimeStr) return null;
+    const startTimeStr = startMatch[1];
+    const startCharStart = 0;
+    const startCharEnd = startTimeStr.length;
+
+    // Find separator and end timestamp
+    const afterStart = line.substring(startCharEnd);
+    const sepMatch = afterStart.match(/^(\s*[-–—]\s*)/);
+
+    let endTimeStr: string | null = null;
+    let endCharStart = 0;
+    let endCharEnd = 0;
+
+    if (sepMatch) {
+      const sepEnd = startCharEnd + sepMatch[0].length;
+      const afterSep = line.substring(sepEnd);
+      const endMatch = afterSep.match(/^((?:\d{1,2}:)?\d{1,2}:\d{2}(?:\.\d+)?)/);
+      if (endMatch) {
+        endTimeStr = endMatch[1];
+        endCharStart = sepEnd;
+        endCharEnd = sepEnd + endTimeStr.length;
+      }
+    }
 
     return {
-      startTime: startTimeStr ? parseTimeToSeconds(startTimeStr) : null,
+      startTime: parseTimeToSeconds(startTimeStr),
       endTime: endTimeStr ? parseTimeToSeconds(endTimeStr) : null,
-      startTimeStr: startTimeStr || null,
-      endTimeStr: endTimeStr || null,
+      startTimeStr,
+      endTimeStr,
+      startCharStart,
+      startCharEnd,
+      endCharStart,
+      endCharEnd,
     };
   }, [notes, activeLineIndex]);
+
+  // Determine selected timestamp based on cursor position within the line
+  const selectedTimestamp = useMemo((): 'start' | 'end' | null => {
+    if (!activeLineClip) return null;
+    if (!activeLineClip.endTimeStr) return 'start';
+    // If cursor is before the end timestamp start, select 'start'; otherwise 'end'
+    return cursorInLine < activeLineClip.endCharStart ? 'start' : 'end';
+  }, [activeLineClip, cursorInLine]);
 
   // Save draft to localStorage immediately
   const saveDraftNow = useCallback(() => {
@@ -153,13 +203,11 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
 
     try {
       if (currentNotes !== initialNotesRef.current) {
-        // Save if different from initial
         localStorage.setItem(draftKey, JSON.stringify({
           notes: currentNotes,
           savedAt: Date.now(),
         }));
       } else {
-        // Clear if same as initial
         localStorage.removeItem(draftKey);
       }
     } catch {
@@ -174,14 +222,12 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
       const savedDraft = localStorage.getItem(draftKey);
       if (savedDraft) {
         const draft = JSON.parse(savedDraft);
-        // Only restore if draft is different from initial notes
         if (draft.notes && draft.notes !== initialNotesRef.current) {
           setNotes(draft.notes);
           setHasChanges(true);
           setIsRestoredFromDraft(true);
           onNotesChange?.(draft.notes);
         } else {
-          // Draft is same as saved, remove it
           localStorage.removeItem(draftKey);
         }
       }
@@ -200,7 +246,6 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
 
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
-      // Save on unmount as well
       saveDraftNow();
     };
   }, [saveDraftNow]);
@@ -209,12 +254,10 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
   useEffect(() => {
     if (!hasChanges) return;
 
-    // Clear existing timeout
     if (autoSaveTimeoutRef.current) {
       clearTimeout(autoSaveTimeoutRef.current);
     }
 
-    // Check if notes are same as initial - if so, clear draft
     if (notes === initialNotesRef.current) {
       const draftKey = getDraftKey(projectId);
       try {
@@ -226,7 +269,6 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
       return;
     }
 
-    // Set new timeout for auto-save
     autoSaveTimeoutRef.current = setTimeout(() => {
       saveDraftNow();
     }, AUTO_SAVE_DELAY);
@@ -253,7 +295,6 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
     [onNotesChange]
   );
 
-  // Clear draft from localStorage
   const clearDraft = useCallback(() => {
     const draftKey = getDraftKey(projectId);
     try {
@@ -271,16 +312,13 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
       await onSave(notes);
       setHasChanges(false);
       setIsRestoredFromDraft(false);
-      // Clear draft after successful save
       clearDraft();
-      // Update initial notes reference
       initialNotesRef.current = notes;
     } finally {
       setIsSaving(false);
     }
   }, [notes, onSave, clearDraft]);
 
-  // Discard draft and restore to initial notes
   const handleDiscardDraft = useCallback(() => {
     setNotes(initialNotesRef.current);
     setHasChanges(false);
@@ -297,11 +335,10 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
     const cursorPos = textarea.selectionStart;
     const lines = notes.split('\n');
 
-    // Find which line the cursor is on
     let charCount = 0;
     let lineIndex = 0;
     for (let i = 0; i < lines.length; i++) {
-      const lineLength = lines[i].length + 1; // +1 for newline
+      const lineLength = lines[i].length + 1;
       if (charCount + lineLength > cursorPos) {
         lineIndex = i;
         break;
@@ -327,46 +364,35 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
 
       const { lineIndex, currentLine, lineStartPos, lineEndPos } = lineInfo;
       const timestamp = formatSecondsToTime(time);
-
-      // Parse the current line
       const match = currentLine.match(TIMESTAMP_PATTERN);
 
       let newLine: string;
       if (match) {
-        // Line has some structure - extract parts
         const [, , separator, endTime, space, description] = match;
-
         if (endTime) {
-          // Has end time - replace start, keep end and description
           newLine = `${timestamp} - ${endTime}${space || ' '}${description || ''}`;
         } else if (separator) {
-          // Has separator but no end time
           newLine = `${timestamp} - ${description || ''}`;
         } else if (description && description.trim()) {
-          // Just has text, make it the description
           newLine = `${timestamp} - ${currentLine.trim()}`;
         } else {
-          // Empty or just whitespace
           newLine = `${timestamp} - `;
         }
       } else {
-        // No match - treat entire line as description
         const trimmedLine = currentLine.trim();
         newLine = trimmedLine ? `${timestamp} - ${trimmedLine}` : `${timestamp} - `;
       }
 
-      // Select the current line and replace via execCommand for undo support
       textarea.focus();
       textarea.setSelectionRange(lineStartPos, lineEndPos);
       document.execCommand('insertText', false, newLine);
-      // handleNotesChange will update state via onChange
       setActiveLineIndex(lineIndex);
-      setLastEditedTimestamp('start');
 
-      // Position cursor after the start timestamp
+      // Position cursor within the start timestamp so it becomes selected
       setTimeout(() => {
-        const cursorPos = lineStartPos + timestamp.length;
+        const cursorPos = lineStartPos + Math.floor(timestamp.length / 2);
         textarea.setSelectionRange(cursorPos, cursorPos);
+        setCursorInLine(Math.floor(timestamp.length / 2));
       }, 0);
     },
     [notes, getCurrentLineInfo]
@@ -383,47 +409,37 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
 
       const { lineIndex, currentLine, lineStartPos, lineEndPos } = lineInfo;
       const timestamp = formatSecondsToTime(time);
-
-      // Parse the current line
       const match = currentLine.match(TIMESTAMP_PATTERN);
 
       let newLine: string;
       if (match) {
         const [, startTime, , , , description] = match;
-
         if (startTime) {
-          // Has start time - keep it, set end time
           newLine = `${startTime} - ${timestamp}${description ? ' ' + description : ' '}`;
         } else if (description && description.trim()) {
-          // No start time but has text - need start time first
-          // Use a placeholder for start time
           newLine = `00:00 - ${timestamp} ${description.trim()}`;
         } else {
-          // Empty line - need start time first
           newLine = `00:00 - ${timestamp} `;
         }
       } else {
-        // No match - need start time
         const trimmedLine = currentLine.trim();
         newLine = trimmedLine
           ? `00:00 - ${timestamp} ${trimmedLine}`
           : `00:00 - ${timestamp} `;
       }
 
-      // Select the current line and replace via execCommand for undo support
       textarea.focus();
       textarea.setSelectionRange(lineStartPos, lineEndPos);
       document.execCommand('insertText', false, newLine);
-      // handleNotesChange will update state via onChange
       setActiveLineIndex(lineIndex);
-      setLastEditedTimestamp('end');
 
-      // Position cursor after the end timestamp
+      // Position cursor within the end timestamp so it becomes selected
       setTimeout(() => {
         const dashPos = newLine.indexOf(' - ');
-        const endTimestampEnd = dashPos + 3 + timestamp.length;
-        const cursorPos = lineStartPos + endTimestampEnd;
+        const endTimestampStart = dashPos + 3;
+        const cursorPos = lineStartPos + endTimestampStart + Math.floor(timestamp.length / 2);
         textarea.setSelectionRange(cursorPos, cursorPos);
+        setCursorInLine(endTimestampStart + Math.floor(timestamp.length / 2));
       }, 0);
     },
     [notes, getCurrentLineInfo]
@@ -467,7 +483,6 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
       textarea.setSelectionRange(lineStartPos, lineEndPos);
       document.execCommand('insertText', false, newLine);
       setActiveLineIndex(lineIndex);
-      setLastEditedTimestamp(target);
     },
     [notes, getCurrentLineInfo, videoDuration]
   );
@@ -498,9 +513,7 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
           e.preventDefault();
           playCurrentClip();
         } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-          // Determine which timestamp to nudge
-          const target = lastEditedTimestamp
-            || (activeLineClip?.startTimeStr ? 'start' : null);
+          const target = selectedTimestamp;
           if (target && activeLineClip) {
             const hasTarget = target === 'start'
               ? activeLineClip.startTimeStr
@@ -515,12 +528,36 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
         }
       }
     },
-    [onSetStartTime, onSetEndTime, playCurrentClip, lastEditedTimestamp, activeLineClip, nudgeTimestamp]
+    [onSetStartTime, onSetEndTime, playCurrentClip, selectedTimestamp, activeLineClip, nudgeTimestamp]
   );
 
-  // Determine the effective nudge target for visual display
-  const effectiveTarget = lastEditedTimestamp
-    || (activeLineClip?.startTimeStr ? 'start' : null);
+  // Compute overlay positions (px) for the selected timestamp
+  const overlayPositions = useMemo(() => {
+    if (!activeLineClip || !selectedTimestamp) return null;
+
+    const cw = charWidthRef.current;
+    const pl = paddingLeftRef.current;
+    const lh = lineHeightRef.current;
+    const topY = 8 + activeLineIndex * lh - textareaScrollTop;
+
+    const selStart = selectedTimestamp === 'start'
+      ? activeLineClip.startCharStart
+      : activeLineClip.endCharStart;
+    const selEnd = selectedTimestamp === 'start'
+      ? activeLineClip.startCharEnd
+      : activeLineClip.endCharEnd;
+
+    return {
+      topY,
+      lineHeight: lh,
+      // Selected timestamp highlight
+      selLeft: pl + selStart * cw,
+      selWidth: (selEnd - selStart) * cw,
+      // Chevron positions
+      chevronLeftX: pl + selStart * cw - 14,
+      chevronRightX: pl + selEnd * cw + 2,
+    };
+  }, [activeLineClip, selectedTimestamp, activeLineIndex, textareaScrollTop]);
 
   return (
     <div className={cn('flex flex-col', className)}>
@@ -539,7 +576,6 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
             <Clock className="h-3 w-3 mr-1" />
             {formatSecondsToTime(totalDuration)}
           </Badge>
-          {/* Draft restored indicator */}
           {isRestoredFromDraft && (
             <Badge variant="outline" className="text-xs text-orange-600 border-orange-300">
               임시저장됨
@@ -547,14 +583,12 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
           )}
         </div>
 
-        {/* Timestamp controls + Save button - wrap together and fill width when wrapped */}
+        {/* Timestamp controls + Save button */}
         <div className="flex items-center gap-1 flex-1 justify-end min-w-fit">
-          {/* Current time display */}
           <span className="font-mono text-sm text-muted-foreground px-2">
             {formatSecondsToTime(currentTime)}
           </span>
 
-          {/* Start time button */}
           {onSetStartTime && (
             <TooltipProvider>
               <Tooltip>
@@ -576,7 +610,6 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
             </TooltipProvider>
           )}
 
-          {/* End time button */}
           {onSetEndTime && (
             <TooltipProvider>
               <Tooltip>
@@ -598,7 +631,6 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
             </TooltipProvider>
           )}
 
-          {/* Discard draft button - only show when restored from draft */}
           {isRestoredFromDraft && (
             <TooltipProvider>
               <Tooltip>
@@ -619,7 +651,6 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
             </TooltipProvider>
           )}
 
-          {/* Save button */}
           {onSave && (
             <Button
               onClick={handleSave}
@@ -647,81 +678,80 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
               }}
             />
 
-            {/* Active line overlay — timestamp display, nudge hints, play button */}
-            {activeLineClip && (
+            {/* Selected timestamp highlight — positioned at actual text */}
+            {overlayPositions && (
               <div
-                className="absolute pointer-events-none right-0 z-[2] flex items-center gap-0.5 pr-3 transition-[top] duration-75"
+                className="absolute pointer-events-none z-[2] rounded-sm bg-primary/15 transition-all duration-100"
+                style={{
+                  top: overlayPositions.topY,
+                  left: overlayPositions.selLeft,
+                  width: overlayPositions.selWidth,
+                  height: overlayPositions.lineHeight,
+                }}
+              />
+            )}
+
+            {/* Ctrl-held nudge chevrons — positioned at selected timestamp edges */}
+            {overlayPositions && modifierKeys.ctrl && selectedTimestamp && (
+              <>
+                <div
+                  className="absolute pointer-events-none z-[2] flex items-center transition-all duration-100"
+                  style={{
+                    top: overlayPositions.topY,
+                    left: overlayPositions.chevronLeftX,
+                    height: overlayPositions.lineHeight,
+                  }}
+                >
+                  <ChevronLeft className="h-3.5 w-3.5 text-primary/70 animate-pulse" />
+                </div>
+                <div
+                  className="absolute pointer-events-none z-[2] flex items-center transition-all duration-100"
+                  style={{
+                    top: overlayPositions.topY,
+                    left: overlayPositions.chevronRightX,
+                    height: overlayPositions.lineHeight,
+                  }}
+                >
+                  <ChevronRight className="h-3.5 w-3.5 text-primary/70 animate-pulse" />
+                </div>
+                {/* Step size hint — above the selected timestamp */}
+                <div
+                  className="absolute pointer-events-none z-[2] flex items-end justify-center transition-all duration-100"
+                  style={{
+                    top: overlayPositions.topY - 14,
+                    left: overlayPositions.selLeft,
+                    width: overlayPositions.selWidth,
+                    height: 14,
+                  }}
+                >
+                  <span className="text-primary/60 text-[9px] font-semibold leading-none select-none">
+                    {modifierKeys.shift ? '±0.1s' : '±1s'}
+                  </span>
+                </div>
+              </>
+            )}
+
+            {/* Play button — right side of active line, only when line has a clip */}
+            {activeLineClip && onPlayClip && (
+              <div
+                className="absolute z-[2] flex items-center pr-3 transition-[top] duration-75"
                 style={{
                   top: 8 + activeLineIndex * lineHeightRef.current - textareaScrollTop,
+                  right: 0,
                   height: lineHeightRef.current,
                 }}
               >
-                {/* Start timestamp */}
-                {activeLineClip.startTimeStr && (
-                  <span
-                    className={cn(
-                      'inline-flex items-center font-mono text-[11px] leading-none px-1 rounded transition-all select-none',
-                      effectiveTarget === 'start'
-                        ? 'bg-primary/15 text-primary'
-                        : 'text-muted-foreground/40'
-                    )}
-                  >
-                    {modifierKeys.ctrl && effectiveTarget === 'start' && (
-                      <ChevronLeft className="h-3 w-3 -ml-0.5 text-primary/60 animate-pulse" />
-                    )}
-                    {activeLineClip.startTimeStr}
-                    {modifierKeys.ctrl && effectiveTarget === 'start' && (
-                      <ChevronRight className="h-3 w-3 -mr-0.5 text-primary/60 animate-pulse" />
-                    )}
-                  </span>
-                )}
-
-                {/* Separator */}
-                {activeLineClip.startTimeStr && activeLineClip.endTimeStr && (
-                  <span className="text-muted-foreground/30 text-[11px] select-none">–</span>
-                )}
-
-                {/* End timestamp */}
-                {activeLineClip.endTimeStr && (
-                  <span
-                    className={cn(
-                      'inline-flex items-center font-mono text-[11px] leading-none px-1 rounded transition-all select-none',
-                      effectiveTarget === 'end'
-                        ? 'bg-primary/15 text-primary'
-                        : 'text-muted-foreground/40'
-                    )}
-                  >
-                    {modifierKeys.ctrl && effectiveTarget === 'end' && (
-                      <ChevronLeft className="h-3 w-3 -ml-0.5 text-primary/60 animate-pulse" />
-                    )}
-                    {activeLineClip.endTimeStr}
-                    {modifierKeys.ctrl && effectiveTarget === 'end' && (
-                      <ChevronRight className="h-3 w-3 -mr-0.5 text-primary/60 animate-pulse" />
-                    )}
-                  </span>
-                )}
-
-                {/* Step size hint */}
-                {modifierKeys.ctrl && effectiveTarget && (
-                  <span className="text-primary/50 text-[9px] font-medium select-none ml-0.5">
-                    {modifierKeys.shift ? '±0.1s' : '±1s'}
-                  </span>
-                )}
-
-                {/* Play button */}
-                {activeLineClip.startTimeStr && onPlayClip && (
-                  <button
-                    className="pointer-events-auto ml-1 p-0.5 rounded text-muted-foreground/30 hover:text-primary hover:bg-primary/10 transition-colors"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      playCurrentClip();
-                    }}
-                    tabIndex={-1}
-                    title="클립 재생 (Ctrl+Enter)"
-                  >
-                    <Play className="h-3 w-3 fill-current" />
-                  </button>
-                )}
+                <button
+                  className="pointer-events-auto p-0.5 rounded text-muted-foreground/30 hover:text-primary hover:bg-primary/10 transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    playCurrentClip();
+                  }}
+                  tabIndex={-1}
+                  title="클립 재생 (Ctrl+Enter)"
+                >
+                  <Play className="h-3 w-3 fill-current" />
+                </button>
               </div>
             )}
 
@@ -730,8 +760,8 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
               value={notes}
               onChange={handleNotesChange}
               onKeyDown={handleKeyDown}
-              onSelect={updateActiveLine}
-              onClick={updateActiveLine}
+              onSelect={updateCursorPosition}
+              onClick={updateCursorPosition}
               onScroll={(e) => setTextareaScrollTop(e.currentTarget.scrollTop)}
               placeholder={`타임스탬프 형식으로 노트를 작성하세요:
 
