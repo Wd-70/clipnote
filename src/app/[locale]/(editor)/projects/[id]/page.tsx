@@ -224,6 +224,18 @@ export default function EditorPage() {
     }
   }, [isPlaying]);
 
+  // Global Ctrl+S to save notes
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        notesEditorRef.current?.save();
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, []);
+
   // Handle save
   const handleSave = useCallback(async (notesText: string) => {
     setIsSaving(true);
@@ -239,7 +251,7 @@ export default function EditorPage() {
       }
 
       setNotes(notesText);
-      console.log('Notes saved');
+      toast.success(tCommon('notesSaved'));
     } catch (error) {
       console.error('Failed to save notes:', error);
       toast.error(tCommon('saveFailed'));

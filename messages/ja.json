@@ -2,6 +2,7 @@
   "common": {
     "loading": "読み込み中...",
     "save": "保存",
+    "notesSaved": "ノートを保存しました",
     "cancel": "キャンセル",
     "delete": "削除",
     "deleting": "削除中...",

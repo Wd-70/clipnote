@@ -2,6 +2,7 @@
   "common": {
     "loading": "加载中...",
     "save": "保存",
+    "notesSaved": "笔记已保存",
     "cancel": "取消",
     "delete": "删除",
     "deleting": "删除中...",

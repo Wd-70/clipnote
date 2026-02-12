@@ -23,6 +23,7 @@ const TIMESTAMP_PATTERN = /^((?:\d{1,2}:)?\d{1,2}:\d{2}(?:\.\d+)?)?(\s*-\s*)?((?
 export interface NotesEditorRef {
   setStartTime: (time: number) => void;
   setEndTime: (time: number) => void;
+  save: () => void;
 }
 
 interface NotesEditorProps {
@@ -514,7 +515,8 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
   useImperativeHandle(ref, () => ({
     setStartTime,
     setEndTime,
-  }), [setStartTime, setEndTime]);
+    save: handleSave,
+  }), [setStartTime, setEndTime, handleSave]);
 
   // Handle keyboard shortcuts
   const handleKeyDown = useCallback(
@@ -532,9 +534,6 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
         } else if (e.key === ' ') {
           e.preventDefault();
           onTogglePlay?.();
-        } else if (e.key === 's') {
-          e.preventDefault();
-          handleSave();
         } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
           const target = selectedTimestamp;
           if (target && activeLineClip) {
@@ -551,7 +550,7 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
         }
       }
     },
-    [onSetStartTime, onSetEndTime, playCurrentClip, onTogglePlay, handleSave, selectedTimestamp, activeLineClip, nudgeTimestamp]
+    [onSetStartTime, onSetEndTime, playCurrentClip, onTogglePlay, selectedTimestamp, activeLineClip, nudgeTimestamp]
   );
 
   // Compute overlay positions (px) for the selected timestamp
