@@ -382,7 +382,7 @@ export function VideoControlPanel({
           </Select>
         </div>
 
-        {/* Timestamp buttons */}
+        {/* Timestamp buttons — text and kbd hide at narrow widths */}
         <div className="flex items-center gap-1">
           <TooltipProvider delayDuration={300}>
             <Tooltip>
@@ -394,8 +394,8 @@ export function VideoControlPanel({
                   onClick={onSetStartTime}
                 >
                   <Timer className="h-3.5 w-3.5" />
-                  <span className="text-xs">{t('setStartTime')}</span>
-                  <kbd className="ml-0.5 pointer-events-none inline-flex h-4 select-none items-center gap-0.5 rounded border bg-muted px-1 font-mono text-[10px] font-medium text-muted-foreground">
+                  <span className="text-xs hidden @[400px]:inline">{t('setStartTime')}</span>
+                  <kbd className="ml-0.5 pointer-events-none hidden @[340px]:inline-flex h-4 select-none items-center gap-0.5 rounded border bg-muted px-1 font-mono text-[10px] font-medium text-muted-foreground">
                     [
                   </kbd>
                 </Button>
@@ -413,8 +413,8 @@ export function VideoControlPanel({
                   onClick={onSetEndTime}
                 >
                   <Timer className="h-3.5 w-3.5" />
-                  <span className="text-xs">{t('setEndTime')}</span>
-                  <kbd className="ml-0.5 pointer-events-none inline-flex h-4 select-none items-center gap-0.5 rounded border bg-muted px-1 font-mono text-[10px] font-medium text-muted-foreground">
+                  <span className="text-xs hidden @[400px]:inline">{t('setEndTime')}</span>
+                  <kbd className="ml-0.5 pointer-events-none hidden @[340px]:inline-flex h-4 select-none items-center gap-0.5 rounded border bg-muted px-1 font-mono text-[10px] font-medium text-muted-foreground">
                     ]
                   </kbd>
                 </Button>

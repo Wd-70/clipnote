@@ -575,19 +575,19 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
   }, [activeLineClip, selectedTimestamp, activeLineIndex, textareaScrollTop]);
 
   return (
-    <div className={cn('flex flex-col', className)}>
-      {/* Header - responsive layout */}
+    <div className={cn('flex flex-col @container', className)}>
+      {/* Header - responsive layout based on container width */}
       <div className="flex flex-wrap items-center gap-2 mb-4">
         {/* Title and stats */}
         <div className="flex items-center gap-2 mr-auto">
           <h3 className="text-lg font-semibold flex items-center gap-2">
             <FileText className="h-5 w-5" />
-            <span className="hidden sm:inline">노트</span>
+            <span className="hidden @[400px]:inline">노트</span>
           </h3>
           <Badge variant="secondary" className="text-xs">
             {clipCount}
           </Badge>
-          <Badge variant="secondary" className="text-xs hidden xs:inline-flex">
+          <Badge variant="secondary" className="text-xs hidden @[480px]:inline-flex">
             <Clock className="h-3 w-3 mr-1" />
             {formatSecondsToTime(totalDuration)}
           </Badge>
@@ -612,10 +612,10 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
                     onClick={onSetStartTime}
                     variant="outline"
                     size="sm"
-                    className="h-8 px-2 sm:px-3"
+                    className="h-8 px-2 @[480px]:px-3"
                   >
-                    <Timer className="h-4 w-4 sm:mr-1.5" />
-                    <span className="hidden sm:inline">시작</span>
+                    <Timer className="h-4 w-4 @[480px]:mr-1.5" />
+                    <span className="hidden @[480px]:inline">시작</span>
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -633,10 +633,10 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
                     onClick={onSetEndTime}
                     variant="outline"
                     size="sm"
-                    className="h-8 px-2 sm:px-3"
+                    className="h-8 px-2 @[480px]:px-3"
                   >
-                    <Timer className="h-4 w-4 sm:mr-1.5" />
-                    <span className="hidden sm:inline">종료</span>
+                    <Timer className="h-4 w-4 @[480px]:mr-1.5" />
+                    <span className="hidden @[480px]:inline">종료</span>
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -673,8 +673,8 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
               size="sm"
               className="h-8"
             >
-              <Save className="h-4 w-4 sm:mr-2" />
-              <span className="hidden sm:inline">{isSaving ? '저장 중...' : '저장'}</span>
+              <Save className="h-4 w-4 @[480px]:mr-2" />
+              <span className="hidden @[480px]:inline">{isSaving ? '저장 중...' : '저장'}</span>
             </Button>
           )}
         </div>
