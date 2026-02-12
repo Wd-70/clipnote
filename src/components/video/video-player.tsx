@@ -76,6 +76,7 @@ interface VideoPlayerProps {
   /** Called when play/pause state changes */
   onPlayingChange?: (playing: boolean) => void;
   className?: string;
+  style?: React.CSSProperties;
   /** If true, blocks direct video clicks - use for share/embed pages */
   disableDirectPlay?: boolean;
   /** Called when video area is clicked (only works when disableDirectPlay is true) */
@@ -85,7 +86,7 @@ interface VideoPlayerProps {
 }
 
 export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
-  ({ url, clips = [], onProgress, onDuration, onPlayingChange, className, disableDirectPlay = false, onVideoClick, onUserInteraction }, ref) => {
+  ({ url, clips = [], onProgress, onDuration, onPlayingChange, className, style, disableDirectPlay = false, onVideoClick, onUserInteraction }, ref) => {
     // YouTube refs
     const youtubePlayerRef = useRef<YouTubePlayerType | null>(null);
     
@@ -693,6 +694,7 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
             'relative bg-black rounded-lg overflow-hidden',
             className
           )}
+          style={style}
         >
           <div className="aspect-video flex items-center justify-center text-white/60">
             유효한 동영상 URL이 아닙니다
@@ -708,6 +710,7 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
           'relative bg-black rounded-lg overflow-hidden group',
           className
         )}
+        style={style}
       >
         {/* Video Area */}
         <div className="aspect-video relative">

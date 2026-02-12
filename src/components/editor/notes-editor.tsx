@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo, forwardRef, useImperativeHandle } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,11 +11,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { Save, Clock, FileText, Timer, Undo2 } from 'lucide-react';
+import { Save, Clock, FileText, Timer, Undo2, Play, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTimestampParser } from '@/hooks/useTimestampParser';
-import { formatSecondsToTime } from '@/lib/utils/timestamp';
+import { formatSecondsToTime, parseTimeToSeconds } from '@/lib/utils/timestamp';
 import { cn } from '@/lib/utils';
 import type { ParsedClip } from '@/types';
+
+// Timestamp pattern: supports MM:SS, M:SS, HH:MM:SS, and optional decimal seconds
+const TIMESTAMP_PATTERN = /^((?:\d{1,2}:)?\d{1,2}:\d{2}(?:\.\d+)?)?(\s*-\s*)?((?:\d{1,2}:)?\d{1,2}:\d{2}(?:\.\d+)?)?(\s+)?(.*)$/;
 
 export interface NotesEditorRef {
   setStartTime: (time: number) => void;
@@ -29,6 +32,7 @@ interface NotesEditorProps {
   onClipsChange?: (clips: ParsedClip[]) => void;
   onSave?: (notes: string) => Promise<void>;
   onClipClick?: (clip: ParsedClip, index: number) => void;
+  onPlayClip?: (startTime: number, endTime?: number) => void;
   currentClipIndex?: number;
   currentTime?: number;
   videoDuration?: number;
@@ -50,6 +54,7 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
   onClipsChange,
   onSave,
   onClipClick,
+  onPlayClip,
   currentClipIndex = -1,
   currentTime = 0,
   videoDuration,
@@ -61,7 +66,12 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [isRestoredFromDraft, setIsRestoredFromDraft] = useState(false);
+  const [activeLineIndex, setActiveLineIndex] = useState(0);
+  const [textareaScrollTop, setTextareaScrollTop] = useState(0);
+  const [lastEditedTimestamp, setLastEditedTimestamp] = useState<'start' | 'end' | null>(null);
+  const [modifierKeys, setModifierKeys] = useState({ ctrl: false, shift: false });
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const lineHeightRef = useRef(20);
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const initialNotesRef = useRef(initialNotes);
   const notesRef = useRef(notes);
@@ -77,6 +87,61 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
   }, [hasChanges]);
 
   const { clips, totalDuration, clipCount } = useTimestampParser(notes, videoDuration);
+
+  // Measure line height from the textarea element
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    const computed = getComputedStyle(textarea);
+    const lh = parseFloat(computed.lineHeight);
+    if (!isNaN(lh)) lineHeightRef.current = lh;
+  }, []);
+
+  // Track which line the cursor is on
+  const updateActiveLine = useCallback(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    const textBefore = textarea.value.substring(0, textarea.selectionStart);
+    setActiveLineIndex(textBefore.split('\n').length - 1);
+  }, []);
+
+  // Window-level modifier key tracking (for visual hints)
+  useEffect(() => {
+    const update = (e: KeyboardEvent) => {
+      setModifierKeys({ ctrl: e.ctrlKey || e.metaKey, shift: e.shiftKey });
+    };
+    const reset = () => {
+      setModifierKeys({ ctrl: false, shift: false });
+    };
+    window.addEventListener('keydown', update);
+    window.addEventListener('keyup', update);
+    window.addEventListener('blur', reset);
+    return () => {
+      window.removeEventListener('keydown', update);
+      window.removeEventListener('keyup', update);
+      window.removeEventListener('blur', reset);
+    };
+  }, []);
+
+  // Parse current active line's timestamps for overlay display
+  const activeLineClip = useMemo(() => {
+    const lines = notes.split('\n');
+    const line = lines[activeLineIndex];
+    if (!line) return null;
+
+    const match = line.match(TIMESTAMP_PATTERN);
+    if (!match) return null;
+
+    const [, startTimeStr, , endTimeStr] = match;
+    if (!startTimeStr && !endTimeStr) return null;
+
+    return {
+      startTime: startTimeStr ? parseTimeToSeconds(startTimeStr) : null,
+      endTime: endTimeStr ? parseTimeToSeconds(endTimeStr) : null,
+      startTimeStr: startTimeStr || null,
+      endTimeStr: endTimeStr || null,
+    };
+  }, [notes, activeLineIndex]);
 
   // Save draft to localStorage immediately
   const saveDraftNow = useCallback(() => {
@@ -251,9 +316,6 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
     return { lineIndex, currentLine, lineStartPos, lineEndPos, lines };
   }, [notes]);
 
-  // Timestamp pattern: supports MM:SS, M:SS, HH:MM:SS, and optional decimal seconds
-  const TIMESTAMP_PATTERN = /^((?:\d{1,2}:)?\d{1,2}:\d{2}(?:\.\d+)?)?(\s*-\s*)?((?:\d{1,2}:)?\d{1,2}:\d{2}(?:\.\d+)?)?(\s+)?(.*)$/;
-
   // Set start time for the current line
   const setStartTime = useCallback(
     (time: number) => {
@@ -263,7 +325,7 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
       const lineInfo = getCurrentLineInfo();
       if (!lineInfo) return;
 
-      const { lineIndex, currentLine, lines } = lineInfo;
+      const { lineIndex, currentLine, lineStartPos, lineEndPos } = lineInfo;
       const timestamp = formatSecondsToTime(time);
 
       // Parse the current line
@@ -293,23 +355,21 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
         newLine = trimmedLine ? `${timestamp} - ${trimmedLine}` : `${timestamp} - `;
       }
 
-      // Replace the line
-      lines[lineIndex] = newLine;
-      const newNotes = lines.join('\n');
-
-      setNotes(newNotes);
-      onNotesChange?.(newNotes);
-      setHasChanges(true);
+      // Select the current line and replace via execCommand for undo support
+      textarea.focus();
+      textarea.setSelectionRange(lineStartPos, lineEndPos);
+      document.execCommand('insertText', false, newLine);
+      // handleNotesChange will update state via onChange
+      setActiveLineIndex(lineIndex);
+      setLastEditedTimestamp('start');
 
       // Position cursor after the start timestamp
       setTimeout(() => {
-        const newLineStartPos = lines.slice(0, lineIndex).join('\n').length + (lineIndex > 0 ? 1 : 0);
-        const cursorPos = newLineStartPos + timestamp.length;
+        const cursorPos = lineStartPos + timestamp.length;
         textarea.setSelectionRange(cursorPos, cursorPos);
-        textarea.focus();
       }, 0);
     },
-    [notes, onNotesChange, getCurrentLineInfo]
+    [notes, getCurrentLineInfo]
   );
 
   // Set end time for the current line
@@ -321,7 +381,7 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
       const lineInfo = getCurrentLineInfo();
       if (!lineInfo) return;
 
-      const { lineIndex, currentLine, lines } = lineInfo;
+      const { lineIndex, currentLine, lineStartPos, lineEndPos } = lineInfo;
       const timestamp = formatSecondsToTime(time);
 
       // Parse the current line
@@ -350,27 +410,73 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
           : `00:00 - ${timestamp} `;
       }
 
-      // Replace the line
-      lines[lineIndex] = newLine;
-      const newNotes = lines.join('\n');
-
-      setNotes(newNotes);
-      onNotesChange?.(newNotes);
-      setHasChanges(true);
+      // Select the current line and replace via execCommand for undo support
+      textarea.focus();
+      textarea.setSelectionRange(lineStartPos, lineEndPos);
+      document.execCommand('insertText', false, newLine);
+      // handleNotesChange will update state via onChange
+      setActiveLineIndex(lineIndex);
+      setLastEditedTimestamp('end');
 
       // Position cursor after the end timestamp
       setTimeout(() => {
-        const newLineStartPos = lines.slice(0, lineIndex).join('\n').length + (lineIndex > 0 ? 1 : 0);
-        // Find position after end timestamp
         const dashPos = newLine.indexOf(' - ');
         const endTimestampEnd = dashPos + 3 + timestamp.length;
-        const cursorPos = newLineStartPos + endTimestampEnd;
+        const cursorPos = lineStartPos + endTimestampEnd;
         textarea.setSelectionRange(cursorPos, cursorPos);
-        textarea.focus();
       }, 0);
     },
-    [notes, onNotesChange, getCurrentLineInfo]
+    [notes, getCurrentLineInfo]
   );
+
+  // Nudge a timestamp by delta seconds
+  const nudgeTimestamp = useCallback(
+    (target: 'start' | 'end', delta: number) => {
+      const textarea = textareaRef.current;
+      if (!textarea) return;
+
+      const lineInfo = getCurrentLineInfo();
+      if (!lineInfo) return;
+
+      const { lineIndex, currentLine, lineStartPos, lineEndPos } = lineInfo;
+      const match = currentLine.match(TIMESTAMP_PATTERN);
+      if (!match) return;
+
+      const [, startTimeStr, , endTimeStr, space, description] = match;
+
+      let newLine: string;
+      if (target === 'start' && startTimeStr) {
+        const newTime = Math.max(0, parseTimeToSeconds(startTimeStr) + delta);
+        const clampedTime = videoDuration ? Math.min(newTime, videoDuration) : newTime;
+        const newTimeStr = formatSecondsToTime(clampedTime);
+        if (endTimeStr) {
+          newLine = `${newTimeStr} - ${endTimeStr}${space || ' '}${description || ''}`;
+        } else {
+          newLine = `${newTimeStr} - ${description || ''}`;
+        }
+      } else if (target === 'end' && endTimeStr) {
+        const newTime = Math.max(0, parseTimeToSeconds(endTimeStr) + delta);
+        const clampedTime = videoDuration ? Math.min(newTime, videoDuration) : newTime;
+        const newTimeStr = formatSecondsToTime(clampedTime);
+        newLine = `${startTimeStr || '00:00'} - ${newTimeStr}${space || ' '}${description || ''}`;
+      } else {
+        return;
+      }
+
+      textarea.focus();
+      textarea.setSelectionRange(lineStartPos, lineEndPos);
+      document.execCommand('insertText', false, newLine);
+      setActiveLineIndex(lineIndex);
+      setLastEditedTimestamp(target);
+    },
+    [notes, getCurrentLineInfo, videoDuration]
+  );
+
+  // Play current line's clip
+  const playCurrentClip = useCallback(() => {
+    if (!activeLineClip || activeLineClip.startTime === null) return;
+    onPlayClip?.(activeLineClip.startTime, activeLineClip.endTime ?? undefined);
+  }, [activeLineClip, onPlayClip]);
 
   // Expose setStartTime and setEndTime via ref
   useImperativeHandle(ref, () => ({
@@ -379,8 +485,6 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
   }), [setStartTime, setEndTime]);
 
   // Handle keyboard shortcuts
-  // Ctrl+[ or Cmd+[ for start time
-  // Ctrl+] or Cmd+] for end time
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
       if (e.ctrlKey || e.metaKey) {
@@ -390,11 +494,33 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
         } else if (e.key === ']') {
           e.preventDefault();
           onSetEndTime?.();
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          playCurrentClip();
+        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+          // Determine which timestamp to nudge
+          const target = lastEditedTimestamp
+            || (activeLineClip?.startTimeStr ? 'start' : null);
+          if (target && activeLineClip) {
+            const hasTarget = target === 'start'
+              ? activeLineClip.startTimeStr
+              : activeLineClip.endTimeStr;
+            if (hasTarget) {
+              e.preventDefault();
+              const step = e.shiftKey ? 0.1 : 1;
+              const direction = e.key === 'ArrowLeft' ? -1 : 1;
+              nudgeTimestamp(target, step * direction);
+            }
+          }
         }
       }
     },
-    [onSetStartTime, onSetEndTime]
+    [onSetStartTime, onSetEndTime, playCurrentClip, lastEditedTimestamp, activeLineClip, nudgeTimestamp]
   );
+
+  // Determine the effective nudge target for visual display
+  const effectiveTarget = lastEditedTimestamp
+    || (activeLineClip?.startTimeStr ? 'start' : null);
 
   return (
     <div className={cn('flex flex-col', className)}>
@@ -511,12 +637,103 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
       {/* Editor */}
       <Card className="flex-1 flex flex-col min-h-0 overflow-hidden">
         <CardContent className="flex-1 p-4 flex flex-col min-h-0 overflow-hidden">
-          <Textarea
-            ref={textareaRef}
-            value={notes}
-            onChange={handleNotesChange}
-            onKeyDown={handleKeyDown}
-            placeholder={`타임스탬프 형식으로 노트를 작성하세요:
+          <div className="relative flex-1 flex flex-col min-h-0 overflow-hidden rounded-md">
+            {/* Active line highlight (background) */}
+            <div
+              className="absolute pointer-events-none left-0 right-0 z-0 bg-primary/[0.06] dark:bg-primary/[0.1] transition-[top] duration-75"
+              style={{
+                top: 8 + activeLineIndex * lineHeightRef.current - textareaScrollTop,
+                height: lineHeightRef.current,
+              }}
+            />
+
+            {/* Active line overlay — timestamp display, nudge hints, play button */}
+            {activeLineClip && (
+              <div
+                className="absolute pointer-events-none right-0 z-[2] flex items-center gap-0.5 pr-3 transition-[top] duration-75"
+                style={{
+                  top: 8 + activeLineIndex * lineHeightRef.current - textareaScrollTop,
+                  height: lineHeightRef.current,
+                }}
+              >
+                {/* Start timestamp */}
+                {activeLineClip.startTimeStr && (
+                  <span
+                    className={cn(
+                      'inline-flex items-center font-mono text-[11px] leading-none px-1 rounded transition-all select-none',
+                      effectiveTarget === 'start'
+                        ? 'bg-primary/15 text-primary'
+                        : 'text-muted-foreground/40'
+                    )}
+                  >
+                    {modifierKeys.ctrl && effectiveTarget === 'start' && (
+                      <ChevronLeft className="h-3 w-3 -ml-0.5 text-primary/60 animate-pulse" />
+                    )}
+                    {activeLineClip.startTimeStr}
+                    {modifierKeys.ctrl && effectiveTarget === 'start' && (
+                      <ChevronRight className="h-3 w-3 -mr-0.5 text-primary/60 animate-pulse" />
+                    )}
+                  </span>
+                )}
+
+                {/* Separator */}
+                {activeLineClip.startTimeStr && activeLineClip.endTimeStr && (
+                  <span className="text-muted-foreground/30 text-[11px] select-none">–</span>
+                )}
+
+                {/* End timestamp */}
+                {activeLineClip.endTimeStr && (
+                  <span
+                    className={cn(
+                      'inline-flex items-center font-mono text-[11px] leading-none px-1 rounded transition-all select-none',
+                      effectiveTarget === 'end'
+                        ? 'bg-primary/15 text-primary'
+                        : 'text-muted-foreground/40'
+                    )}
+                  >
+                    {modifierKeys.ctrl && effectiveTarget === 'end' && (
+                      <ChevronLeft className="h-3 w-3 -ml-0.5 text-primary/60 animate-pulse" />
+                    )}
+                    {activeLineClip.endTimeStr}
+                    {modifierKeys.ctrl && effectiveTarget === 'end' && (
+                      <ChevronRight className="h-3 w-3 -mr-0.5 text-primary/60 animate-pulse" />
+                    )}
+                  </span>
+                )}
+
+                {/* Step size hint */}
+                {modifierKeys.ctrl && effectiveTarget && (
+                  <span className="text-primary/50 text-[9px] font-medium select-none ml-0.5">
+                    {modifierKeys.shift ? '±0.1s' : '±1s'}
+                  </span>
+                )}
+
+                {/* Play button */}
+                {activeLineClip.startTimeStr && onPlayClip && (
+                  <button
+                    className="pointer-events-auto ml-1 p-0.5 rounded text-muted-foreground/30 hover:text-primary hover:bg-primary/10 transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      playCurrentClip();
+                    }}
+                    tabIndex={-1}
+                    title="클립 재생 (Ctrl+Enter)"
+                  >
+                    <Play className="h-3 w-3 fill-current" />
+                  </button>
+                )}
+              </div>
+            )}
+
+            <Textarea
+              ref={textareaRef}
+              value={notes}
+              onChange={handleNotesChange}
+              onKeyDown={handleKeyDown}
+              onSelect={updateActiveLine}
+              onClick={updateActiveLine}
+              onScroll={(e) => setTextareaScrollTop(e.currentTarget.scrollTop)}
+              placeholder={`타임스탬프 형식으로 노트를 작성하세요:
 
 00:30 - 01:15 인트로 영상
 02:45 - 03:30 핵심 내용 설명
@@ -527,9 +744,11 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
 2:45 본론 시작
 
 Tip: 각 줄에 타임스탬프를 작성하면 자동으로 클립이 생성됩니다.
-단축키: Ctrl+[ 시작 시간 설정, Ctrl+] 종료 시간 설정`}
-            className="flex-1 min-h-0 resize-none font-mono text-sm overflow-auto"
-          />
+단축키: Ctrl+[ 시작, Ctrl+] 종료, Ctrl+Enter 재생
+        Ctrl+←/→ ±1초, Ctrl+Shift+←/→ ±0.1초`}
+              className="flex-1 min-h-0 resize-none font-mono text-sm overflow-auto bg-transparent relative z-[1]"
+            />
+          </div>
         </CardContent>
       </Card>
 

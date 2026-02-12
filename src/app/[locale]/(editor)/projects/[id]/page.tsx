@@ -209,6 +209,12 @@ export default function EditorPage() {
     notesEditorRef.current?.setEndTime(time);
   }, [currentTime]);
 
+  // Play clip from notes editor
+  const handlePlayClip = useCallback((startTime: number, _endTime?: number) => {
+    playerRef.current?.seekTo(startTime);
+    playerRef.current?.play();
+  }, []);
+
   // Handle save
   const handleSave = useCallback(async (notesText: string) => {
     setIsSaving(true);
@@ -405,10 +411,10 @@ export default function EditorPage() {
 
       {/* Main content */}
       <div className="flex-1 p-4" style={{ contain: 'layout' }}>
-        {/* PC: min 900px or viewport height (whichever is larger). Both columns same height */}
-        <div className="lg:grid lg:grid-cols-2 gap-4 lg:h-[max(900px,calc(100vh-140px))]" style={{ contain: 'layout style' }}>
+        {/* PC: two-column grid, both columns equal height via grid auto rows */}
+        <div className="lg:grid lg:grid-cols-2 gap-4" style={{ contain: 'layout style' }}>
           {/* Left column: Video Player, Timeline, Clip List */}
-          <div className="flex flex-col gap-4 lg:h-full lg:overflow-hidden">
+          <div className="flex flex-col gap-4">
             <VideoPlayer
               ref={playerRef}
               url={project.videoUrl}
@@ -455,19 +461,19 @@ export default function EditorPage() {
               currentClipIndex={currentClipIndex}
               onClipClick={handleClipClick}
               onPlayAll={playAllClips}
-              className="h-[400px] lg:h-auto lg:flex-1 lg:min-h-0 lg:overflow-hidden"
+              className="h-[400px]"
             />
           </div>
 
           {/* Right column: Notes Editor & Analysis */}
-          <div className="flex flex-col gap-4 pt-4 lg:pt-0 lg:h-full lg:overflow-hidden">
-            <Tabs defaultValue="notes" className="flex flex-col lg:flex-1 lg:min-h-0 lg:overflow-hidden">
+          <div className="flex flex-col gap-4 pt-4 lg:pt-0">
+            <Tabs defaultValue="notes" className="flex flex-col lg:flex-1 lg:min-h-0">
               <TabsList className="grid w-full grid-cols-2 shrink-0">
                 <TabsTrigger value="notes">{t('notes')}</TabsTrigger>
                 <TabsTrigger value="analysis">{t('aiAnalysis')}</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="notes" className="mt-4 data-[state=active]:flex data-[state=active]:flex-col lg:flex-1 lg:min-h-0 lg:overflow-hidden">
+              <TabsContent value="notes" className="mt-4 data-[state=active]:flex data-[state=active]:flex-col lg:flex-1 lg:min-h-0">
                 <NotesEditor
                   ref={notesEditorRef}
                   projectId={projectId}
@@ -476,17 +482,18 @@ export default function EditorPage() {
                   onClipsChange={setClips}
                   onSave={handleSave}
                   onClipClick={handleClipClick}
+                  onPlayClip={handlePlayClip}
                   currentClipIndex={currentClipIndex}
                   currentTime={currentTime}
                   videoDuration={duration}
                   onSetStartTime={handleSetStartTime}
                   onSetEndTime={handleSetEndTime}
-                  className="min-h-[450px] lg:min-h-0 lg:h-full lg:overflow-hidden"
+                  className="min-h-[450px] lg:h-full"
                 />
               </TabsContent>
 
-              <TabsContent value="analysis" className="mt-4 data-[state=active]:flex data-[state=active]:flex-col lg:flex-1 lg:min-h-0 lg:overflow-hidden">
-                <Card className="min-h-[450px] lg:min-h-0 lg:h-full lg:overflow-hidden">
+              <TabsContent value="analysis" className="mt-4 data-[state=active]:flex data-[state=active]:flex-col lg:flex-1 lg:min-h-0">
+                <Card className="min-h-[450px] lg:h-full">
                   <CardHeader>
                     <CardTitle className="text-base flex items-center gap-2">
                       <Sparkles className="h-4 w-4" />
