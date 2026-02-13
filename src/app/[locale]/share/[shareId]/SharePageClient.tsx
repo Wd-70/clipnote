@@ -543,153 +543,143 @@ export default function SharePageClient() {
                 onDuration={handleDuration}
                 className={cn("aspect-video w-full", isFullscreen && "h-[calc(100vh-120px)]")}
                 disableDirectPlay
-                hideControls
                 onVideoClick={handleToggleVirtualPlay}
-              />
-              
-              {/* Virtual Timeline Controls - Always dark theme for video player UI */}
-              <div className={cn(
-                "bg-neutral-900 p-4 space-y-4 text-white",
-                isFullscreen ? "absolute bottom-0 left-0 right-0" : "rounded-b-2xl"
-              )}>
-              {/* Playback Controls */}
-              <div className="flex items-center justify-between gap-2">
-                {/* Volume Controls - Left side */}
-                <div className="flex items-center gap-2 min-w-[120px]">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-9 w-9 rounded-full text-white/80 hover:text-white hover:bg-white/10"
-                    onClick={handleToggleMute}
-                  >
-                    {isMuted || volume === 0 ? (
-                      <VolumeX className="h-4 w-4" />
-                    ) : (
-                      <Volume2 className="h-4 w-4" />
-                    )}
-                  </Button>
-                  <Slider
-                    value={[isMuted ? 0 : volume]}
-                    min={0}
-                    max={100}
-                    step={1}
-                    onValueChange={handleVolumeChange}
-                    className="w-20"
-                  />
-                </div>
+                renderControls={() => (
+                  <div className="bg-gradient-to-t from-black/90 via-black/70 to-transparent p-4 space-y-3 text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                    {/* Virtual Timeline Slider */}
+                    <div className="space-y-2">
+                      <div className="relative">
+                        {/* Clip segments visualization */}
+                        <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-2 rounded-full overflow-hidden pointer-events-none bg-white/10">
+                          {clipRanges.map((range, i) => {
+                            const left = totalVirtualDuration > 0 ? (range.virtualStart / totalVirtualDuration) * 100 : 0;
+                            const width = totalVirtualDuration > 0 ? (range.duration / totalVirtualDuration) * 100 : 0;
+                            const isActive = i === currentClipIndex;
 
-                {/* Center Playback Controls */}
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-9 w-9 rounded-full text-white/80 hover:text-white hover:bg-white/10"
-                    onClick={handlePrevClip}
-                    disabled={!project.clips.length}
-                    title={t('prev')}
-                  >
-                    <SkipBack className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-9 w-9 rounded-full text-white/80 hover:text-white hover:bg-white/10"
-                    onClick={handleSkipBackward}
-                  >
-                    <Rewind className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    className="h-12 w-12 rounded-full shadow-lg bg-white text-black hover:bg-white/90"
-                    onClick={handleToggleVirtualPlay}
-                  >
-                    {isVirtualPlaying ? (
-                      <Pause className="h-5 w-5" />
-                    ) : (
-                      <Play className="h-5 w-5 ml-0.5" />
-                    )}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-9 w-9 rounded-full text-white/80 hover:text-white hover:bg-white/10"
-                    onClick={handleSkipForward}
-                  >
-                    <FastForward className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-9 w-9 rounded-full text-white/80 hover:text-white hover:bg-white/10"
-                    onClick={handleNextClip}
-                    disabled={!project.clips.length || currentClipIndex >= project.clips.length - 1}
-                    title={t('next')}
-                  >
-                    <SkipForward className="h-4 w-4" />
-                  </Button>
-                </div>
+                            return (
+                              <div
+                                key={i}
+                                className={cn(
+                                  "absolute top-0 h-full transition-colors",
+                                  isActive ? "bg-white" : "bg-white/40"
+                                )}
+                                style={{ left: `${left}%`, width: `${width}%` }}
+                              />
+                            );
+                          })}
+                        </div>
 
-                {/* Fullscreen Control - Right side */}
-                <div className="flex items-center min-w-[120px] justify-end">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-9 w-9 rounded-full text-white/80 hover:text-white hover:bg-white/10"
-                    onClick={handleToggleFullscreen}
-                    title={t('fullscreen')}
-                  >
-                    {isFullscreen ? (
-                      <Minimize className="h-4 w-4" />
-                    ) : (
-                      <Maximize className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
-              </div>
-
-              {/* Virtual Timeline Slider */}
-              <div className="space-y-2">
-                <div className="relative">
-                  {/* Clip segments visualization */}
-                  <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-2 rounded-full overflow-hidden pointer-events-none bg-white/10">
-                    {clipRanges.map((range, i) => {
-                      const left = totalVirtualDuration > 0 ? (range.virtualStart / totalVirtualDuration) * 100 : 0;
-                      const width = totalVirtualDuration > 0 ? (range.duration / totalVirtualDuration) * 100 : 0;
-                      const isActive = i === currentClipIndex;
-                      
-                      return (
-                        <div
-                          key={i}
-                          className={cn(
-                            "absolute top-0 h-full transition-colors",
-                            isActive ? "bg-white" : "bg-white/40"
-                          )}
-                          style={{ left: `${left}%`, width: `${width}%` }}
+                        <Slider
+                          value={[currentVirtualTime]}
+                          min={0}
+                          max={totalVirtualDuration || 1}
+                          step={0.1}
+                          onValueChange={handleVirtualSeek}
+                          className="relative z-10"
                         />
-                      );
-                    })}
+                      </div>
+                    </div>
+
+                    {/* Playback Controls */}
+                    <div className="flex items-center justify-between gap-2">
+                      {/* Volume Controls - Left side */}
+                      <div className="flex items-center gap-2 min-w-[120px]">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-9 w-9 rounded-full text-white/80 hover:text-white hover:bg-white/10"
+                          onClick={handleToggleMute}
+                        >
+                          {isMuted || volume === 0 ? (
+                            <VolumeX className="h-4 w-4" />
+                          ) : (
+                            <Volume2 className="h-4 w-4" />
+                          )}
+                        </Button>
+                        <Slider
+                          value={[isMuted ? 0 : volume]}
+                          min={0}
+                          max={100}
+                          step={1}
+                          onValueChange={handleVolumeChange}
+                          className="w-20"
+                        />
+                      </div>
+
+                      {/* Center Playback Controls */}
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 rounded-full text-white/80 hover:text-white hover:bg-white/10"
+                          onClick={handlePrevClip}
+                          disabled={!project.clips.length}
+                          title={t('prev')}
+                        >
+                          <SkipBack className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 rounded-full text-white/80 hover:text-white hover:bg-white/10"
+                          onClick={handleSkipBackward}
+                        >
+                          <Rewind className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          className="h-10 w-10 rounded-full shadow-lg bg-white text-black hover:bg-white/90"
+                          onClick={handleToggleVirtualPlay}
+                        >
+                          {isVirtualPlaying ? (
+                            <Pause className="h-5 w-5" />
+                          ) : (
+                            <Play className="h-5 w-5 ml-0.5" />
+                          )}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 rounded-full text-white/80 hover:text-white hover:bg-white/10"
+                          onClick={handleSkipForward}
+                        >
+                          <FastForward className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 rounded-full text-white/80 hover:text-white hover:bg-white/10"
+                          onClick={handleNextClip}
+                          disabled={!project.clips.length || currentClipIndex >= project.clips.length - 1}
+                          title={t('next')}
+                        >
+                          <SkipForward className="h-4 w-4" />
+                        </Button>
+                      </div>
+
+                      {/* Right: Time + Fullscreen */}
+                      <div className="flex items-center gap-2 min-w-[120px] justify-end">
+                        <span className="text-xs font-mono text-white/60">
+                          {formatSecondsToTime(currentVirtualTime)} / {formatSecondsToTime(totalVirtualDuration)}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 rounded-full text-white/80 hover:text-white hover:bg-white/10"
+                          onClick={handleToggleFullscreen}
+                          title={t('fullscreen')}
+                        >
+                          {isFullscreen ? (
+                            <Minimize className="h-4 w-4" />
+                          ) : (
+                            <Maximize className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                    </div>
                   </div>
-                  
-                  <Slider
-                    value={[currentVirtualTime]}
-                    min={0}
-                    max={totalVirtualDuration || 1}
-                    step={0.1}
-                    onValueChange={handleVirtualSeek}
-                    className="relative z-10"
-                  />
-                </div>
-                
-                {/* Time Display */}
-                <div className="flex justify-between text-xs font-mono text-white/60">
-                  <span>{formatSecondsToTime(currentVirtualTime)}</span>
-                  <span className="text-white font-medium">
-                    Clip {currentClipIndex >= 0 ? currentClipIndex + 1 : '-'} / {project.clips.length}
-                  </span>
-                  <span>{formatSecondsToTime(totalVirtualDuration)}</span>
-                </div>
-              </div>
-              </div>
+                )}
+              />
             </div>
           </motion.div>
 

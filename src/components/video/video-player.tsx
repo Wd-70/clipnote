@@ -90,6 +90,8 @@ interface VideoPlayerProps {
   minimalControls?: boolean;
   /** Hide all overlay controls (used when external controls fully replace the overlay) */
   hideControls?: boolean;
+  /** Custom overlay controls renderer - replaces default controls when provided */
+  renderControls?: () => React.ReactNode;
   /** Live stream mode */
   isLive?: boolean;
   /** Live stream open date (KST) for elapsed time calculation */
@@ -99,7 +101,7 @@ interface VideoPlayerProps {
 }
 
 export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
-  ({ url, clips = [], onProgress, onDuration, onPlayingChange, className, style, disableDirectPlay = false, onVideoClick, onUserInteraction, minimalControls = false, hideControls = false, isLive = false, liveOpenDate, onLiveEnd }, ref) => {
+  ({ url, clips = [], onProgress, onDuration, onPlayingChange, className, style, disableDirectPlay = false, onVideoClick, onUserInteraction, minimalControls = false, hideControls = false, renderControls, isLive = false, liveOpenDate, onLiveEnd }, ref) => {
     // YouTube refs
     const youtubePlayerRef = useRef<YouTubePlayerType | null>(null);
     
@@ -913,8 +915,15 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
           )}
         </div>
 
-        {/* Controls overlay - hidden when external controls fully replace it */}
-        {!hideControls && (
+        {/* Custom controls overlay */}
+        {renderControls && (
+          <div className="absolute bottom-0 left-0 right-0 z-20">
+            {renderControls()}
+          </div>
+        )}
+
+        {/* Default controls overlay - hidden when custom or hideControls */}
+        {!renderControls && !hideControls && (
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity">
           {/* Timeline with clip markers - hidden in live mode and minimal mode */}
           {!isLive && !minimalControls && (
