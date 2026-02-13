@@ -12,6 +12,7 @@ import {
   ArrowLeft,
   ChevronRight,
   Scissors,
+  Shield,
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -88,6 +89,15 @@ export function SidebarWithFolders({ className }: SidebarWithFoldersProps) {
       href: '/settings',
       icon: Settings,
     },
+    ...(userData?.role === 'ADMIN'
+      ? [
+          {
+            title: t('admin'),
+            href: '/admin',
+            icon: Shield,
+          },
+        ]
+      : []),
   ];
 
   const isActiveRoute = (href: string) => {

@@ -87,8 +87,8 @@ export function ClipList({
               <div
                 key={clip.id}
                 className={cn(
-                  'group flex items-center gap-1.5 p-2 rounded-lg border transition-all cursor-pointer overflow-hidden',
-                  'hover:border-primary/50 hover:bg-muted/30',
+                  'group flex items-center gap-1.5 p-2 rounded-lg border transition-all overflow-hidden',
+                  onClipClick ? 'cursor-pointer hover:border-primary/50 hover:bg-muted/30' : 'cursor-default',
                   currentClipIndex === index &&
                     'border-primary bg-primary/5 shadow-sm'
                 )}
@@ -129,17 +129,19 @@ export function ClipList({
 
                 {/* Action buttons - show on hover */}
                 <div className="flex items-center shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onClipClick?.(clip, index);
-                    }}
-                  >
-                    <Play className="h-3 w-3" />
-                  </Button>
+                  {onClipClick && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onClipClick(clip, index);
+                      }}
+                    >
+                      <Play className="h-3 w-3" />
+                    </Button>
+                  )}
 
                   {onClipDelete && (
                     <Button

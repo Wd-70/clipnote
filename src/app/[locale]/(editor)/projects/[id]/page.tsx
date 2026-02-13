@@ -35,6 +35,8 @@ import {
   Share2,
   Settings,
   Trash2,
+  ArrowRightLeft,
+  RefreshCw,
 } from 'lucide-react';
 import Link from 'next/link';
 import type { ParsedClip } from '@/types';
@@ -49,6 +51,9 @@ interface Project {
   videoId: string;
   notes: string;
   folderId?: string | null;
+  isLive?: boolean;
+  liveChannelId?: string;
+  liveOpenDate?: string;
   createdAt: string;
 }
 
@@ -76,6 +81,7 @@ export default function EditorPage() {
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isConverting, setIsConverting] = useState(false);
   const [headerWidth, setHeaderWidth] = useState(0);
 
   // Fetch project data from API
@@ -295,6 +301,50 @@ export default function EditorPage() {
     }
   };
 
+  // Handle VOD conversion
+  const handleConvertToVod = async () => {
+    if (!project?.isLive) return;
+    setIsConverting(true);
+    try {
+      const response = await fetch(`/api/projects/${projectId}/convert-vod`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        if (response.status === 404) {
+          toast.error(t('vodNotReady'));
+        } else {
+          toast.error(errorData.error || t('vodNotReady'));
+        }
+        return;
+      }
+
+      const data = await response.json();
+      setProject((prev) =>
+        prev
+          ? {
+              ...prev,
+              videoUrl: data.data.videoUrl,
+              videoId: data.data.videoId,
+              isLive: false,
+            }
+          : null
+      );
+      toast.success(t('vodConverted'));
+    } catch (error) {
+      console.error('VOD conversion failed:', error);
+      toast.error(t('vodNotReady'));
+    } finally {
+      setIsConverting(false);
+    }
+  };
+
+  // Handle live stream end
+  const handleLiveEnd = useCallback(() => {
+    toast.info(t('liveEnded'));
+  }, [t]);
+
   if (isLoading) {
     return (
       <div className="h-screen flex items-center justify-center">
@@ -345,6 +395,12 @@ export default function EditorPage() {
                 <Badge variant="outline" className="text-xs shrink-0">
                   {project.platform}
                 </Badge>
+                {project.isLive && (
+                  <Badge variant="destructive" className="text-xs shrink-0 gap-1">
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                    {t('live')}
+                  </Badge>
+                )}
                 {!isCompact && <span>{tCommon('clips', { count: clips.length })}</span>}
               </div>
             </div>
@@ -352,16 +408,48 @@ export default function EditorPage() {
 
           {/* Right: Action buttons - dynamically responsive based on header width */}
           <div className="flex items-center gap-1 shrink-0">
-            {/* Play button */}
-            <Button
-              variant="outline"
-              size={isNarrow ? "icon" : "sm"}
-              onClick={() => playAllClips()}
-              className="h-8"
-            >
-              <Play className="h-4 w-4" />
-              {!isNarrow && <span className="ml-2">{t('playClips')}</span>}
-            </Button>
+            {/* Live mode buttons */}
+            {project.isLive && (
+              <>
+                {/* Sync to live button */}
+                <Button
+                  variant="outline"
+                  size={isNarrow ? "icon" : "sm"}
+                  onClick={() => playerRef.current?.syncToLive()}
+                  className="h-8"
+                  title={t('syncToLive')}
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  {!isNarrow && <span className="ml-2">{t('syncToLive')}</span>}
+                </Button>
+
+                {/* VOD conversion button */}
+                <Button
+                  variant="outline"
+                  size={isNarrow ? "icon" : "sm"}
+                  onClick={handleConvertToVod}
+                  disabled={isConverting}
+                  className="h-8"
+                  title={t('convertToVodDesc')}
+                >
+                  <ArrowRightLeft className="h-4 w-4" />
+                  {!isNarrow && <span className="ml-2">{t('convertToVod')}</span>}
+                </Button>
+              </>
+            )}
+
+            {/* Play button - hidden in live mode */}
+            {!project.isLive && (
+              <Button
+                variant="outline"
+                size={isNarrow ? "icon" : "sm"}
+                onClick={() => playAllClips()}
+                className="h-8"
+              >
+                <Play className="h-4 w-4" />
+                {!isNarrow && <span className="ml-2">{t('playClips')}</span>}
+              </Button>
+            )}
 
             {/* Export button */}
             <Button
@@ -444,44 +532,51 @@ export default function EditorPage() {
               onProgress={handleProgress}
               onPlayingChange={setIsPlaying}
               onUserInteraction={exitClipMode}
+              isLive={project.isLive}
+              liveOpenDate={project.liveOpenDate}
+              onLiveEnd={handleLiveEnd}
               className="shrink-0"
             />
 
-            {/* Video Control Panel - for original video navigation */}
-            <VideoControlPanel
-              playerRef={playerRef}
-              currentTime={currentTime}
-              duration={duration}
-              isPlaying={isPlaying}
-              onPlayStateChange={setIsPlaying}
-              onSetStartTime={handleSetStartTime}
-              onSetEndTime={handleSetEndTime}
-              onExitClipMode={exitClipMode}
-              className="shrink-0"
-            />
+            {/* Video Control Panel - hidden in live mode */}
+            {!project.isLive && (
+              <VideoControlPanel
+                playerRef={playerRef}
+                currentTime={currentTime}
+                duration={duration}
+                isPlaying={isPlaying}
+                onPlayStateChange={setIsPlaying}
+                onSetStartTime={handleSetStartTime}
+                onSetEndTime={handleSetEndTime}
+                onExitClipMode={exitClipMode}
+                className="shrink-0"
+              />
+            )}
 
-            {/* Clip Timeline - Virtual playback controls */}
-            <ClipTimeline
-              clips={clips}
-              clipRanges={clipRanges}
-              currentClipIndex={currentClipIndex}
-              currentVirtualTime={currentVirtualTime}
-              totalVirtualDuration={totalVirtualDuration}
-              isPlaying={isPlaying}
-              onSeek={seekToVirtualTime}
-              onSkipPrevious={skipToPreviousClip}
-              onSkipNext={skipToNextClip}
-              onTogglePlay={togglePlay}
-              onPause={handlePause}
-              className="shrink-0"
-            />
+            {/* Clip Timeline - hidden in live mode */}
+            {!project.isLive && (
+              <ClipTimeline
+                clips={clips}
+                clipRanges={clipRanges}
+                currentClipIndex={currentClipIndex}
+                currentVirtualTime={currentVirtualTime}
+                totalVirtualDuration={totalVirtualDuration}
+                isPlaying={isPlaying}
+                onSeek={seekToVirtualTime}
+                onSkipPrevious={skipToPreviousClip}
+                onSkipNext={skipToNextClip}
+                onTogglePlay={togglePlay}
+                onPause={handlePause}
+                className="shrink-0"
+              />
+            )}
 
-            {/* Clip List - Fixed height on mobile, fills remaining space on desktop */}
+            {/* Clip List - click navigation disabled in live mode */}
             <ClipList
               clips={clips}
               currentClipIndex={currentClipIndex}
-              onClipClick={handleClipClick}
-              onPlayAll={playAllClips}
+              onClipClick={project.isLive ? undefined : handleClipClick}
+              onPlayAll={project.isLive ? undefined : playAllClips}
               className="h-[400px]"
             />
           </div>
@@ -502,8 +597,8 @@ export default function EditorPage() {
                   onNotesChange={setNotes}
                   onClipsChange={setClips}
                   onSave={handleSave}
-                  onClipClick={handleClipClick}
-                  onPlayClip={handlePlayClip}
+                  onClipClick={project.isLive ? undefined : handleClipClick}
+                  onPlayClip={project.isLive ? undefined : handlePlayClip}
                   onTogglePlay={handleTogglePlay}
                   currentClipIndex={currentClipIndex}
                   currentTime={currentTime}

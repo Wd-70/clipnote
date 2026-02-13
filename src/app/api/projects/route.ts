@@ -3,7 +3,7 @@ import { auth } from '@/auth';
 import { getDB } from '@/lib/db/adapter';
 import { parseVideoUrl } from '@/lib/utils/video';
 import { fetchYouTubeVideoInfo } from '@/lib/utils/youtube';
-import { fetchChzzkVideoInfo } from '@/lib/utils/chzzk';
+import { fetchChzzkVideoInfo, fetchChzzkLiveInfo } from '@/lib/utils/chzzk';
 import { fetchTwitchVideoInfo } from '@/lib/utils/twitch';
 
 // GET /api/projects - List user's projects
@@ -136,52 +136,75 @@ export async function POST(req: NextRequest) {
     const db = await getDB();
     console.log('[API POST /api/projects] Creating project for userId:', session.user.id);
     
-    // If no title provided, try to fetch from platform API
+    // Fetch video metadata from platform API (always, for channel info + thumbnail + duration)
     let projectTitle = title;
     let thumbnailUrl: string | undefined;
     let duration: number | undefined;
-    
-    if (!projectTitle && videoInfo.platform === 'YOUTUBE') {
-      console.log('[API POST /api/projects] No title provided, fetching from YouTube API...');
+    let channelId: string | undefined;
+    let channelName: string | undefined;
+    let isLive = false;
+    let liveChannelId: string | undefined;
+    let liveOpenDate: string | undefined;
+
+    // Handle Chzzk live stream URLs
+    if (videoInfo.isLive && videoInfo.platform === 'CHZZK') {
+      console.log('[API POST /api/projects] Fetching Chzzk live info...');
+      const liveInfo = await fetchChzzkLiveInfo(videoInfo.videoId);
+
+      if (!liveInfo || liveInfo.status !== 'OPEN') {
+        return NextResponse.json(
+          { error: 'This channel is not currently live' },
+          { status: 400 }
+        );
+      }
+
+      isLive = true;
+      liveChannelId = videoInfo.videoId;
+      liveOpenDate = liveInfo.openDate;
+      if (!projectTitle) projectTitle = liveInfo.title;
+      thumbnailUrl = liveInfo.thumbnailUrl;
+      channelId = liveInfo.channelId;
+      channelName = liveInfo.channelName;
+      console.log('[API POST /api/projects] Live stream detected - channel:', channelName);
+    } else if (videoInfo.platform === 'YOUTUBE') {
+      console.log('[API POST /api/projects] Fetching metadata from YouTube API...');
       const youtubeInfo = await fetchYouTubeVideoInfo(videoInfo.videoId);
-      
+
       if (youtubeInfo) {
-        projectTitle = youtubeInfo.title;
+        if (!projectTitle) projectTitle = youtubeInfo.title;
         thumbnailUrl = youtubeInfo.thumbnailUrl;
         duration = youtubeInfo.duration;
-        console.log('[API POST /api/projects] Fetched YouTube title:', projectTitle);
-      } else {
-        console.warn('[API POST /api/projects] Failed to fetch YouTube info, using default title');
-        projectTitle = 'Untitled Project';
+        channelId = youtubeInfo.channelId;
+        channelName = youtubeInfo.channelTitle;
+        console.log('[API POST /api/projects] Fetched YouTube info - channel:', channelName);
       }
-    } else if (!projectTitle && videoInfo.platform === 'CHZZK') {
-      console.log('[API POST /api/projects] No title provided, fetching from Chzzk API...');
+    } else if (videoInfo.platform === 'CHZZK') {
+      console.log('[API POST /api/projects] Fetching metadata from Chzzk API...');
       const chzzkInfo = await fetchChzzkVideoInfo(videoInfo.videoId);
-      
+
       if (chzzkInfo) {
-        projectTitle = chzzkInfo.title;
+        if (!projectTitle) projectTitle = chzzkInfo.title;
         thumbnailUrl = chzzkInfo.thumbnailUrl;
         duration = chzzkInfo.duration;
-        console.log('[API POST /api/projects] Fetched Chzzk title:', projectTitle);
-      } else {
-        console.warn('[API POST /api/projects] Failed to fetch Chzzk info, using default title');
-        projectTitle = 'Untitled Project';
+        channelId = chzzkInfo.channelId;
+        channelName = chzzkInfo.channelName;
+        console.log('[API POST /api/projects] Fetched Chzzk info - channel:', channelName);
       }
-    } else if (!projectTitle && videoInfo.platform === 'TWITCH') {
-      console.log('[API POST /api/projects] No title provided, fetching from Twitch API...');
+    } else if (videoInfo.platform === 'TWITCH') {
+      console.log('[API POST /api/projects] Fetching metadata from Twitch API...');
       const twitchInfo = await fetchTwitchVideoInfo(videoInfo.videoId);
-      
+
       if (twitchInfo) {
-        projectTitle = twitchInfo.title;
+        if (!projectTitle) projectTitle = twitchInfo.title;
         thumbnailUrl = twitchInfo.thumbnailUrl;
         duration = twitchInfo.duration;
-        console.log('[API POST /api/projects] Fetched Twitch title:', projectTitle);
-      } else {
-        // Twitch API requires credentials, so fallback to default title is normal
-        console.log('[API POST /api/projects] Twitch API not configured or video not found, using default title');
-        projectTitle = 'Untitled Project';
+        channelId = twitchInfo.channelId;
+        channelName = twitchInfo.channelName;
+        console.log('[API POST /api/projects] Fetched Twitch info - channel:', channelName);
       }
-    } else if (!projectTitle) {
+    }
+
+    if (!projectTitle) {
       projectTitle = 'Untitled Project';
     }
     
@@ -209,11 +232,18 @@ export async function POST(req: NextRequest) {
       title: projectTitle,
       thumbnailUrl,
       duration,
+      channelId: channelId || undefined,
+      channelName: channelName || undefined,
       notes: [],
       isAutoCollected: false,
       folderId: folderId || undefined,
       isShared: true,
       shareId,
+      ...(isLive && {
+        isLive: true,
+        liveChannelId,
+        liveOpenDate,
+      }),
     });
 
     console.log('[API POST /api/projects] Project created successfully');

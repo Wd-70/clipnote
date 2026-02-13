@@ -96,5 +96,9 @@ const SharedProjectSchema = new Schema<SharedProjectDocument>(
 SharedProjectSchema.index({ shareId: 1 });
 SharedProjectSchema.index({ userId: 1, createdAt: -1 });
 
+if (process.env.NODE_ENV !== 'production') {
+  delete mongoose.models.SharedProject;
+}
+
 export const SharedProject: Model<SharedProjectDocument> =
   mongoose.models.SharedProject || mongoose.model<SharedProjectDocument>('SharedProject', SharedProjectSchema);

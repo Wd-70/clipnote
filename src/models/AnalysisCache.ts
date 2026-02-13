@@ -76,6 +76,10 @@ const AnalysisCacheSchema = new Schema<AnalysisCacheDocument>(
 // Unique compound index for videoId + platform
 AnalysisCacheSchema.index({ videoId: 1, platform: 1 }, { unique: true });
 
+if (process.env.NODE_ENV !== 'production') {
+  delete mongoose.models.AnalysisCache;
+}
+
 export const AnalysisCache: Model<AnalysisCacheDocument> =
   mongoose.models.AnalysisCache ||
   mongoose.model<AnalysisCacheDocument>('AnalysisCache', AnalysisCacheSchema);

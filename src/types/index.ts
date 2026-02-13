@@ -6,7 +6,7 @@ export interface IUser {
   name?: string;
   image?: string;
   points: number;
-  role: 'FREE' | 'PRO';
+  role: 'FREE' | 'PRO' | 'ADMIN';
   savedChannels: string[];
   createdAt: Date;
   updatedAt: Date;
@@ -48,6 +48,8 @@ export interface IProject {
   title: string;
   thumbnailUrl?: string;
   duration?: number;
+  channelId?: string;
+  channelName?: string;
   notes: string | INote[]; // Support both string (raw text) and structured notes
   isAutoCollected: boolean;
   order?: number; // for manual sorting within folder
@@ -55,6 +57,10 @@ export interface IProject {
   shareId?: string; // unique share ID, generated when first shared
   isShared?: boolean; // whether the project is publicly accessible
   shareViewCount?: number; // track view count
+  // Live stream fields
+  isLive?: boolean;
+  liveChannelId?: string;
+  liveOpenDate?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -103,4 +109,5 @@ export interface VideoInfo {
   platform: VideoPlatform;
   videoId: string;
   url: string;
+  isLive?: boolean;
 }

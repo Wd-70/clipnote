@@ -68,5 +68,9 @@ FolderSchema.virtual('hasChildren', {
   count: true,
 });
 
+if (process.env.NODE_ENV !== 'production') {
+  delete mongoose.models.Folder;
+}
+
 export const Folder: Model<FolderDocument> =
   mongoose.models.Folder || mongoose.model<FolderDocument>('Folder', FolderSchema);

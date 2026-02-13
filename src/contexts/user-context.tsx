@@ -16,7 +16,7 @@ export interface UserData {
   name: string;
   image: string;
   points: number;
-  role: 'FREE' | 'PRO';
+  role: 'FREE' | 'PRO' | 'ADMIN';
 }
 
 interface UserContextState {

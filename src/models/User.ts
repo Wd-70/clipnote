@@ -25,7 +25,7 @@ const UserSchema = new Schema<UserDocument, UserModel>(
     },
     role: {
       type: String,
-      enum: ['FREE', 'PRO'],
+      enum: ['FREE', 'PRO', 'ADMIN'],
       default: 'FREE',
     },
     savedChannels: {
@@ -42,6 +42,10 @@ const UserSchema = new Schema<UserDocument, UserModel>(
 UserSchema.statics.findByEmail = function (email: string) {
   return this.findOne({ email });
 };
+
+if (process.env.NODE_ENV !== 'production') {
+  delete mongoose.models.User;
+}
 
 export const User: UserModel =
   (mongoose.models.User as UserModel) ||

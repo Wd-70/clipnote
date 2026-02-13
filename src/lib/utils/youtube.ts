@@ -7,6 +7,7 @@ interface YouTubeVideoInfo {
   description: string;
   thumbnailUrl: string;
   duration: number; // in seconds
+  channelId: string;
   channelTitle: string;
 }
 
@@ -66,6 +67,7 @@ export async function fetchYouTubeVideoInfo(videoId: string): Promise<YouTubeVid
       description: snippet.description,
       thumbnailUrl: snippet.thumbnails?.maxres?.url || snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url || '',
       duration,
+      channelId: snippet.channelId || '',
       channelTitle: snippet.channelTitle,
     };
   } catch (error) {

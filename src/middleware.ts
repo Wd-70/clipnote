@@ -7,7 +7,7 @@ import { routing } from './i18n/routing';
 const intlMiddleware = createMiddleware(routing);
 
 // Routes that require authentication
-const protectedRoutes = ['/dashboard', '/projects', '/points', '/settings'];
+const protectedRoutes = ['/dashboard', '/projects', '/points', '/settings', '/admin'];
 const authRoutes = ['/login'];
 
 // Session cookie names

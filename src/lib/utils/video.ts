@@ -68,6 +68,11 @@ export function extractVideoId(url: string): string | null {
       if (videoIndex !== -1 && pathParts[videoIndex + 1]) {
         return pathParts[videoIndex + 1];
       }
+      // chzzk.naver.com/live/CHANNEL_ID
+      const liveIndex = pathParts.indexOf('live');
+      if (liveIndex !== -1 && pathParts[liveIndex + 1]) {
+        return pathParts[liveIndex + 1];
+      }
     }
 
     if (platform === 'TWITCH') {
@@ -88,6 +93,21 @@ export function extractVideoId(url: string): string | null {
 /**
  * Parse video URL and return video info
  */
+/**
+ * Check if a Chzzk URL is a live stream URL (/live/{channelId})
+ */
+export function isChzzkLiveUrl(url: string): boolean {
+  try {
+    const urlObj = new URL(url);
+    return urlObj.hostname.includes('chzzk.naver.com') && urlObj.pathname.includes('/live/');
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Parse video URL and return video info
+ */
 export function parseVideoUrl(url: string): VideoInfo | null {
   const platform = detectPlatform(url);
   const videoId = extractVideoId(url);
@@ -96,10 +116,13 @@ export function parseVideoUrl(url: string): VideoInfo | null {
     return null;
   }
 
+  const isLive = platform === 'CHZZK' && isChzzkLiveUrl(url);
+
   return {
     platform,
     videoId,
     url,
+    isLive: isLive || undefined,
   };
 }
 

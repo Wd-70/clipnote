@@ -14,6 +14,7 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const videoId = searchParams.get('videoId');
+    const type = searchParams.get('type');
 
     if (!videoId) {
       return NextResponse.json(
@@ -22,9 +23,66 @@ export async function GET(req: NextRequest) {
       );
     }
 
+    // Live stream mode: fetch from live-detail API
+    if (type === 'live') {
+      const liveResponse = await fetch(
+        `https://api.chzzk.naver.com/service/v3/channels/${videoId}/live-detail`,
+        {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+            'Accept': 'application/json',
+          },
+          cache: 'no-store',
+        }
+      );
+
+      if (!liveResponse.ok) {
+        return NextResponse.json(
+          { error: 'Failed to fetch live stream info' },
+          { status: liveResponse.status }
+        );
+      }
+
+      const liveData = await liveResponse.json();
+
+      if (liveData.code !== 200 || !liveData.content) {
+        return NextResponse.json(
+          { error: liveData.message || 'Live stream not available' },
+          { status: 400 }
+        );
+      }
+
+      const liveContent = liveData.content;
+
+      if (liveContent.status !== 'OPEN' || !liveContent.livePlaybackJson) {
+        return NextResponse.json(
+          { error: 'Stream is not live', status: liveContent.status },
+          { status: 404 }
+        );
+      }
+
+      const playback = JSON.parse(liveContent.livePlaybackJson);
+      const hlsMedia = playback.media?.find((m: { mediaId: string }) => m.mediaId === 'HLS');
+
+      if (!hlsMedia?.path) {
+        return NextResponse.json(
+          { error: 'HLS stream not available for this live' },
+          { status: 404 }
+        );
+      }
+
+      return NextResponse.json({
+        hlsUrl: hlsMedia.path,
+        vodType: 'LIVE',
+        openDate: liveContent.openDate,
+        channelName: liveContent.channel?.channelName,
+        liveTitle: liveContent.liveTitle,
+      });
+    }
+
     // Add cache-busting parameter like the browser does
     const dt = Date.now().toString(36).substring(0, 5);
-    
+
     const response = await fetch(
       `https://api.chzzk.naver.com/service/v3/videos/${videoId}?dt=${dt}`,
       {

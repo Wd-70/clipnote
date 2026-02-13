@@ -105,3 +105,131 @@ export function getChzzkEmbedUrl(videoId: string): string {
 export function getChzzkVideoUrl(videoId: string): string {
   return `https://chzzk.naver.com/video/${videoId}`;
 }
+
+// =========================================================================
+// Live Stream API
+// =========================================================================
+
+export interface ChzzkLiveInfo {
+  liveId: string;
+  title: string;
+  channelName: string;
+  channelId: string;
+  openDate: string;
+  status: string;
+  hlsUrl: string | null;
+  thumbnailUrl: string;
+}
+
+export interface ChzzkVodMatch {
+  videoNo: number;
+  videoId: string;
+  title: string;
+  duration: number;
+}
+
+/**
+ * Fetch live stream status and details for a channel
+ */
+export async function fetchChzzkLiveInfo(channelId: string): Promise<ChzzkLiveInfo | null> {
+  try {
+    const url = `https://api.chzzk.naver.com/service/v3/channels/${channelId}/live-detail`;
+
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Accept': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      console.error('[Chzzk Live API] Failed to fetch live info:', response.status);
+      return null;
+    }
+
+    const data = await response.json();
+
+    if (data.code !== 200 || !data.content) {
+      console.warn('[Chzzk Live API] API error:', data.message || 'Unknown error');
+      return null;
+    }
+
+    const content = data.content;
+
+    // Extract HLS URL from livePlaybackJson
+    let hlsUrl: string | null = null;
+    if (content.livePlaybackJson) {
+      try {
+        const playback = JSON.parse(content.livePlaybackJson);
+        const hlsMedia = playback.media?.find((m: { mediaId: string }) => m.mediaId === 'HLS');
+        if (hlsMedia?.path) {
+          hlsUrl = hlsMedia.path;
+        }
+      } catch (e) {
+        console.error('[Chzzk Live API] Failed to parse livePlaybackJson:', e);
+      }
+    }
+
+    return {
+      liveId: content.liveId?.toString() || '',
+      title: content.liveTitle || '',
+      channelName: content.channel?.channelName || '',
+      channelId: content.channel?.channelId || channelId,
+      openDate: content.openDate || '',
+      status: content.status || 'CLOSE',
+      hlsUrl,
+      thumbnailUrl: content.liveImageUrl || '',
+    };
+  } catch (error) {
+    console.error('[Chzzk Live API] Error fetching live info:', error);
+    return null;
+  }
+}
+
+/**
+ * Find VOD matching a specific live broadcast by openDate
+ */
+export async function findChzzkVodByOpenDate(
+  channelId: string,
+  openDate: string
+): Promise<ChzzkVodMatch | null> {
+  try {
+    const url = `https://api.chzzk.naver.com/service/v1/channels/${channelId}/videos?sortType=LATEST&page=0&size=10`;
+
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Accept': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      console.error('[Chzzk VOD API] Failed to fetch videos:', response.status);
+      return null;
+    }
+
+    const data = await response.json();
+
+    if (data.code !== 200 || !data.content) {
+      return null;
+    }
+
+    const videos = data.content.data || [];
+
+    for (const video of videos) {
+      if (video.liveOpenDate === openDate) {
+        return {
+          videoNo: video.videoNo,
+          videoId: video.videoId,
+          title: video.videoTitle,
+          duration: video.duration || 0,
+        };
+      }
+    }
+
+    return null;
+  } catch (error) {
+    console.error('[Chzzk VOD API] Error finding VOD:', error);
+    return null;
+  }
+}

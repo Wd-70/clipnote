@@ -14,6 +14,7 @@ import {
   SkipBack,
   SkipForward,
   Loader2,
+  RefreshCw,
 } from 'lucide-react';
 import { formatDuration, detectPlatform, extractVideoId } from '@/lib/utils/video';
 import { cn } from '@/lib/utils';
@@ -65,6 +66,8 @@ export interface VideoPlayerRef {
   exitFullscreen: () => void;
   isFullscreen: () => boolean;
   getContainerRef: () => HTMLDivElement | null;
+  // Live stream
+  syncToLive: () => void;
 }
 
 interface VideoPlayerProps {
@@ -83,10 +86,16 @@ interface VideoPlayerProps {
   onVideoClick?: () => void;
   /** Called when user directly interacts with video player (click to play/pause, skip buttons) */
   onUserInteraction?: () => void;
+  /** Live stream mode */
+  isLive?: boolean;
+  /** Live stream open date (KST) for elapsed time calculation */
+  liveOpenDate?: string;
+  /** Called when live stream ends */
+  onLiveEnd?: () => void;
 }
 
 export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
-  ({ url, clips = [], onProgress, onDuration, onPlayingChange, className, style, disableDirectPlay = false, onVideoClick, onUserInteraction }, ref) => {
+  ({ url, clips = [], onProgress, onDuration, onPlayingChange, className, style, disableDirectPlay = false, onVideoClick, onUserInteraction, isLive = false, liveOpenDate, onLiveEnd }, ref) => {
     // YouTube refs
     const youtubePlayerRef = useRef<YouTubePlayerType | null>(null);
     
@@ -129,7 +138,7 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
     }, [playing, onPlayingChange]);
 
     // =========================================================================
-    // Chzzk HLS Initialization
+    // Chzzk HLS Initialization (supports both VOD and Live)
     // =========================================================================
     useEffect(() => {
       if (platform !== 'CHZZK' || !videoId) return;
@@ -139,9 +148,12 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
         setChzzkError(null);
 
         try {
-          // Fetch HLS URL from our API
-          const response = await fetch(`/api/chzzk/hls?videoId=${videoId}`);
-          
+          // Fetch HLS URL from our API (add type=live for live streams)
+          const apiUrl = isLive
+            ? `/api/chzzk/hls?videoId=${videoId}&type=live`
+            : `/api/chzzk/hls?videoId=${videoId}`;
+          const response = await fetch(apiUrl);
+
           if (!response.ok) {
             const errorData = await response.json();
             throw new Error(errorData.error || 'Failed to load video');
@@ -157,17 +169,26 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
           const video = chzzkVideoRef.current;
           if (!video) return;
 
-          // Set duration from API response if available
-          if (data.duration) {
+          // Set duration from API response if available (not for live)
+          if (!isLive && data.duration) {
             setDuration(data.duration);
             onDuration?.(data.duration);
           }
 
           if (Hls.isSupported()) {
-            const hls = new Hls({
-              enableWorker: true,
-              lowLatencyMode: false,
-            });
+            const hlsConfig = isLive
+              ? {
+                  enableWorker: true,
+                  lowLatencyMode: true,
+                  liveSyncDurationCount: 3,
+                  liveMaxLatencyDurationCount: 6,
+                }
+              : {
+                  enableWorker: true,
+                  lowLatencyMode: false,
+                };
+
+            const hls = new Hls(hlsConfig);
 
             hls.loadSource(hlsUrl);
             hls.attachMedia(video);
@@ -182,7 +203,13 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
               if (errorData.fatal) {
                 switch (errorData.type) {
                   case Hls.ErrorTypes.NETWORK_ERROR:
-                    console.error('[ChzzkPlayer] Network error, trying to recover...');
+                    if (isLive) {
+                      // For live streams, network errors may mean stream ended
+                      console.warn('[ChzzkPlayer] Live stream network error - stream may have ended');
+                      onLiveEnd?.();
+                    } else {
+                      console.error('[ChzzkPlayer] Network error, trying to recover...');
+                    }
                     hls.startLoad();
                     break;
                   case Hls.ErrorTypes.MEDIA_ERROR:
@@ -191,6 +218,9 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
                     break;
                   default:
                     console.error('[ChzzkPlayer] Fatal error:', errorData);
+                    if (isLive) {
+                      onLiveEnd?.();
+                    }
                     setChzzkError('Failed to play video');
                     setChzzkLoading(false);
                     break;
@@ -225,7 +255,18 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
           hlsRef.current = null;
         }
       };
-    }, [platform, videoId, onDuration]);
+    }, [platform, videoId, isLive, onDuration, onLiveEnd]);
+
+    // =========================================================================
+    // Auto-play for live streams
+    // =========================================================================
+    useEffect(() => {
+      if (isLive && isReady && platform === 'CHZZK' && chzzkVideoRef.current) {
+        chzzkVideoRef.current.play().catch(() => {
+          // Autoplay may be blocked by browser policy; ignore
+        });
+      }
+    }, [isLive, isReady, platform]);
 
     // =========================================================================
     // Twitch Player Initialization
@@ -337,19 +378,38 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
     }, [platform, isReady, seeking, onProgress]);
 
     // =========================================================================
-    // Chzzk Video Event Handlers
+    // Chzzk Video Event Handlers (supports VOD + Live elapsed time)
     // =========================================================================
     useEffect(() => {
       if (platform !== 'CHZZK' || !chzzkVideoRef.current || !isReady) return;
 
       const video = chzzkVideoRef.current;
+      const liveStartDate = isLive && liveOpenDate ? new Date(liveOpenDate) : null;
+
+      const getElapsedTime = (): number => {
+        if (isLive && hlsRef.current && liveStartDate) {
+          // Use HLS.js playingDate (based on EXT-X-PROGRAM-DATE-TIME)
+          const playingDate = (hlsRef.current as any).playingDate;
+          if (playingDate && playingDate instanceof Date) {
+            return Math.max(0, (playingDate.getTime() - liveStartDate.getTime()) / 1000);
+          }
+          // Fallback: compute from wall-clock time
+          return Math.max(0, (Date.now() - liveStartDate.getTime()) / 1000);
+        }
+        return video.currentTime;
+      };
 
       const handleTimeUpdate = () => {
         if (!seeking) {
-          const time = video.currentTime;
+          const time = getElapsedTime();
           setCurrentTime(time);
-          
-          if (duration > 0) {
+
+          if (isLive) {
+            onProgress?.({
+              played: 0,
+              playedSeconds: time,
+            });
+          } else if (duration > 0) {
             onProgress?.({
               played: time / duration,
               playedSeconds: time,
@@ -359,6 +419,7 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
       };
 
       const handleDurationChange = () => {
+        if (isLive) return; // Live has no fixed duration
         const dur = video.duration;
         if (dur && !isNaN(dur)) {
           setDuration(dur);
@@ -374,8 +435,8 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
       video.addEventListener('play', handlePlay);
       video.addEventListener('pause', handlePause);
 
-      // Initial duration
-      if (video.duration && !isNaN(video.duration)) {
+      // Initial duration (VOD only)
+      if (!isLive && video.duration && !isNaN(video.duration)) {
         setDuration(video.duration);
         onDuration?.(video.duration);
       }
@@ -386,7 +447,7 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
         video.removeEventListener('play', handlePlay);
         video.removeEventListener('pause', handlePause);
       };
-    }, [platform, isReady, seeking, duration, onProgress, onDuration]);
+    }, [platform, isReady, seeking, duration, isLive, liveOpenDate, onProgress, onDuration]);
 
     // =========================================================================
     // Imperative Handle (shared interface for both platforms)
@@ -488,7 +549,19 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
       },
       isFullscreen: () => !!document.fullscreenElement,
       getContainerRef: () => containerRef.current,
-    }), [platform, currentTime, duration, volume, muted]);
+      syncToLive: () => {
+        if (platform === 'CHZZK' && chzzkVideoRef.current && isLive && hlsRef.current) {
+          const video = chzzkVideoRef.current;
+          // Seek to the live edge
+          if (video.seekable.length > 0) {
+            video.currentTime = video.seekable.end(video.seekable.length - 1);
+          }
+          if (video.paused) {
+            video.play();
+          }
+        }
+      },
+    }), [platform, currentTime, duration, volume, muted, isLive]);
 
     // =========================================================================
     // YouTube Handlers
@@ -542,7 +615,7 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
     const handleSeekCommit = useCallback((value: number[]) => {
       setSeeking(false);
       const newTime = (value[0] / 100) * duration;
-      
+
       if (platform === 'YOUTUBE' && youtubePlayerRef.current) {
         youtubePlayerRef.current.seekTo(newTime, true);
       } else if (platform === 'CHZZK' && chzzkVideoRef.current) {
@@ -619,7 +692,6 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
     }, [platform, muted]);
 
     const skipBack = useCallback(() => {
-      // Notify parent that user is directly interacting with video
       onUserInteraction?.();
 
       const newTime = Math.max(0, currentTime - 10);
@@ -634,7 +706,6 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
     }, [platform, currentTime, onUserInteraction]);
 
     const skipForward = useCallback(() => {
-      // Notify parent that user is directly interacting with video
       onUserInteraction?.();
 
       const newTime = Math.min(duration, currentTime + 10);
@@ -840,45 +911,49 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
 
         {/* Controls overlay */}
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity">
-          {/* Timeline with clip markers */}
-          <div className="relative mb-3">
-            {/* Clip markers */}
-            <div className="absolute inset-0 h-2 pointer-events-none">
-              {clipMarkers.map((marker, i) => (
-                <div
-                  key={i}
-                  className="absolute h-full bg-primary/50 rounded"
-                  style={{
-                    left: `${marker.left}%`,
-                    width: `${marker.width}%`,
-                  }}
-                />
-              ))}
-            </div>
+          {/* Timeline with clip markers - hidden in live mode */}
+          {!isLive && (
+            <div className="relative mb-3">
+              {/* Clip markers */}
+              <div className="absolute inset-0 h-2 pointer-events-none">
+                {clipMarkers.map((marker, i) => (
+                  <div
+                    key={i}
+                    className="absolute h-full bg-primary/50 rounded"
+                    style={{
+                      left: `${marker.left}%`,
+                      width: `${marker.width}%`,
+                    }}
+                  />
+                ))}
+              </div>
 
-            {/* Progress slider */}
-            <Slider
-              value={[played]}
-              max={100}
-              step={0.1}
-              onValueChange={handleSeekChange}
-              onValueCommit={handleSeekCommit}
-              className="relative z-10"
-            />
-          </div>
+              {/* Progress slider */}
+              <Slider
+                value={[played]}
+                max={100}
+                step={0.1}
+                onValueChange={handleSeekChange}
+                onValueCommit={handleSeekCommit}
+                className="relative z-10"
+              />
+            </div>
+          )}
 
           {/* Control buttons */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-white hover:bg-white/20"
-                onClick={skipBack}
-                disabled={!isReady}
-              >
-                <SkipBack className="h-4 w-4" />
-              </Button>
+              {!isLive && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-white hover:bg-white/20"
+                  onClick={skipBack}
+                  disabled={!isReady}
+                >
+                  <SkipBack className="h-4 w-4" />
+                </Button>
+              )}
 
               <Button
                 variant="ghost"
@@ -894,15 +969,17 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
                 )}
               </Button>
 
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-white hover:bg-white/20"
-                onClick={skipForward}
-                disabled={!isReady}
-              >
-                <SkipForward className="h-4 w-4" />
-              </Button>
+              {!isLive && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-white hover:bg-white/20"
+                  onClick={skipForward}
+                  disabled={!isReady}
+                >
+                  <SkipForward className="h-4 w-4" />
+                </Button>
+              )}
 
               <div className="flex items-center gap-2 ml-2">
                 <Button
@@ -929,9 +1006,41 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
             </div>
 
             <div className="flex items-center gap-4">
-              <span className="text-sm text-white font-mono">
-                {formatDuration(currentTime)} / {formatDuration(duration)}
-              </span>
+              {isLive ? (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-white hover:bg-white/20"
+                    onClick={() => {
+                      if (platform === 'CHZZK' && chzzkVideoRef.current && hlsRef.current) {
+                        const video = chzzkVideoRef.current;
+                        if (video.seekable.length > 0) {
+                          video.currentTime = video.seekable.end(video.seekable.length - 1);
+                        }
+                        if (video.paused) {
+                          video.play();
+                        }
+                      }
+                    }}
+                    disabled={!isReady}
+                    title="Sync to live"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                  </Button>
+                  <span className="flex items-center gap-1.5 text-sm text-white font-mono">
+                    <span className="inline-block w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                    LIVE
+                  </span>
+                  <span className="text-sm text-white font-mono">
+                    {formatDuration(currentTime)}
+                  </span>
+                </>
+              ) : (
+                <span className="text-sm text-white font-mono">
+                  {formatDuration(currentTime)} / {formatDuration(duration)}
+                </span>
+              )}
 
               <Button
                 variant="ghost"

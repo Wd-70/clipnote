@@ -18,7 +18,7 @@ export interface DBUser {
   name?: string;
   image?: string;
   points: number;
-  role: 'FREE' | 'PRO';
+  role: 'FREE' | 'PRO' | 'ADMIN';
   savedChannels: string[];
   createdAt?: Date | string;
   updatedAt?: Date | string;
@@ -34,6 +34,8 @@ export interface DBProject {
   title: string;
   thumbnailUrl?: string;
   duration?: number;
+  channelId?: string;
+  channelName?: string;
   notes: Array<{
     startTime: number;
     endTime: number;
@@ -46,6 +48,10 @@ export interface DBProject {
   shareId?: string;
   isShared?: boolean;
   shareViewCount?: number;
+  // Live stream fields
+  isLive?: boolean;
+  liveChannelId?: string;
+  liveOpenDate?: string;
   createdAt?: Date | string;
   updatedAt?: Date | string;
 }

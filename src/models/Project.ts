@@ -59,6 +59,8 @@ const ProjectSchema = new Schema<ProjectDocument>(
     },
     thumbnailUrl: String,
     duration: Number,
+    channelId: String,
+    channelName: String,
     notes: {
       type: Schema.Types.Mixed,
       default: '',
@@ -83,6 +85,12 @@ const ProjectSchema = new Schema<ProjectDocument>(
       type: Number,
       default: 0,
     },
+    isLive: {
+      type: Boolean,
+      default: false,
+    },
+    liveChannelId: String,
+    liveOpenDate: String,
   },
   {
     timestamps: true,
@@ -94,6 +102,11 @@ ProjectSchema.index({ userId: 1, createdAt: -1 });
 ProjectSchema.index({ userId: 1, folderId: 1, order: 1 });
 ProjectSchema.index({ videoId: 1, platform: 1 });
 ProjectSchema.index({ shareId: 1 }, { unique: true, sparse: true });
+
+// In development, delete cached model to pick up schema changes on hot reload
+if (process.env.NODE_ENV !== 'production') {
+  delete mongoose.models.Project;
+}
 
 export const Project: Model<ProjectDocument> =
   mongoose.models.Project || mongoose.model<ProjectDocument>('Project', ProjectSchema);
