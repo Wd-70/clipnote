@@ -543,6 +543,7 @@ export default function SharePageClient() {
                 onDuration={handleDuration}
                 className={cn("aspect-video w-full", isFullscreen && "h-[calc(100vh-120px)]")}
                 disableDirectPlay
+                hideControls
                 onVideoClick={handleToggleVirtualPlay}
               />
               
