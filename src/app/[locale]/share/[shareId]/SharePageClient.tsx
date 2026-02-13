@@ -545,7 +545,7 @@ export default function SharePageClient() {
                 disableDirectPlay
                 onVideoClick={handleToggleVirtualPlay}
                 renderControls={() => (
-                  <div className="bg-gradient-to-t from-black/90 via-black/70 to-transparent p-4 space-y-3 text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="bg-gradient-to-t from-black/90 via-black/70 to-transparent p-4 space-y-3 text-white opacity-0 group-hover:opacity-100 transition-opacity [&_[data-slot=slider-track]]:bg-white/20 [&_[data-slot=slider-range]]:bg-white [&_[data-slot=slider-thumb]]:bg-white [&_[data-slot=slider-thumb]]:border-white">
                     {/* Virtual Timeline Slider */}
                     <div className="space-y-2">
                       <div className="relative">
