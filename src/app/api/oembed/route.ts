@@ -97,8 +97,8 @@ export async function GET(req: NextRequest) {
     const reqUrl = new URL(req.url);
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || `${reqUrl.protocol}//${reqUrl.host}`;
 
-    // Default: 640x480 (16:9 video + ~120px control bar)
-    const controlBarHeight = 120;
+    // Default: 640x408 (16:9 video + ~48px clips row)
+    const controlBarHeight = 48;
     let width = maxwidth ? Math.min(maxwidth, 640) : 640;
     let height = Math.round(width * 9 / 16) + controlBarHeight;
     if (maxheight && height > maxheight) {
