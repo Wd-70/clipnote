@@ -97,7 +97,7 @@
     "description": "すべての動画プロジェクトを管理・編集できます。",
     "totalProjects": "合計{count}件のプロジェクト",
     "loading": "プロジェクト一覧を読み込み中...",
-    "allProjects": "すべてのプロジェクト",
+    "allProjects": "ライブラリ",
     "uncategorized": "未分類",
     "inFolder": "{folder}フォルダ内"
   },

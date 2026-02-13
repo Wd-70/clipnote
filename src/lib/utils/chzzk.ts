@@ -178,7 +178,7 @@ export async function fetchChzzkLiveInfo(channelId: string): Promise<ChzzkLiveIn
       openDate: content.openDate || '',
       status: content.status || 'CLOSE',
       hlsUrl,
-      thumbnailUrl: content.liveImageUrl || '',
+      thumbnailUrl: (content.liveImageUrl?.replace('{type}', '720') || content.channel?.channelImageUrl || ''),
     };
   } catch (error) {
     console.error('[Chzzk Live API] Error fetching live info:', error);

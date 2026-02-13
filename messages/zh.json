@@ -97,7 +97,7 @@
     "description": "管理和编辑所有视频项目。",
     "totalProjects": "共 {count} 个项目",
     "loading": "加载项目列表...",
-    "allProjects": "所有项目",
+    "allProjects": "资料库",
     "uncategorized": "未分类",
     "inFolder": "在 {folder} 文件夹中"
   },

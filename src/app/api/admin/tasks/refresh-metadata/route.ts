@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/admin-auth';
 import { getDB } from '@/lib/db/adapter';
 import { fetchYouTubeVideoInfo } from '@/lib/utils/youtube';
-import { fetchChzzkVideoInfo } from '@/lib/utils/chzzk';
+import { fetchChzzkVideoInfo, fetchChzzkLiveInfo } from '@/lib/utils/chzzk';
 import { fetchTwitchVideoInfo } from '@/lib/utils/twitch';
 
 /**
@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     let projects = await db.Project.find({});
 
     if (mode === 'missing') {
-      projects = projects.filter((p: any) => !p.channelId);
+      projects = projects.filter((p: any) => !p.channelId || !p.thumbnailUrl);
     }
 
     const total = projects.length;
@@ -69,15 +69,29 @@ export async function POST(request: NextRequest) {
             }
           }
         } else if (project.platform === 'CHZZK') {
-          const info = await fetchChzzkVideoInfo(project.videoId);
-          if (info) {
-            channelId = info.channelId;
-            channelName = info.channelName;
-            thumbnailUrl = info.thumbnailUrl;
-            duration = info.duration;
-            if (!channelId) skipReason = 'API returned empty channelId';
+          if (project.isLive) {
+            // Live projects: videoId is channelId, use live API
+            const liveId = project.liveChannelId || project.videoId;
+            const liveInfo = await fetchChzzkLiveInfo(liveId);
+            if (liveInfo) {
+              channelId = liveInfo.channelId;
+              channelName = liveInfo.channelName;
+              thumbnailUrl = liveInfo.thumbnailUrl;
+              if (!channelId) skipReason = 'Live API returned empty channelId';
+            } else {
+              skipReason = 'Chzzk live API returned no data';
+            }
           } else {
-            skipReason = 'Chzzk API returned no data (video not found?)';
+            const info = await fetchChzzkVideoInfo(project.videoId);
+            if (info) {
+              channelId = info.channelId;
+              channelName = info.channelName;
+              thumbnailUrl = info.thumbnailUrl;
+              duration = info.duration;
+              if (!channelId) skipReason = 'API returned empty channelId';
+            } else {
+              skipReason = 'Chzzk API returned no data (video not found?)';
+            }
           }
         } else if (project.platform === 'TWITCH') {
           if (!process.env.TWITCH_CLIENT_ID || !process.env.TWITCH_ACCESS_TOKEN) {
@@ -98,29 +112,44 @@ export async function POST(request: NextRequest) {
           skipReason = `Unknown platform: ${project.platform}`;
         }
 
-        if (channelId) {
-          const setFields: Record<string, any> = { channelId, channelName };
-          if (thumbnailUrl && !project.thumbnailUrl) {
+        if (channelId || (thumbnailUrl && !project.thumbnailUrl)) {
+          const setFields: Record<string, any> = {};
+          if (channelId) {
+            setFields.channelId = channelId;
+            setFields.channelName = channelName;
+          }
+          if (thumbnailUrl && (!project.thumbnailUrl || mode === 'all')) {
             setFields.thumbnailUrl = thumbnailUrl;
           }
           if (duration && !project.duration) {
             setFields.duration = duration;
           }
 
-          const updateResult = await db.Project.findByIdAndUpdate(
-            project._id,
-            { $set: setFields },
-            { new: true }
-          );
-          console.log(`[refresh-metadata] Updated ${project._id}: channelId=${updateResult?.channelId}, channelName=${updateResult?.channelName}`);
-          updated++;
-          results.push({
-            id: String(project._id),
-            title: project.title,
-            status: 'updated',
-            platform: project.platform,
-            channelName,
-          });
+          if (Object.keys(setFields).length > 0) {
+            const updateResult = await db.Project.findByIdAndUpdate(
+              project._id,
+              { $set: setFields },
+              { new: true }
+            );
+            console.log(`[refresh-metadata] Updated ${project._id}: fields=${Object.keys(setFields).join(',')}`);
+            updated++;
+            results.push({
+              id: String(project._id),
+              title: project.title,
+              status: 'updated',
+              platform: project.platform,
+              channelName: channelName || project.channelName,
+            });
+          } else {
+            skipped++;
+            results.push({
+              id: String(project._id),
+              title: project.title,
+              status: 'skipped',
+              platform: project.platform,
+              reason: 'Nothing to update',
+            });
+          }
         } else {
           skipped++;
           results.push({

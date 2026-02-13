@@ -97,7 +97,7 @@
     "description": "모든 비디오 프로젝트를 관리하고 편집하세요.",
     "totalProjects": "총 {count}개의 프로젝트",
     "loading": "프로젝트 목록을 불러오는 중...",
-    "allProjects": "모든 프로젝트",
+    "allProjects": "전체 보관함",
     "uncategorized": "미분류",
     "inFolder": "{folder} 폴더 내"
   },

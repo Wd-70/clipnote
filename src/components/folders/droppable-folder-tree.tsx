@@ -328,7 +328,7 @@ export function DroppableFolderTree({
             role="treeitem"
             aria-selected={currentFolderId === null}
             className={cn(
-              'w-full flex items-center gap-2 h-9 px-3 rounded-md text-sm transition-all',
+              'w-full flex items-center gap-2 h-9 px-3 rounded-md text-sm transition-all cursor-pointer',
               'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring',
               currentFolderId === null
                 ? 'bg-secondary text-secondary-foreground font-medium'

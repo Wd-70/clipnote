@@ -134,19 +134,28 @@ export function ProjectCard({ project, onDelete }: ProjectCardProps) {
         </div>
 
         {/* Platform Badge (Always visible) */}
-        <div className="absolute top-3 left-3">
-          <Badge 
-            variant="secondary" 
+        <div className="absolute top-3 left-3 flex items-center gap-1.5">
+          <Badge
+            variant="secondary"
             className={cn(
               "backdrop-blur-md shadow-sm border",
-              isYoutube 
-                ? "bg-red-500/10 text-red-600 dark:text-red-400 border-red-200/20" 
+              isYoutube
+                ? "bg-red-500/10 text-red-600 dark:text-red-400 border-red-200/20"
                 : "bg-green-500/10 text-green-600 dark:text-green-400 border-green-200/20"
             )}
           >
             {isYoutube ? <Youtube className="w-3 h-3 mr-1" /> : <Play className="w-3 h-3 mr-1" />}
             {project.platform}
           </Badge>
+          {project.isLive && (
+            <Badge
+              variant="destructive"
+              className="backdrop-blur-md shadow-sm gap-1"
+            >
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+              LIVE
+            </Badge>
+          )}
         </div>
       </div>
 

@@ -97,7 +97,7 @@
     "description": "Manage and edit all your video projects.",
     "totalProjects": "{count, plural, =1 {# project} other {# projects}} total",
     "loading": "Loading projects...",
-    "allProjects": "All Projects",
+    "allProjects": "Library",
     "uncategorized": "Uncategorized",
     "inFolder": "In {folder}"
   },
