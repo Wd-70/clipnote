@@ -337,9 +337,9 @@ export default function EmbedPage() {
   }));
 
   return (
-    <div ref={containerRef} className="h-screen w-full bg-black text-white flex flex-col overflow-hidden font-sans select-none group/container">
-        {/* Main Video Area - Takes available space */}
-        <div className="flex-1 relative min-h-0 w-full bg-black">
+    <div ref={containerRef} className="h-screen w-full bg-black text-white flex flex-col overflow-hidden font-sans select-none">
+      {/* Main Video Area - Takes available space */}
+      <div className="flex-1 relative min-h-0 w-full bg-black">
         <VideoPlayer
           ref={playerRef}
           url={project.videoUrl}
@@ -349,141 +349,134 @@ export default function EmbedPage() {
           className="w-full h-full"
           disableDirectPlay
           onVideoClick={toggleVirtualPlay}
-        />
-        
-        {/* Play/Pause Overlay - Visual indicator only, clicks handled by VideoPlayer */}
-        <div 
-          className={cn(
-            "absolute inset-0 flex items-center justify-center bg-black/20 transition-opacity duration-300 pointer-events-none",
-            isVirtualPlaying ? "opacity-0" : "opacity-100"
+          renderControls={() => (
+            <div className="bg-gradient-to-t from-black/90 via-black/70 to-transparent p-3 sm:p-4 space-y-2 text-white opacity-0 group-hover:opacity-100 transition-opacity [&_[data-slot=slider-track]]:bg-white/20 [&_[data-slot=slider-range]]:bg-white [&_[data-slot=slider-thumb]]:bg-white [&_[data-slot=slider-thumb]]:border-white">
+              {/* Timeline */}
+              <div className="relative">
+                <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1.5 rounded-full overflow-hidden pointer-events-none bg-white/10">
+                  {clipRanges.map((range, i) => {
+                    const left = totalVirtualDuration > 0 ? (range.virtualStart / totalVirtualDuration) * 100 : 0;
+                    const width = totalVirtualDuration > 0 ? (range.duration / totalVirtualDuration) * 100 : 0;
+                    const isActive = i === currentClipIndex;
+
+                    return (
+                      <div
+                        key={i}
+                        className={cn(
+                          "absolute top-0 h-full transition-colors",
+                          isActive ? "bg-white" : "bg-white/40"
+                        )}
+                        style={{ left: `${left}%`, width: `${width}%` }}
+                      />
+                    );
+                  })}
+                </div>
+                <Slider
+                  value={[currentVirtualTime]}
+                  min={0}
+                  max={totalVirtualDuration || 1}
+                  step={0.1}
+                  onValueChange={handleVirtualSeek}
+                  className="relative z-10"
+                />
+              </div>
+
+              {/* Controls */}
+              <div className="flex items-center justify-between gap-2">
+                {/* Left: Volume */}
+                <div className="flex items-center gap-1 min-w-[100px]">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-white/70 hover:text-white hover:bg-white/10 rounded-full"
+                    onClick={handleToggleMute}
+                  >
+                    {isMuted || volume === 0 ? (
+                      <VolumeX className="h-3.5 w-3.5" />
+                    ) : (
+                      <Volume2 className="h-3.5 w-3.5" />
+                    )}
+                  </Button>
+                  <Slider
+                    value={[isMuted ? 0 : volume]}
+                    min={0}
+                    max={100}
+                    step={1}
+                    onValueChange={handleVolumeChange}
+                    className="w-16"
+                  />
+                </div>
+
+                {/* Center: Playback */}
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-white/70 hover:text-white hover:bg-white/10 rounded-full"
+                    onClick={handlePrevClip}
+                    disabled={!project.clips.length}
+                  >
+                    <SkipBack className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    size="icon"
+                    className="h-9 w-9 rounded-full shadow-lg bg-white text-black hover:bg-white/90"
+                    onClick={toggleVirtualPlay}
+                  >
+                    {isVirtualPlaying ? (
+                      <Pause className="h-4 w-4" />
+                    ) : (
+                      <Play className="h-4 w-4 ml-0.5" />
+                    )}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-white/70 hover:text-white hover:bg-white/10 rounded-full"
+                    onClick={handleNextClip}
+                    disabled={!project.clips.length || currentClipIndex >= project.clips.length - 1}
+                  >
+                    <SkipForward className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+
+                {/* Right: Time + Fullscreen */}
+                <div className="flex items-center gap-2 min-w-[100px] justify-end">
+                  <span className="text-[10px] sm:text-xs font-mono text-white/60">
+                    {formatSecondsToTime(currentVirtualTime)} / {formatSecondsToTime(totalVirtualDuration)}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-white/70 hover:text-white hover:bg-white/10 rounded-full"
+                    onClick={handleToggleFullscreen}
+                  >
+                    {isFullscreen ? (
+                      <Minimize className="h-3.5 w-3.5" />
+                    ) : (
+                      <Maximize className="h-3.5 w-3.5" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </div>
           )}
-        >
-          <div className="w-16 h-16 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center border border-white/10 shadow-xl">
-            <Play className="w-6 h-6 text-white ml-1" fill="currentColor" />
+        />
+
+        {/* Play indicator overlay - shown when paused */}
+        {!isVirtualPlaying && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="w-16 h-16 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center border border-white/10 shadow-xl">
+              <Play className="w-6 h-6 text-white ml-1" fill="currentColor" />
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
-      {/* Control Bar - Fixed height */}
-      <div className="shrink-0 bg-neutral-900 border-t border-white/10 p-3 sm:p-4 space-y-3 z-10 relative">
-        {/* Timeline Row */}
-        <div className="flex items-center gap-2 sm:gap-3">
-          {/* Volume Control - Left side (hidden on very small screens) */}
-          <div className="hidden xs:flex items-center gap-1 shrink-0">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 text-white/70 hover:text-white hover:bg-white/10 rounded-full"
-              onClick={handleToggleMute}
-            >
-              {isMuted || volume === 0 ? (
-                <VolumeX className="h-3.5 w-3.5" />
-              ) : (
-                <Volume2 className="h-3.5 w-3.5" />
-              )}
-            </Button>
-            <Slider
-              value={[isMuted ? 0 : volume]}
-              min={0}
-              max={100}
-              step={1}
-              onValueChange={handleVolumeChange}
-              className="w-14 sm:w-16"
-            />
-          </div>
-
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 sm:h-8 sm:w-8 text-white/70 hover:text-white hover:bg-white/10 rounded-full shrink-0"
-            onClick={handlePrevClip}
-            disabled={!project.clips.length}
-          >
-            <SkipBack className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-          </Button>
-          
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 sm:h-9 sm:w-9 text-white/90 hover:text-white hover:bg-white/10 rounded-full shrink-0"
-            onClick={toggleVirtualPlay}
-          >
-            {isVirtualPlaying ? (
-              <Pause className="h-4 w-4" fill="currentColor" />
-            ) : (
-              <Play className="h-4 w-4" fill="currentColor" />
-            )}
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 sm:h-8 sm:w-8 text-white/70 hover:text-white hover:bg-white/10 rounded-full shrink-0"
-            onClick={handleNextClip}
-            disabled={!project.clips.length || currentClipIndex >= project.clips.length - 1}
-          >
-            <SkipForward className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-          </Button>
-
-          <div className="flex-1 flex items-center gap-2 sm:gap-3">
-            <span className="text-[10px] sm:text-xs font-mono text-white/50 w-8 sm:w-9 text-right shrink-0">
-              {formatSecondsToTime(currentVirtualTime)}
-            </span>
-            
-            <div className="relative flex-1 group/slider py-1 cursor-pointer">
-              {/* Clip segments visualization */}
-              <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1.5 rounded-full overflow-hidden pointer-events-none bg-white/10">
-                {clipRanges.map((range, i) => {
-                  const left = totalVirtualDuration > 0 ? (range.virtualStart / totalVirtualDuration) * 100 : 0;
-                  const width = totalVirtualDuration > 0 ? (range.duration / totalVirtualDuration) * 100 : 0;
-                  const isActive = i === currentClipIndex;
-                  
-                  return (
-                    <div
-                      key={i}
-                      className={cn(
-                        "absolute top-0 h-full transition-colors",
-                        isActive ? "bg-white" : "bg-white/40"
-                      )}
-                      style={{ left: `${left}%`, width: `${width}%` }}
-                    />
-                  );
-                })}
-              </div>
-              
-              <Slider
-                value={[currentVirtualTime]}
-                min={0}
-                max={totalVirtualDuration || 1}
-                step={0.1}
-                onValueChange={handleVirtualSeek}
-                className="cursor-pointer relative z-10"
-              />
-            </div>
-            
-            <span className="text-[10px] sm:text-xs font-mono text-white/50 w-8 sm:w-9 text-left shrink-0">
-              {formatSecondsToTime(totalVirtualDuration)}
-            </span>
-          </div>
-
-          {/* Fullscreen Control - Right side */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 sm:h-8 sm:w-8 text-white/70 hover:text-white hover:bg-white/10 rounded-full shrink-0"
-            onClick={handleToggleFullscreen}
-          >
-            {isFullscreen ? (
-              <Minimize className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            ) : (
-              <Maximize className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            )}
-          </Button>
-        </div>
-
-        {/* Clips Row */}
+      {/* Clips Row - Fixed at bottom */}
+      <div className="shrink-0 bg-neutral-900 border-t border-white/10 px-3 sm:px-4 py-2 z-10 relative">
         <div className="flex items-center gap-4">
-          <div 
+          <div
             className="flex-1 overflow-x-auto"
             style={{
               scrollbarWidth: 'none',
