@@ -532,6 +532,7 @@ export default function EditorPage() {
               onProgress={handleProgress}
               onPlayingChange={setIsPlaying}
               onUserInteraction={exitClipMode}
+              minimalControls
               isLive={project.isLive}
               liveOpenDate={project.liveOpenDate}
               onLiveEnd={handleLiveEnd}
