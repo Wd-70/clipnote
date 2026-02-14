@@ -6,6 +6,15 @@ interface PageProps {
   params: Promise<{ shareId: string }>;
 }
 
+// Resolve a thumbnail URL with platform-specific fallback
+function resolveThumbnail(project: DBProject): string | null {
+  if (project.thumbnailUrl) return project.thumbnailUrl;
+  if (project.platform === 'YOUTUBE' && project.videoId) {
+    return `https://img.youtube.com/vi/${project.videoId}/hqdefault.jpg`;
+  }
+  return null;
+}
+
 // Convert seconds to ISO 8601 duration (e.g., PT5M30S)
 function toISO8601Duration(seconds: number): string {
   const h = Math.floor(seconds / 3600);
@@ -103,7 +112,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       : `${project.title} - ClipNote로 만든 비디오 클립`;
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 'https://clipnote.link';
     const shareUrl = `${baseUrl}/share/${shareId}`;
-    const thumbnailUrl = project.thumbnailUrl;
+    const thumbnailUrl = resolveThumbnail(project);
+    // Always provide an image: project thumbnail → YouTube thumbnail → default OG
+    const ogImage = thumbnailUrl || `${baseUrl}/opengraph-image`;
 
     return {
       title: project.title,
@@ -120,15 +131,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         url: shareUrl,
         type: 'video.other',
         siteName: 'ClipNote',
-        images: thumbnailUrl
-          ? [{ url: thumbnailUrl, width: 1200, height: 630, alt: project.title }]
-          : [],
+        images: [{ url: ogImage, width: 1200, height: 630, alt: project.title }],
       },
       twitter: {
         card: 'summary_large_image',
         title: project.title,
         description: clipSummary,
-        images: thumbnailUrl ? [thumbnailUrl] : [],
+        images: [ogImage],
       },
     };
   } catch (error) {
@@ -158,7 +167,7 @@ export default async function SharePage({ params }: PageProps) {
         '@type': 'VideoObject',
         name: project.title,
         description: clipSummary,
-        thumbnailUrl: project.thumbnailUrl || `${baseUrl}/opengraph-image`,
+        thumbnailUrl: resolveThumbnail(project) || `${baseUrl}/opengraph-image`,
         uploadDate: project.createdAt ? new Date(project.createdAt).toISOString() : new Date().toISOString(),
         duration: toISO8601Duration(project.duration || totalDuration),
         embedUrl: `${baseUrl}/embed/${shareId}`,

@@ -109,15 +109,22 @@ export async function GET(req: NextRequest) {
     const embedUrl = `${baseUrl}/embed/${shareId}`;
     const description = `${clips.length} highlight clips`;
 
+    // Resolve thumbnail: explicit → YouTube fallback → default OG
+    const thumbnailUrl = project.thumbnailUrl
+      || (project.platform === 'YOUTUBE' && project.videoId
+        ? `https://img.youtube.com/vi/${project.videoId}/hqdefault.jpg`
+        : null)
+      || `${baseUrl}/opengraph-image`;
+
     const oembedResponse = {
       type: 'video',
       version: '1.0',
       title: project.title,
       provider_name: 'ClipNote',
       provider_url: baseUrl || 'https://clipnote.link',
-      thumbnail_url: project.thumbnailUrl || undefined,
-      thumbnail_width: project.thumbnailUrl ? 480 : undefined,
-      thumbnail_height: project.thumbnailUrl ? 360 : undefined,
+      thumbnail_url: thumbnailUrl,
+      thumbnail_width: 480,
+      thumbnail_height: 360,
       html: `<iframe src="${embedUrl}" width="${width}" height="${height}" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe>`,
       width,
       height,
