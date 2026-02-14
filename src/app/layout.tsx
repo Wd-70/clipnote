@@ -16,8 +16,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ClipNote - AI Video Clipping Service",
-  description: "Edit videos with text notes using AI analysis",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://clipnote.link'),
+  title: {
+    default: 'ClipNote',
+    template: '%s | ClipNote',
+  },
+  description: 'Edit videos with text notes using AI analysis',
 };
 
 export default function RootLayout({

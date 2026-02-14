@@ -6,6 +6,18 @@ interface PageProps {
   params: Promise<{ shareId: string }>;
 }
 
+// Convert seconds to ISO 8601 duration (e.g., PT5M30S)
+function toISO8601Duration(seconds: number): string {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  let result = 'PT';
+  if (h > 0) result += `${h}H`;
+  if (m > 0) result += `${m}M`;
+  if (s > 0 || result === 'PT') result += `${s}S`;
+  return result;
+}
+
 // Helper to parse clips from notes
 function parseClipsFromNotes(notes: unknown): Array<{ startTime: number; endTime: number; text: string }> {
   if (Array.isArray(notes)) {
@@ -73,7 +85,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { shareId } = await params;
 
   const defaultMetadata: Metadata = {
-    title: '공유된 클립 - ClipNote',
+    title: '공유된 클립',
     description: 'ClipNote로 만든 비디오 클립을 확인해보세요.',
   };
 
@@ -86,39 +98,37 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     }
 
     const clips = parseClipsFromNotes(project.notes);
-    const title = `${project.title} - ClipNote`;
-    const description = `${clips.length}개의 하이라이트 클립이 포함된 영상입니다. ClipNote로 만들어졌습니다.`;
-    const thumbnailUrl = project.thumbnailUrl || '/og-default.png';
+    const clipSummary = clips.length > 0
+      ? clips.slice(0, 3).map(c => c.text).filter(Boolean).join(' · ') || `${clips.length}개의 하이라이트 클립`
+      : `${project.title} - ClipNote로 만든 비디오 클립`;
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 'https://clipnote.link';
     const shareUrl = `${baseUrl}/share/${shareId}`;
+    const thumbnailUrl = project.thumbnailUrl;
 
     return {
-      title,
-      description,
+      title: project.title,
+      description: clipSummary,
       alternates: {
+        canonical: shareUrl,
         types: {
           'application/json+oembed': `${baseUrl}/api/oembed?url=${encodeURIComponent(shareUrl)}`,
         },
       },
       openGraph: {
         title: project.title,
-        description,
+        description: clipSummary,
+        url: shareUrl,
         type: 'video.other',
         siteName: 'ClipNote',
-        images: [
-          {
-            url: thumbnailUrl,
-            width: 1200,
-            height: 630,
-            alt: project.title,
-          },
-        ],
+        images: thumbnailUrl
+          ? [{ url: thumbnailUrl, width: 1200, height: 630, alt: project.title }]
+          : [],
       },
       twitter: {
         card: 'summary_large_image',
         title: project.title,
-        description,
-        images: [thumbnailUrl],
+        description: clipSummary,
+        images: thumbnailUrl ? [thumbnailUrl] : [],
       },
     };
   } catch (error) {
@@ -127,6 +137,53 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 }
 
-export default function SharePage() {
-  return <SharePageClient />;
+export default async function SharePage({ params }: PageProps) {
+  const { shareId } = await params;
+  let jsonLd = null;
+
+  try {
+    const db = await getDB();
+    const project = await db.Project.findOne({ shareId }) as DBProject | null;
+
+    if (project && project.isShared) {
+      const clips = parseClipsFromNotes(project.notes);
+      const clipSummary = clips.length > 0
+        ? clips.slice(0, 3).map(c => c.text).filter(Boolean).join(' · ') || `${clips.length}개의 하이라이트 클립`
+        : `${project.title} - ClipNote로 만든 비디오 클립`;
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 'https://clipnote.link';
+      const totalDuration = clips.reduce((sum, c) => sum + (c.endTime - c.startTime), 0);
+
+      jsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'VideoObject',
+        name: project.title,
+        description: clipSummary,
+        thumbnailUrl: project.thumbnailUrl || `${baseUrl}/opengraph-image`,
+        uploadDate: project.createdAt ? new Date(project.createdAt).toISOString() : new Date().toISOString(),
+        duration: toISO8601Duration(project.duration || totalDuration),
+        embedUrl: `${baseUrl}/embed/${shareId}`,
+        ...(project.shareViewCount != null && {
+          interactionStatistic: {
+            '@type': 'InteractionCounter',
+            interactionType: { '@type': 'WatchAction' },
+            userInteractionCount: project.shareViewCount,
+          },
+        }),
+      };
+    }
+  } catch {
+    // Silently fail - JSON-LD is non-critical
+  }
+
+  return (
+    <>
+      {jsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      )}
+      <SharePageClient />
+    </>
+  );
 }

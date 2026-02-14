@@ -19,6 +19,8 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'meta' });
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://clipnote.link';
+  const localePrefix = locale === 'ko' ? '' : `/${locale}`;
 
   return {
     title: t('title'),
@@ -26,8 +28,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     openGraph: {
       title: t('title'),
       description: t('description'),
+      url: `${baseUrl}${localePrefix}`,
       locale: locale,
       type: 'website',
+      siteName: 'ClipNote',
     },
     twitter: {
       card: 'summary_large_image',
@@ -36,10 +40,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     },
     alternates: {
       languages: {
-        'ko': '/ko',
-        'en': '/en',
-        'ja': '/ja',
-        'zh': '/zh',
+        'ko': `${baseUrl}`,
+        'en': `${baseUrl}/en`,
+        'ja': `${baseUrl}/ja`,
+        'zh': `${baseUrl}/zh`,
       },
     },
   };
