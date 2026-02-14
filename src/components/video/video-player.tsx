@@ -248,7 +248,13 @@ export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
           }
         } catch (error) {
           console.error('[ChzzkPlayer] Error initializing:', error);
-          setChzzkError(error instanceof Error ? error.message : 'Failed to load video');
+          const message = error instanceof Error ? error.message : 'Failed to load video';
+          // If the live stream has ended, notify parent instead of showing error
+          if (isLive && (message.includes('not live') || message.includes('not available'))) {
+            onLiveEnd?.();
+            return;
+          }
+          setChzzkError(message);
           setChzzkLoading(false);
         }
       };

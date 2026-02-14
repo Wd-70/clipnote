@@ -340,10 +340,32 @@ export default function EditorPage() {
     }
   };
 
-  // Handle live stream end
-  const handleLiveEnd = useCallback(() => {
+  // Handle live stream end - automatically attempt VOD conversion
+  const handleLiveEnd = useCallback(async () => {
     toast.info(t('liveEnded'));
-  }, [t]);
+    // Automatically attempt VOD conversion
+    try {
+      const response = await fetch(`/api/projects/${projectId}/convert-vod`, {
+        method: 'POST',
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setProject((prev) =>
+          prev
+            ? {
+                ...prev,
+                videoUrl: data.data.videoUrl,
+                videoId: data.data.videoId,
+                isLive: false,
+              }
+            : null
+        );
+        toast.success(t('vodConverted'));
+      }
+    } catch {
+      // VOD not ready yet - user can manually convert later
+    }
+  }, [t, projectId]);
 
   if (isLoading) {
     return (
