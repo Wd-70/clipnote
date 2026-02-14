@@ -187,7 +187,11 @@ export async function fetchChzzkLiveInfo(channelId: string): Promise<ChzzkLiveIn
 }
 
 /**
- * Find VOD matching a specific live broadcast by openDate
+ * Find VOD matching a specific live broadcast by openDate.
+ *
+ * The channel videos list API (v1) does NOT include liveOpenDate,
+ * so we fetch candidate videos from the list and then check each
+ * one via the individual video detail API (v3) which does include it.
  */
 export async function findChzzkVodByOpenDate(
   channelId: string,
@@ -216,13 +220,29 @@ export async function findChzzkVodByOpenDate(
 
     const videos = data.content.data || [];
 
+    // Check each video's detail to find matching liveOpenDate
     for (const video of videos) {
-      if (video.liveOpenDate === openDate) {
+      if (!video.videoNo) continue;
+
+      const detailUrl = `https://api.chzzk.naver.com/service/v3/videos/${video.videoNo}`;
+      const detailRes = await fetch(detailUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'Accept': 'application/json',
+        },
+      });
+
+      if (!detailRes.ok) continue;
+
+      const detailData = await detailRes.json();
+      if (detailData.code !== 200 || !detailData.content) continue;
+
+      if (detailData.content.liveOpenDate === openDate) {
         return {
           videoNo: video.videoNo,
-          videoId: video.videoId,
-          title: video.videoTitle,
-          duration: video.duration || 0,
+          videoId: video.videoId || detailData.content.videoId,
+          title: video.videoTitle || detailData.content.videoTitle,
+          duration: video.duration || detailData.content.duration || 0,
         };
       }
     }
