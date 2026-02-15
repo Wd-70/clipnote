@@ -16,9 +16,7 @@ import { useTimestampParser } from '@/hooks/useTimestampParser';
 import { formatSecondsToTime, parseTimeToSeconds } from '@/lib/utils/timestamp';
 import { cn } from '@/lib/utils';
 import type { ParsedClip } from '@/types';
-
-// Timestamp pattern: supports MM:SS, M:SS, HH:MM:SS, and optional decimal seconds
-const TIMESTAMP_PATTERN = /^((?:\d{1,2}:)?\d{1,2}:\d{2}(?:\.\d+)?)?(\s*-\s*)?((?:\d{1,2}:)?\d{1,2}:\d{2}(?:\.\d+)?)?(\s+)?(.*)$/;
+import { TIMESTAMP_PATTERN, getCursorZone, restoreCursorInLine, type CursorZoneInfo } from '@/lib/utils/cursor-zone';
 
 export interface NotesEditorRef {
   setStartTime: (time: number) => void;
@@ -82,6 +80,8 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
   const initialNotesRef = useRef(initialNotes);
   const notesRef = useRef(notes);
   const hasChangesRef = useRef(hasChanges);
+  // Tracks which zone of the line the cursor is in, updated on every cursor movement
+  const cursorZoneRef = useRef<CursorZoneInfo>({ zone: 'rest', offset: 0 });
 
   // Keep refs in sync for use in event handlers
   useEffect(() => {
@@ -116,14 +116,58 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
     paddingLeftRef.current = parseFloat(computed.paddingLeft) || 12;
   }, []);
 
-  // Track cursor position: line index and position within line
+  // Track cursor position: line index, position within line, and zone info
   const updateCursorPosition = useCallback(() => {
     const textarea = textareaRef.current;
     if (!textarea) return;
     const textBefore = textarea.value.substring(0, textarea.selectionStart);
-    const lines = textBefore.split('\n');
-    setActiveLineIndex(lines.length - 1);
-    setCursorInLine(lines[lines.length - 1].length);
+    const linesBefore = textBefore.split('\n');
+    const lineIndex = linesBefore.length - 1;
+    const posInLine = linesBefore[lineIndex].length;
+    setActiveLineIndex(lineIndex);
+    setCursorInLine(posInLine);
+
+    // Save zone info for cursor restoration after programmatic edits / undo
+    const allLines = textarea.value.split('\n');
+    const currentLine = allLines[lineIndex] || '';
+    cursorZoneRef.current = getCursorZone(currentLine, posInLine);
+  }, []);
+
+  // Restore cursor position on undo/redo using saved zone info.
+  // Must defer with requestAnimationFrame so React's onChange → setNotes
+  // processes the undone value first; otherwise React re-renders with stale
+  // notes state and overwrites the browser's undo.
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    let rafId: number;
+    const handleInput = (e: Event) => {
+      const inputEvent = e as InputEvent;
+      if (inputEvent.inputType !== 'historyUndo' && inputEvent.inputType !== 'historyRedo') return;
+
+      rafId = requestAnimationFrame(() => {
+        if (!textareaRef.current) return;
+        const ta = textareaRef.current;
+        const textBefore = ta.value.substring(0, ta.selectionStart);
+        const linesBefore = textBefore.split('\n');
+        const lineIndex = linesBefore.length - 1;
+        const allLines = ta.value.split('\n');
+        const currentLine = allLines[lineIndex] || '';
+
+        const lineStartPos = ta.selectionStart - linesBefore[lineIndex].length;
+        const restoredPos = restoreCursorInLine(currentLine, cursorZoneRef.current);
+        ta.setSelectionRange(lineStartPos + restoredPos, lineStartPos + restoredPos);
+        setActiveLineIndex(lineIndex);
+        setCursorInLine(restoredPos);
+      });
+    };
+
+    textarea.addEventListener('input', handleInput);
+    return () => {
+      textarea.removeEventListener('input', handleInput);
+      cancelAnimationFrame(rafId);
+    };
   }, []);
 
   // Window-level modifier key tracking (for visual hints)
@@ -375,6 +419,18 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
     return { lineIndex, currentLine, lineStartPos, lineEndPos, lines };
   }, [notes]);
 
+  // Helper: restore cursor position using saved zone info after a line replacement
+  const restoreCursorAfterEdit = useCallback(
+    (textarea: HTMLTextAreaElement, lineStartPos: number, newLine: string, lineIndex: number) => {
+      const newCursorInLine = restoreCursorInLine(newLine, cursorZoneRef.current);
+      const cursorPos = lineStartPos + newCursorInLine;
+      textarea.setSelectionRange(cursorPos, cursorPos);
+      setActiveLineIndex(lineIndex);
+      setCursorInLine(newCursorInLine);
+    },
+    []
+  );
+
   // Set start time for the current line
   const setStartTime = useCallback(
     (time: number) => {
@@ -396,28 +452,21 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
         } else if (separator) {
           newLine = `${timestamp} - ${description || ''}`;
         } else if (description && description.trim()) {
-          newLine = `${timestamp} - ${currentLine.trim()}`;
+          newLine = `${timestamp}${space || ' '}${description}`;
         } else {
-          newLine = `${timestamp} - `;
+          newLine = timestamp;
         }
       } else {
         const trimmedLine = currentLine.trim();
-        newLine = trimmedLine ? `${timestamp} - ${trimmedLine}` : `${timestamp} - `;
+        newLine = trimmedLine ? `${timestamp} ${trimmedLine}` : timestamp;
       }
 
       textarea.focus();
       textarea.setSelectionRange(lineStartPos, lineEndPos);
       document.execCommand('insertText', false, newLine);
-      setActiveLineIndex(lineIndex);
-
-      // Position cursor within the start timestamp so it becomes selected
-      setTimeout(() => {
-        const cursorPos = lineStartPos + Math.floor(timestamp.length / 2);
-        textarea.setSelectionRange(cursorPos, cursorPos);
-        setCursorInLine(Math.floor(timestamp.length / 2));
-      }, 0);
+      restoreCursorAfterEdit(textarea, lineStartPos, newLine, lineIndex);
     },
-    [notes, getCurrentLineInfo]
+    [notes, getCurrentLineInfo, restoreCursorAfterEdit]
   );
 
   // Set end time for the current line
@@ -438,36 +487,27 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
         const [, startTime, , , , description] = match;
         if (startTime) {
           newLine = `${startTime} - ${timestamp}${description ? ' ' + description : ' '}`;
-        } else if (description && description.trim()) {
-          newLine = `00:00 - ${timestamp} ${description.trim()}`;
         } else {
-          newLine = `00:00 - ${timestamp} `;
+          newLine = ` - ${timestamp}${description ? ' ' + description : ''}`;
         }
       } else {
         const trimmedLine = currentLine.trim();
         newLine = trimmedLine
-          ? `00:00 - ${timestamp} ${trimmedLine}`
-          : `00:00 - ${timestamp} `;
+          ? ` - ${timestamp} ${trimmedLine}`
+          : ` - ${timestamp}`;
       }
 
       textarea.focus();
       textarea.setSelectionRange(lineStartPos, lineEndPos);
       document.execCommand('insertText', false, newLine);
-      setActiveLineIndex(lineIndex);
-
-      // Position cursor within the end timestamp so it becomes selected
-      setTimeout(() => {
-        const dashPos = newLine.indexOf(' - ');
-        const endTimestampStart = dashPos + 3;
-        const cursorPos = lineStartPos + endTimestampStart + Math.floor(timestamp.length / 2);
-        textarea.setSelectionRange(cursorPos, cursorPos);
-        setCursorInLine(endTimestampStart + Math.floor(timestamp.length / 2));
-      }, 0);
+      restoreCursorAfterEdit(textarea, lineStartPos, newLine, lineIndex);
     },
-    [notes, getCurrentLineInfo]
+    [notes, getCurrentLineInfo, restoreCursorAfterEdit]
   );
 
   // Nudge a timestamp by delta seconds
+  // Only replaces the specific timestamp portion (not the entire line)
+  // so that undo/redo restores cursor to the timestamp position
   const nudgeTimestamp = useCallback(
     (target: 'start' | 'end', delta: number) => {
       const textarea = textareaRef.current;
@@ -476,37 +516,44 @@ export const NotesEditor = forwardRef<NotesEditorRef, NotesEditorProps>(({
       const lineInfo = getCurrentLineInfo();
       if (!lineInfo) return;
 
-      const { lineIndex, currentLine, lineStartPos, lineEndPos } = lineInfo;
+      const { lineIndex, currentLine, lineStartPos } = lineInfo;
       const match = currentLine.match(TIMESTAMP_PATTERN);
       if (!match) return;
 
-      const [, startTimeStr, , endTimeStr, space, description] = match;
+      const [, startTimeStr, separator, endTimeStr] = match;
 
-      let newLine: string;
+      let newTimeStr: string;
+      let tsStart: number;
+      let tsEnd: number;
+
       if (target === 'start' && startTimeStr) {
         const newTime = Math.max(0, parseTimeToSeconds(startTimeStr) + delta);
         const clampedTime = videoDuration ? Math.min(newTime, videoDuration) : newTime;
-        const newTimeStr = formatSecondsToTime(clampedTime);
-        if (endTimeStr) {
-          newLine = `${newTimeStr} - ${endTimeStr}${space || ' '}${description || ''}`;
-        } else {
-          newLine = `${newTimeStr} - ${description || ''}`;
-        }
+        newTimeStr = formatSecondsToTime(clampedTime);
+        tsStart = lineStartPos;
+        tsEnd = lineStartPos + startTimeStr.length;
       } else if (target === 'end' && endTimeStr) {
         const newTime = Math.max(0, parseTimeToSeconds(endTimeStr) + delta);
         const clampedTime = videoDuration ? Math.min(newTime, videoDuration) : newTime;
-        const newTimeStr = formatSecondsToTime(clampedTime);
-        newLine = `${startTimeStr || '00:00'} - ${newTimeStr}${space || ' '}${description || ''}`;
+        newTimeStr = formatSecondsToTime(clampedTime);
+        const endTsOffset = (startTimeStr?.length || 0) + (separator?.length || 0);
+        tsStart = lineStartPos + endTsOffset;
+        tsEnd = tsStart + endTimeStr.length;
       } else {
         return;
       }
 
       textarea.focus();
-      textarea.setSelectionRange(lineStartPos, lineEndPos);
-      document.execCommand('insertText', false, newLine);
-      setActiveLineIndex(lineIndex);
+      textarea.setSelectionRange(tsStart, tsEnd);
+      document.execCommand('insertText', false, newTimeStr);
+
+      // Restore cursor using zone info (the new line is reconstructed from the textarea)
+      const newValue = textarea.value;
+      const allLines = newValue.split('\n');
+      const newLine = allLines[lineIndex] || '';
+      restoreCursorAfterEdit(textarea, lineStartPos, newLine, lineIndex);
     },
-    [notes, getCurrentLineInfo, videoDuration]
+    [notes, getCurrentLineInfo, videoDuration, restoreCursorAfterEdit]
   );
 
   // Play current line's clip
